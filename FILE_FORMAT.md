@@ -1,6 +1,6 @@
 # Font Animation Studio - Data File Format Documentation
 
-**Version:** 1.0  
+**Version:** 1.1  
 **Last Updated:** October 10, 2025  
 **File Extension:** `.json`
 
@@ -12,7 +12,7 @@ Font Animation Studio saves projects as JSON files containing all project data i
 
 ```json
 {
-  "version": "1.0",
+  "version": "1.1",
   "textObjects": [...],
   "settings": {...},
   "fonts": [...]
@@ -23,7 +23,7 @@ Font Animation Studio saves projects as JSON files containing all project data i
 
 ### `version` (string, required)
 - **Description:** Format version identifier for compatibility checking
-- **Current Value:** `"1.0"`
+- **Current Value:** `"1.1"`
 - **Usage:** Used to handle format migrations and compatibility
 
 ### `textObjects` (array, required)
@@ -55,7 +55,6 @@ Each text object represents an animated text element on the canvas.
   "y": 150,
   "fontSize": 48,
   "color": "#000000",
-  "rotation": 0,
   "variableAxes": {},
   "openTypeFeatures": {},
   "keyframes": [...]
@@ -73,7 +72,6 @@ Each text object represents an animated text element on the canvas.
 | `y` | number | ✅ | Vertical position | `0` | Any number (pixels) |
 | `fontSize` | number | ✅ | Font size in pixels | `48` | 1-200 |
 | `color` | string | ✅ | Text color | `"#000000"` | Hex color code |
-| `rotation` | number | ✅ | Rotation in degrees | `0` | 0-360 |
 | `variableAxes` | object | ✅ | Variable font axis values | `{}` | See Variable Axes |
 | `openTypeFeatures` | object | ✅ | OpenType feature settings | `{}` | See OpenType Features |
 | `keyframes` | array | ✅ | Animation keyframes | `[...]` | Array of Keyframe objects |
@@ -154,7 +152,6 @@ Contains animatable property values:
 | `y` | number | Vertical position | Any number |
 | `fontSize` | number | Font size in pixels | 1-200 |
 | `color` | string | Text color | Hex color code |
-| `rotation` | number | Rotation in degrees | 0-360 |
 | `variableAxes` | object | Variable font axes | Font-specific ranges |
 | `openTypeFeatures` | object | OpenType features | Boolean values |
 
@@ -201,7 +198,7 @@ Contains canvas and animation settings:
 
 ```json
 {
-  "version": "1.0",
+  "version": "1.1",
   "textObjects": [
     {
       "id": 1697123456789,
@@ -211,7 +208,6 @@ Contains canvas and animation settings:
       "y": 100,
       "fontSize": 48,
       "color": "#ff0000",
-      "rotation": 0,
       "variableAxes": {
         "wght": 600
       },
@@ -227,7 +223,6 @@ Contains canvas and animation settings:
             "y": 100,
             "fontSize": 48,
             "color": "#ff0000",
-            "rotation": 0,
             "variableAxes": {
               "wght": 600
             },
@@ -244,7 +239,6 @@ Contains canvas and animation settings:
             "y": 300,
             "fontSize": 72,
             "color": "#0000ff",
-            "rotation": 45,
             "variableAxes": {
               "wght": 900
             },
@@ -324,6 +318,11 @@ Properties are validated on load:
 ---
 
 ## Version History
+
+### Version 1.1 (October 10, 2025)
+- **BREAKING CHANGE:** Removed `rotation` property from text objects
+- Simplified text object structure
+- Updated keyframe properties structure
 
 ### Version 1.0 (October 10, 2025)
 - Initial format specification

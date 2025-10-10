@@ -22,10 +22,6 @@ class UIManager {
         // Update color
         document.getElementById('fontColor').value = textObject.color;
 
-        // Update rotation
-        document.getElementById('textRotation').value = textObject.rotation || 0;
-        document.getElementById('rotationValue').textContent = `${textObject.rotation || 0}°`;
-
         // Update text content
         document.getElementById('textContent').value = textObject.text;
 

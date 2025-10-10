@@ -199,18 +199,6 @@ class FontAnimationApp {
             }
         });
 
-        document.getElementById('textRotation').addEventListener('input', (e) => {
-            if (this.selectedObject) {
-                this.updateObjectProperty(this.selectedObject, 'rotation', parseFloat(e.target.value));
-                document.getElementById('rotationValue').textContent = `${e.target.value}°`;
-                this.redraw();
-            }
-        });
-
-        document.getElementById('textRotation').addEventListener('change', () => {
-            this.saveState();
-        });
-
         document.getElementById('textContent').addEventListener('input', (e) => {
             if (this.selectedObject) {
                 this.selectedObject.text = e.target.value;
@@ -428,7 +416,6 @@ class FontAnimationApp {
             fontFamily: defaultFont,
             fontSize: 48,
             color: '#000000',
-            rotation: 0,
             variableAxes: {},
             openTypeFeatures: {},
             keyframes: [{
@@ -438,7 +425,6 @@ class FontAnimationApp {
                     y: y,
                     fontSize: 48,
                     color: '#000000',
-                    rotation: 0,
                     variableAxes: {},
                     openTypeFeatures: {}
                 }
@@ -526,7 +512,6 @@ class FontAnimationApp {
                     y: obj.y,
                     fontSize: obj.fontSize,
                     color: obj.color,
-                    rotation: obj.rotation || 0,
                     variableAxes: obj.variableAxes || {},
                     openTypeFeatures: obj.openTypeFeatures || {}
                 }
@@ -569,13 +554,6 @@ class FontAnimationApp {
 
         const props = this.getObjectPropertiesAtFrame(obj, this.currentFrame);
 
-        // Apply rotation
-        if (props.rotation && props.rotation !== 0) {
-            this.ctx.translate(props.x, props.y);
-            this.ctx.rotate((props.rotation * Math.PI) / 180);
-            this.ctx.translate(-props.x, -props.y);
-        }
-
         this.ctx.font = `${props.fontSize}px "${obj.fontFamily}"`;
         this.ctx.fillStyle = props.color;
         this.ctx.textBaseline = 'top';
@@ -614,7 +592,6 @@ class FontAnimationApp {
                 y: obj.y,
                 fontSize: obj.fontSize,
                 color: obj.color,
-                rotation: obj.rotation || 0,
                 variableAxes: obj.variableAxes || {},
                 openTypeFeatures: obj.openTypeFeatures || {}
             };
@@ -660,7 +637,6 @@ class FontAnimationApp {
             x: start.x + (end.x - start.x) * t,
             y: start.y + (end.y - start.y) * t,
             fontSize: start.fontSize + (end.fontSize - start.fontSize) * t,
-            rotation: start.rotation + (end.rotation - start.rotation) * t,
             color: this.interpolateColor(start.color, end.color, t),
             variableAxes: this.interpolateVariableAxes(start.variableAxes || {}, end.variableAxes || {}, t),
             openTypeFeatures: end.openTypeFeatures || start.openTypeFeatures || {}
@@ -870,7 +846,7 @@ class FontAnimationApp {
 
     saveProject() {
         const project = {
-            version: '1.0',
+            version: '1.1',
             textObjects: this.textObjects,
             settings: {
                 canvasWidth: this.canvasWidth,
