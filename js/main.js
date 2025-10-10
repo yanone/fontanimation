@@ -11,17 +11,17 @@ class FontAnimationApp {
         this.isPlaying = false;
         this.currentFrame = 0;
         this.totalFrames = 150; // 5 seconds at 30fps
-        this.frameRate = 30;
-        this.duration = 5;
-        this.canvasWidth = 1920;
-        this.canvasHeight = 1080;
-        this.canvasBackground = '#ffffff';
+        this.frameRate = window.AppSettings?.get('frameRate') || 30;
+        this.duration = window.AppSettings?.get('duration') || 5;
+        this.canvasWidth = window.AppSettings?.get('canvasWidth') || 1000;
+        this.canvasHeight = window.AppSettings?.get('canvasHeight') || 600;
+        this.canvasBackground = window.AppSettings?.get('canvasBackground') || '#ffffff';
         this.zoom = 1;
         this.panX = 0;
         this.panY = 0;
         this.history = [];
         this.historyIndex = -1;
-        this.maxHistory = 50;
+        this.maxHistory = window.AppSettings?.get('maxHistorySteps') || 50;
         this.missingFonts = new Set(); // Track fonts that were missing when project was loaded
 
         this.init();
@@ -33,6 +33,7 @@ class FontAnimationApp {
         this.setupKeyboardShortcuts();
         this.setupTimeline();
         this.setupFontManager();
+        this.initializeUIFromSettings();
         this.saveState(); // Initial state
     }
 
@@ -401,6 +402,17 @@ class FontAnimationApp {
         }
     }
 
+    initializeUIFromSettings() {
+        // Initialize UI input fields with values from settings
+        if (window.AppSettings) {
+            document.getElementById('canvasWidth').value = this.canvasWidth;
+            document.getElementById('canvasHeight').value = this.canvasHeight;
+            document.getElementById('canvasBackground').value = this.canvasBackground;
+            document.getElementById('frameRate').value = this.frameRate;
+            document.getElementById('duration').value = this.duration;
+        }
+    }
+
     // Test method to add a text object for debugging
     addTestText() {
         this.createTextObject(100, 100, 'Test Text');
@@ -503,8 +515,8 @@ class FontAnimationApp {
             y: y,
             text: text,
             fontFamily: defaultFont,
-            fontSize: 48,
-            color: '#000000',
+            fontSize: window.AppSettings?.get('defaultFontSize') || 48,
+            color: window.AppSettings?.get('defaultTextColor') || '#000000',
             variableAxes: {},
             openTypeFeatures: {},
             keyframes: [{
@@ -512,8 +524,8 @@ class FontAnimationApp {
                 properties: {
                     x: x,
                     y: y,
-                    fontSize: 48,
-                    color: '#000000',
+                    fontSize: window.AppSettings?.get('defaultFontSize') || 48,
+                    color: window.AppSettings?.get('defaultTextColor') || '#000000',
                     variableAxes: {},
                     openTypeFeatures: {}
                 }
@@ -993,9 +1005,9 @@ class FontAnimationApp {
         this.textObjects = [];
         this.selectedObject = null;
         this.currentFrame = 0;
-        this.canvasWidth = 1920;
-        this.canvasHeight = 1080;
-        this.canvasBackground = '#ffffff';
+        this.canvasWidth = window.AppSettings?.get('canvasWidth') || 1000;
+        this.canvasHeight = window.AppSettings?.get('canvasHeight') || 600;
+        this.canvasBackground = window.AppSettings?.get('canvasBackground') || '#ffffff';
         this.frameRate = 30;
         this.duration = 5;
         this.history = [];
@@ -1019,7 +1031,7 @@ class FontAnimationApp {
 
     saveProject() {
         const project = {
-            version: '1.1',
+            version: window.AppSettings?.get('fileFormatVersion') || '1.1',
             textObjects: this.textObjects,
             settings: {
                 canvasWidth: this.canvasWidth,

@@ -27,6 +27,13 @@ class TimelineManager {
         });
     }
 
+    // Helper method to calculate timeline width using settings
+    calculateTimelineWidth() {
+        const minPixelsPerSecond = window.AppSettings?.get('minPixelsPerSecond') || 80;
+        const minTimelineWidth = window.AppSettings?.get('minTimelineWidth') || 800;
+        return Math.max(minTimelineWidth, this.app.duration * minPixelsPerSecond);
+    }
+
     update() {
         this.updateTimeRuler();
         this.updateLayers();
@@ -37,9 +44,8 @@ class TimelineManager {
         const timeRuler = document.getElementById('timeRuler');
         const totalFrames = this.app.totalFrames;
 
-        // Calculate timeline width - minimum 20px per second, more for longer durations
-        const minPixelsPerSecond = 80;
-        const timelineWidth = Math.max(800, this.app.duration * minPixelsPerSecond);
+        // Calculate timeline width using settings
+        const timelineWidth = this.calculateTimelineWidth();
 
         // Set the timeline ruler width
         timeRuler.style.width = `${timelineWidth}px`;
@@ -161,8 +167,7 @@ class TimelineManager {
         keyframeElement.title = `Frame ${keyframe.frame}`;
 
         // Position based on frame using pixel positioning to match timeline ruler
-        const minPixelsPerSecond = 80;
-        const timelineWidth = Math.max(800, this.app.duration * minPixelsPerSecond);
+        const timelineWidth = this.calculateTimelineWidth();
         const pixelPosition = (keyframe.frame / this.app.totalFrames) * timelineWidth;
         keyframeElement.style.left = `${pixelPosition}px`;
 
@@ -187,8 +192,7 @@ class TimelineManager {
             span.dataset.endFrame = endFrame;
             span.dataset.objectId = textObject.id;
 
-            const minPixelsPerSecond = 80;
-            const timelineWidth = Math.max(800, this.app.duration * minPixelsPerSecond);
+            const timelineWidth = this.calculateTimelineWidth();
             const startPosition = (startFrame / this.app.totalFrames) * timelineWidth;
             const endPosition = (endFrame / this.app.totalFrames) * timelineWidth;
 
@@ -206,8 +210,7 @@ class TimelineManager {
         content.addEventListener('dblclick', (e) => {
             const rect = content.getBoundingClientRect();
             const x = e.clientX - rect.left;
-            const minPixelsPerSecond = 80;
-            const timelineWidth = Math.max(800, this.app.duration * minPixelsPerSecond);
+            const timelineWidth = this.calculateTimelineWidth();
             const frame = Math.round((x / timelineWidth) * this.app.totalFrames);
             this.addKeyframe(textObject, frame);
         });
@@ -658,8 +661,7 @@ class TimelineManager {
         }
 
         // Calculate cursor position based on timeline width, not percentage
-        const minPixelsPerSecond = 80;
-        const timelineWidth = Math.max(800, this.app.duration * minPixelsPerSecond);
+        const timelineWidth = this.calculateTimelineWidth();
         const cursorPosition = (this.app.currentFrame / this.app.totalFrames) * timelineWidth;
 
         // Position the cursor within the timeRuler

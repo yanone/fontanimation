@@ -1,0 +1,64 @@
+// Application Settings and Default Values
+class AppSettings {
+    static get defaults() {
+        return {
+            // Canvas settings
+            canvasWidth: 1000,
+            canvasHeight: 600,
+            canvasBackground: '#ffffff',
+
+            // Animation settings
+            frameRate: 30,
+            duration: 5,
+
+            // Text settings
+            defaultFontSize: 48,
+            defaultTextColor: '#000000',
+            defaultText: 'Sample Text',
+
+            // Timeline settings
+            minPixelsPerSecond: 80,
+            minTimelineWidth: 800,
+
+            // UI settings
+            maxHistorySteps: 50,
+
+            // File format
+            fileFormatVersion: '1.1'
+        };
+    }
+
+    // Get a specific default value
+    static get(key) {
+        return this.defaults[key];
+    }
+
+    // Get all canvas-related defaults
+    static get canvasDefaults() {
+        return {
+            width: this.defaults.canvasWidth,
+            height: this.defaults.canvasHeight,
+            background: this.defaults.canvasBackground
+        };
+    }
+
+    // Get all animation-related defaults
+    static get animationDefaults() {
+        return {
+            frameRate: this.defaults.frameRate,
+            duration: this.defaults.duration
+        };
+    }
+
+    // Get all text-related defaults
+    static get textDefaults() {
+        return {
+            fontSize: this.defaults.defaultFontSize,
+            color: this.defaults.defaultTextColor,
+            text: this.defaults.defaultText
+        };
+    }
+}
+
+// Expose AppSettings to window object
+window.AppSettings = AppSettings;
