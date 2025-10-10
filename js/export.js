@@ -81,10 +81,22 @@ class ExportManager {
     }
 
     async exportWithVideoRecording() {
+        // Create high-DPI canvas for crisp video output
+        const devicePixelRatio = window.devicePixelRatio || 1;
         const canvas = document.createElement('canvas');
-        canvas.width = this.app.canvasWidth;
-        canvas.height = this.app.canvasHeight;
+        canvas.width = this.app.canvasWidth * devicePixelRatio;
+        canvas.height = this.app.canvasHeight * devicePixelRatio;
         const context = canvas.getContext('2d');
+
+        // Scale context to match device pixel ratio
+        context.scale(devicePixelRatio, devicePixelRatio);
+
+        // Enable high-quality text rendering
+        context.textRenderingOptimization = 'optimizeQuality';
+        context.imageSmoothingEnabled = true;
+        context.imageSmoothingQuality = 'high';
+        context.textBaseline = 'top';
+        context.textAlign = 'left';
 
         // Choose best available format
         const preferredFormats = [
@@ -152,14 +164,22 @@ class ExportManager {
         }
 
         const frames = [];
+        // Create high-DPI canvas for crisp image output
+        const devicePixelRatio = window.devicePixelRatio || 1;
         const canvas = document.createElement('canvas');
-        canvas.width = this.app.canvasWidth;
-        canvas.height = this.app.canvasHeight;
+        canvas.width = this.app.canvasWidth * devicePixelRatio;
+        canvas.height = this.app.canvasHeight * devicePixelRatio;
         const context = canvas.getContext('2d');
 
-        // Enable high-quality rendering
+        // Scale context to match device pixel ratio
+        context.scale(devicePixelRatio, devicePixelRatio);
+
+        // Enable high-quality text rendering
+        context.textRenderingOptimization = 'optimizeQuality';
         context.imageSmoothingEnabled = true;
         context.imageSmoothingQuality = 'high';
+        context.textBaseline = 'top';
+        context.textAlign = 'left';
 
         // Render all frames
         for (let frame = 0; frame < this.app.totalFrames; frame++) {
@@ -194,10 +214,10 @@ class ExportManager {
     }
 
     renderFrame(frame, canvas, context) {
-        // Clear canvas with background color
-        context.clearRect(0, 0, canvas.width, canvas.height);
+        // Clear canvas with background color (use logical dimensions since context is scaled)
+        context.clearRect(0, 0, this.app.canvasWidth, this.app.canvasHeight);
         context.fillStyle = this.app.canvasBackground;
-        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.fillRect(0, 0, this.app.canvasWidth, this.app.canvasHeight);
 
         // Render all text objects at this frame
         this.app.textObjects.forEach(obj => {
@@ -389,14 +409,22 @@ class ExportManager {
 
     // Export single frame as image
     exportCurrentFrame() {
+        // Create high-DPI canvas for crisp image output
+        const devicePixelRatio = window.devicePixelRatio || 1;
         const canvas = document.createElement('canvas');
-        canvas.width = this.app.canvasWidth;
-        canvas.height = this.app.canvasHeight;
+        canvas.width = this.app.canvasWidth * devicePixelRatio;
+        canvas.height = this.app.canvasHeight * devicePixelRatio;
         const context = canvas.getContext('2d');
 
-        // Enable high-quality rendering
+        // Scale context to match device pixel ratio
+        context.scale(devicePixelRatio, devicePixelRatio);
+
+        // Enable high-quality text rendering
+        context.textRenderingOptimization = 'optimizeQuality';
         context.imageSmoothingEnabled = true;
         context.imageSmoothingQuality = 'high';
+        context.textBaseline = 'top';
+        context.textAlign = 'left';
 
         this.renderFrame(this.app.currentFrame, canvas, context);
 
