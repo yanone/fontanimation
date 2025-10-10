@@ -211,7 +211,10 @@ class FontAnimationApp {
         timelineHeader.addEventListener('mousemove', (e) => {
             if (!isDraggingCursor) return;
 
-            const rect = timelineHeader.getBoundingClientRect();
+            const timeRuler = document.getElementById('timeRuler');
+            if (!timeRuler) return;
+
+            const rect = timeRuler.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const frame = Math.round((x / rect.width) * this.totalFrames);
             this.setCurrentFrame(Math.max(0, Math.min(frame, this.totalFrames - 1)));
@@ -224,7 +227,10 @@ class FontAnimationApp {
         timelineHeader.addEventListener('click', (e) => {
             if (e.target === timeCursor) return;
 
-            const rect = timelineHeader.getBoundingClientRect();
+            const timeRuler = document.getElementById('timeRuler');
+            if (!timeRuler) return;
+
+            const rect = timeRuler.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const frame = Math.round((x / rect.width) * this.totalFrames);
             this.setCurrentFrame(Math.max(0, Math.min(frame, this.totalFrames - 1)));

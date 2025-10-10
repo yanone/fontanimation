@@ -527,11 +527,23 @@ body {
     background: #2b2b2b;
     border-bottom: 1px solid #404040;
     position: relative;
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+#timelineHeader::before {
+    content: '';
+    flex-shrink: 0;
+    width: 150px;
+    background: #2b2b2b;
+    border-right: 1px solid #404040;
 }
 
 #timeRuler {
     height: 100%;
     position: relative;
+    flex-shrink: 0;
     background: repeating-linear-gradient(to right,
             #404040 0px,
             #404040 1px,
@@ -584,6 +596,7 @@ body {
 #timelineLayers {
     flex: 1;
     overflow-y: auto;
+    overflow-x: auto;
 }
 
 .timeline-layer {
@@ -608,9 +621,9 @@ body {
 }
 
 .layer-content {
-    flex: 1;
     position: relative;
     background: #1e1e1e;
+    flex-shrink: 0;
 }
 
 .keyframe {

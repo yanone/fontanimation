@@ -7,7 +7,24 @@ class TimelineManager {
     }
 
     setup() {
+        this.setupScrollSynchronization();
         this.update();
+    }
+
+    setupScrollSynchronization() {
+        const timelineHeader = document.getElementById('timelineHeader');
+        const timelineLayers = document.getElementById('timelineLayers');
+
+        if (!timelineHeader || !timelineLayers) return;
+
+        // Synchronize scrolling between header and layers
+        timelineHeader.addEventListener('scroll', () => {
+            timelineLayers.scrollLeft = timelineHeader.scrollLeft;
+        });
+
+        timelineLayers.addEventListener('scroll', () => {
+            timelineHeader.scrollLeft = timelineLayers.scrollLeft;
+        });
     }
 
     update() {
@@ -26,6 +43,12 @@ class TimelineManager {
 
         // Set the timeline ruler width
         timeRuler.style.width = `${timelineWidth}px`;
+
+        // Set all layer content widths to match
+        const layerContents = document.querySelectorAll('.layer-content');
+        layerContents.forEach(content => {
+            content.style.width = `${timelineWidth}px`;
+        });
 
         // Clear only the time marks, not the cursor
         const existingMarks = timeRuler.querySelectorAll('.time-mark');
@@ -137,9 +160,11 @@ class TimelineManager {
         keyframeElement.dataset.objectId = textObject.id;
         keyframeElement.title = `Frame ${keyframe.frame}`;
 
-        // Position based on frame
-        const percentage = (keyframe.frame / this.app.totalFrames) * 100;
-        keyframeElement.style.left = `${percentage}%`;
+        // Position based on frame using pixel positioning to match timeline ruler
+        const minPixelsPerSecond = 80;
+        const timelineWidth = Math.max(800, this.app.duration * minPixelsPerSecond);
+        const pixelPosition = (keyframe.frame / this.app.totalFrames) * timelineWidth;
+        keyframeElement.style.left = `${pixelPosition}px`;
 
         // Check if selected
         if (this.isKeyframeSelected(textObject.id, keyframe.frame)) {
@@ -162,11 +187,13 @@ class TimelineManager {
             span.dataset.endFrame = endFrame;
             span.dataset.objectId = textObject.id;
 
-            const startPercentage = (startFrame / this.app.totalFrames) * 100;
-            const endPercentage = (endFrame / this.app.totalFrames) * 100;
+            const minPixelsPerSecond = 80;
+            const timelineWidth = Math.max(800, this.app.duration * minPixelsPerSecond);
+            const startPosition = (startFrame / this.app.totalFrames) * timelineWidth;
+            const endPosition = (endFrame / this.app.totalFrames) * timelineWidth;
 
-            span.style.left = `${startPercentage}%`;
-            span.style.width = `${Math.max(1, endPercentage - startPercentage)}%`;
+            span.style.left = `${startPosition}px`;
+            span.style.width = `${Math.max(2, endPosition - startPosition)}px`;
 
             content.appendChild(span);
         }
@@ -179,7 +206,9 @@ class TimelineManager {
         content.addEventListener('dblclick', (e) => {
             const rect = content.getBoundingClientRect();
             const x = e.clientX - rect.left;
-            const frame = Math.round((x / rect.width) * this.app.totalFrames);
+            const minPixelsPerSecond = 80;
+            const timelineWidth = Math.max(800, this.app.duration * minPixelsPerSecond);
+            const frame = Math.round((x / timelineWidth) * this.app.totalFrames);
             this.addKeyframe(textObject, frame);
         });
 
