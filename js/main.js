@@ -182,7 +182,7 @@ class FontAnimationApp {
 
         document.getElementById('fontSize').addEventListener('input', (e) => {
             if (this.selectedObject) {
-                this.selectedObject.fontSize = parseFloat(e.target.value);
+                this.updateObjectProperty(this.selectedObject, 'fontSize', parseFloat(e.target.value));
                 this.redraw();
             }
         });
@@ -193,7 +193,7 @@ class FontAnimationApp {
 
         document.getElementById('fontColor').addEventListener('change', (e) => {
             if (this.selectedObject) {
-                this.selectedObject.color = e.target.value;
+                this.updateObjectProperty(this.selectedObject, 'color', e.target.value);
                 this.redraw();
                 this.saveState();
             }
@@ -201,7 +201,7 @@ class FontAnimationApp {
 
         document.getElementById('textRotation').addEventListener('input', (e) => {
             if (this.selectedObject) {
-                this.selectedObject.rotation = parseFloat(e.target.value);
+                this.updateObjectProperty(this.selectedObject, 'rotation', parseFloat(e.target.value));
                 document.getElementById('rotationValue').textContent = `${e.target.value}°`;
                 this.redraw();
             }
@@ -225,7 +225,7 @@ class FontAnimationApp {
         // Position controls
         document.getElementById('textX').addEventListener('input', (e) => {
             if (this.selectedObject) {
-                this.selectedObject.x = parseFloat(e.target.value);
+                this.updateObjectProperty(this.selectedObject, 'x', parseFloat(e.target.value));
                 this.redraw();
             }
         });
@@ -236,7 +236,7 @@ class FontAnimationApp {
 
         document.getElementById('textY').addEventListener('input', (e) => {
             if (this.selectedObject) {
-                this.selectedObject.y = parseFloat(e.target.value);
+                this.updateObjectProperty(this.selectedObject, 'y', parseFloat(e.target.value));
                 this.redraw();
             }
         });
@@ -292,8 +292,11 @@ class FontAnimationApp {
             const deltaX = x - dragStartX;
             const deltaY = y - dragStartY;
 
-            this.selectedObject.x = dragStartObjX + deltaX;
-            this.selectedObject.y = dragStartObjY + deltaY;
+            const newX = dragStartObjX + deltaX;
+            const newY = dragStartObjY + deltaY;
+
+            this.updateObjectProperty(this.selectedObject, 'x', newX);
+            this.updateObjectProperty(this.selectedObject, 'y', newY);
 
             this.updateRightPanel();
             this.redraw();
@@ -502,6 +505,39 @@ class FontAnimationApp {
         }
     }
 
+    updateObjectProperty(obj, property, value) {
+        console.log(`Updating ${property} to ${value} for object at frame ${this.currentFrame}`);
+
+        // Update the direct property on the object
+        obj[property] = value;
+
+        // Also update the current keyframe if it exists
+        const currentKeyframe = obj.keyframes.find(kf => kf.frame === this.currentFrame);
+        if (currentKeyframe) {
+            console.log('Updating existing keyframe');
+            currentKeyframe.properties[property] = value;
+        } else {
+            console.log('Creating new keyframe');
+            // If no keyframe exists for current frame, create one
+            const newKeyframe = {
+                frame: this.currentFrame,
+                properties: {
+                    x: obj.x,
+                    y: obj.y,
+                    fontSize: obj.fontSize,
+                    color: obj.color,
+                    rotation: obj.rotation || 0,
+                    variableAxes: obj.variableAxes || {},
+                    openTypeFeatures: obj.openTypeFeatures || {}
+                }
+            };
+            obj.keyframes.push(newKeyframe);
+            obj.keyframes.sort((a, b) => a.frame - b.frame);
+        }
+
+        console.log('Object keyframes:', obj.keyframes);
+    }
+
     zoomAt(x, y, factor) {
         const oldZoom = this.zoom;
         this.zoom = Math.max(0.1, Math.min(5, this.zoom * factor));
@@ -573,7 +609,7 @@ class FontAnimationApp {
         const keyframes = obj.keyframes.sort((a, b) => a.frame - b.frame);
 
         if (keyframes.length === 0) {
-            return {
+            const props = {
                 x: obj.x,
                 y: obj.y,
                 fontSize: obj.fontSize,
@@ -582,13 +618,17 @@ class FontAnimationApp {
                 variableAxes: obj.variableAxes || {},
                 openTypeFeatures: obj.openTypeFeatures || {}
             };
+            console.log('No keyframes, returning direct props:', props);
+            return props;
         }
 
         if (keyframes.length === 1 || frame <= keyframes[0].frame) {
+            console.log('Using first keyframe props:', keyframes[0].properties);
             return keyframes[0].properties;
         }
 
         if (frame >= keyframes[keyframes.length - 1].frame) {
+            console.log('Using last keyframe props:', keyframes[keyframes.length - 1].properties);
             return keyframes[keyframes.length - 1].properties;
         }
 
