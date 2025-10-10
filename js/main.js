@@ -449,6 +449,22 @@ class FontAnimationApp {
                     // Test shortcut to add text
                     this.addTestText();
                     break;
+                case 'arrowleft':
+                    e.preventDefault();
+                    if (e.shiftKey) {
+                        this.jumpBackward(10);
+                    } else {
+                        this.stepBackward();
+                    }
+                    break;
+                case 'arrowright':
+                    e.preventDefault();
+                    if (e.shiftKey) {
+                        this.jumpForward(10);
+                    } else {
+                        this.stepForward();
+                    }
+                    break;
             }
         });
     }
@@ -898,6 +914,35 @@ class FontAnimationApp {
             const frames = this.currentFrame % this.frameRate;
             currentTimeDisplay.textContent = `${seconds}s+${frames}f`;
         }
+    }
+
+    // Frame navigation methods
+    stepForward() {
+        if (window.AnimationManager) {
+            if (!this.animationManager) {
+                this.animationManager = new window.AnimationManager(this);
+            }
+            this.animationManager.stepForward();
+        }
+    }
+
+    stepBackward() {
+        if (window.AnimationManager) {
+            if (!this.animationManager) {
+                this.animationManager = new window.AnimationManager(this);
+            }
+            this.animationManager.stepBackward();
+        }
+    }
+
+    jumpForward(frames = 10) {
+        const targetFrame = Math.min(this.currentFrame + frames, this.totalFrames - 1);
+        this.setCurrentFrame(targetFrame);
+    }
+
+    jumpBackward(frames = 10) {
+        const targetFrame = Math.max(this.currentFrame - frames, 0);
+        this.setCurrentFrame(targetFrame);
     }
 
     updateRightPanel() {
