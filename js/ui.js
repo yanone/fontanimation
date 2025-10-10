@@ -29,6 +29,10 @@ class UIManager {
         // Update text content
         document.getElementById('textContent').value = textObject.text;
 
+        // Update position
+        document.getElementById('textX').value = textObject.x.toFixed(1);
+        document.getElementById('textY').value = textObject.y.toFixed(1);
+
         // Update variable axes
         UIManager.updateVariableAxes(textObject, app);
 

@@ -1,0 +1,39 @@
+{
+  "version": "1.0",
+  "textObjects": [
+    {
+      "id": 1760093717135,
+      "x": 50,
+      "y": 50,
+      "text": "Samle Text",
+      "fontFamily": "Arial",
+      "fontSize": 20,
+      "color": "#000000",
+      "rotation": 132,
+      "variableAxes": {},
+      "openTypeFeatures": {},
+      "keyframes": [
+        {
+          "frame": 0,
+          "properties": {
+            "x": 253,
+            "y": 249,
+            "fontSize": 48,
+            "color": "#000000",
+            "rotation": 0,
+            "variableAxes": {},
+            "openTypeFeatures": {}
+          }
+        }
+      ]
+    }
+  ],
+  "settings": {
+    "canvasWidth": 500,
+    "canvasHeight": 500,
+    "canvasBackground": "#ffffff",
+    "frameRate": 30,
+    "duration": 5
+  },
+  "fonts": []
+}

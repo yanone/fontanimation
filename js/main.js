@@ -31,6 +31,7 @@ class FontAnimationApp {
         this.setupEventListeners();
         this.setupKeyboardShortcuts();
         this.setupTimeline();
+        this.setupFontManager();
         this.saveState(); // Initial state
     }
 
@@ -116,7 +117,8 @@ class FontAnimationApp {
         document.getElementById('undoBtn').addEventListener('click', () => this.undo());
         document.getElementById('redoBtn').addEventListener('click', () => this.redo());
 
-        // Canvas interactions will be handled by the tools manager
+        // Canvas interactions
+        this.setupCanvasEventListeners();
 
         // Timeline
         this.setupTimelineEventListeners();
@@ -219,6 +221,126 @@ class FontAnimationApp {
         document.getElementById('textContent').addEventListener('change', () => {
             this.saveState();
         });
+
+        // Position controls
+        document.getElementById('textX').addEventListener('input', (e) => {
+            if (this.selectedObject) {
+                this.selectedObject.x = parseFloat(e.target.value);
+                this.redraw();
+            }
+        });
+
+        document.getElementById('textX').addEventListener('change', () => {
+            this.saveState();
+        });
+
+        document.getElementById('textY').addEventListener('input', (e) => {
+            if (this.selectedObject) {
+                this.selectedObject.y = parseFloat(e.target.value);
+                this.redraw();
+            }
+        });
+
+        document.getElementById('textY').addEventListener('change', () => {
+            this.saveState();
+        });
+    }
+
+    setupCanvasEventListeners() {
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let dragStartObjX = 0;
+        let dragStartObjY = 0;
+
+        this.canvas.addEventListener('mousedown', (e) => {
+            const rect = this.canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / this.zoom - this.panX / this.zoom;
+            const y = (e.clientY - rect.top) / this.zoom - this.panY / this.zoom;
+
+            if (this.currentTool === 'text') {
+                // Prompt for text input or use default
+                let text = prompt('Enter text:', 'Sample Text');
+                if (text === null) {
+                    text = 'Sample Text'; // Use default if cancelled
+                }
+                if (text.trim()) {
+                    this.createTextObject(x, y, text.trim());
+                } else {
+                    this.createTextObject(x, y, 'Sample Text');
+                }
+            } else if (this.currentTool === 'select') {
+                const clickedObject = this.selectObjectAt(x, y);
+                if (clickedObject) {
+                    isDragging = true;
+                    dragStartX = x;
+                    dragStartY = y;
+                    dragStartObjX = clickedObject.x;
+                    dragStartObjY = clickedObject.y;
+                    this.canvas.style.cursor = 'grabbing';
+                }
+            }
+        });
+
+        this.canvas.addEventListener('mousemove', (e) => {
+            if (!isDragging || !this.selectedObject) return;
+
+            const rect = this.canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / this.zoom - this.panX / this.zoom;
+            const y = (e.clientY - rect.top) / this.zoom - this.panY / this.zoom;
+
+            const deltaX = x - dragStartX;
+            const deltaY = y - dragStartY;
+
+            this.selectedObject.x = dragStartObjX + deltaX;
+            this.selectedObject.y = dragStartObjY + deltaY;
+
+            this.updateRightPanel();
+            this.redraw();
+        });
+
+        this.canvas.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                this.canvas.style.cursor = '';
+                this.saveState();
+            }
+        });
+
+        this.canvas.addEventListener('mouseleave', () => {
+            if (isDragging) {
+                isDragging = false;
+                this.canvas.style.cursor = '';
+                this.saveState();
+            }
+        });
+
+        // Double-click to edit text
+        this.canvas.addEventListener('dblclick', (e) => {
+            if (this.selectedObject && this.currentTool === 'select') {
+                const newText = prompt('Edit text:', this.selectedObject.text);
+                if (newText !== null) {
+                    this.selectedObject.text = newText;
+                    this.redraw();
+                    this.saveState();
+                }
+            }
+        });
+    }
+
+    setupFontManager() {
+        if (window.FontManager) {
+            this.fontManager = new window.FontManager(this);
+            console.log('Font manager initialized');
+        } else {
+            console.warn('FontManager not available');
+        }
+    }
+
+    // Test method to add a text object for debugging
+    addTestText() {
+        this.createTextObject(100, 100, 'Test Text');
+        console.log('Test text added at 100, 100');
     }
 
     setupKeyboardShortcuts() {
@@ -259,6 +381,10 @@ class FontAnimationApp {
                         this.deleteSelectedObject();
                     }
                     break;
+                case 'x':
+                    // Test shortcut to add text
+                    this.addTestText();
+                    break;
             }
         });
     }
@@ -275,15 +401,27 @@ class FontAnimationApp {
         this.canvas.classList.add(tool + '-cursor');
     }
 
-    createTextObject(x, y) {
-        const availableFonts = Array.from(this.fonts.keys());
-        const defaultFont = availableFonts.length > 0 ? availableFonts[0] : 'Arial';
+    createTextObject(x, y, text = 'Sample Text') {
+        // Get available fonts from font manager or use default
+        let availableFonts = [];
+        let defaultFont = 'Arial';
+
+        if (this.fontManager && this.fontManager.fonts) {
+            availableFonts = Array.from(this.fontManager.fonts.keys());
+            this.fonts = this.fontManager.fonts; // Sync fonts
+        } else {
+            availableFonts = Array.from(this.fonts.keys());
+        }
+
+        if (availableFonts.length > 0) {
+            defaultFont = availableFonts[0];
+        }
 
         const textObject = {
             id: Date.now(),
             x: x,
             y: y,
-            text: 'Sample Text',
+            text: text,
             fontFamily: defaultFont,
             fontSize: 48,
             color: '#000000',
@@ -306,6 +444,7 @@ class FontAnimationApp {
 
         this.textObjects.push(textObject);
         this.selectedObject = textObject;
+
         this.updateTimeline();
         this.updateRightPanel();
         this.redraw();
