@@ -105,6 +105,7 @@ class FontAnimationApp {
         this.ctx.textAlign = 'left';
 
         this.totalFrames = Math.ceil(this.duration * this.frameRate);
+        this.updateFrameTimeDisplay();
         this.redraw();
     }
 
@@ -145,6 +146,7 @@ class FontAnimationApp {
             this.frameRate = parseInt(e.target.value);
             this.totalFrames = Math.ceil(this.duration * this.frameRate);
             this.updateTimeline();
+            this.updateFrameTimeDisplay();
             this.saveState();
         });
 
@@ -152,6 +154,7 @@ class FontAnimationApp {
             this.duration = parseFloat(e.target.value);
             this.totalFrames = Math.ceil(this.duration * this.frameRate);
             this.updateTimeline();
+            this.updateFrameTimeDisplay();
             this.saveState();
         });
 
@@ -868,7 +871,27 @@ class FontAnimationApp {
         if (this.timeline) {
             this.timeline.updateCursor();
         }
+        this.updateFrameTimeDisplay();
         this.redraw();
+    }
+
+    updateFrameTimeDisplay() {
+        const currentFrameDisplay = document.getElementById('currentFrameDisplay');
+        const totalFramesDisplay = document.getElementById('totalFramesDisplay');
+        const currentTimeDisplay = document.getElementById('currentTimeDisplay');
+
+        if (currentFrameDisplay) {
+            currentFrameDisplay.textContent = this.currentFrame.toString();
+        }
+        if (totalFramesDisplay) {
+            totalFramesDisplay.textContent = this.totalFrames.toString();
+        }
+        if (currentTimeDisplay) {
+            const totalSeconds = this.currentFrame / this.frameRate;
+            const seconds = Math.floor(totalSeconds);
+            const frames = this.currentFrame % this.frameRate;
+            currentTimeDisplay.textContent = `${seconds}s+${frames}f`;
+        }
     }
 
     updateRightPanel() {
@@ -938,6 +961,7 @@ class FontAnimationApp {
         this.updateCanvasSize();
         this.saveState();
         this.updateTimeline();
+        this.updateFrameTimeDisplay();
         this.updateRightPanel();
         this.redraw();
     }
@@ -1026,6 +1050,7 @@ class FontAnimationApp {
         this.updateCanvasSize();
         this.saveState();
         this.updateTimeline();
+        this.updateFrameTimeDisplay();
         this.updateRightPanel();
         this.redraw();
     }

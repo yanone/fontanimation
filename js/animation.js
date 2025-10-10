@@ -76,6 +76,9 @@ class AnimationManager {
             this.app.timeline.updateCursor();
         }
 
+        // Update frame and time display
+        this.app.updateFrameTimeDisplay();
+
         // Redraw canvas with new frame
         this.app.redraw();
     }
@@ -86,6 +89,9 @@ class AnimationManager {
         if (this.app.timeline) {
             this.app.timeline.updateCursor();
         }
+
+        // Update frame and time display
+        this.app.updateFrameTimeDisplay();
 
         this.app.redraw();
     }

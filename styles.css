@@ -70,6 +70,28 @@ body {
     background: #505050;
 }
 
+/* Frame and Time Display */
+.frame-label,
+.time-label {
+    font-size: 12px;
+    color: #cccccc;
+    white-space: nowrap;
+    margin-right: 4px;
+}
+
+#currentFrameDisplay,
+#totalFramesDisplay,
+#currentTimeDisplay {
+    font-size: 12px;
+    color: #ffffff;
+    background: #505050;
+    padding: 4px 8px;
+    border-radius: 4px;
+    min-width: 40px;
+    text-align: center;
+    font-family: monospace;
+}
+
 /* Main Content */
 #mainContent {
     flex: 1;
