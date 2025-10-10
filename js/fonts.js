@@ -250,8 +250,9 @@ class FontManager {
 
     isDiscretionaryFeature(tag) {
         // Only include discretionary features that users should be able to toggle
+        // Note: 'aalt' (Access All Alternates) is excluded as it's typically handled automatically
         const discretionaryFeatures = [
-            'aalt', 'calt', 'case', 'clig', 'cpsp', 'cswh', 'dlig', 'dnom', 'expt',
+            'calt', 'case', 'clig', 'cpsp', 'cswh', 'dlig', 'dnom', 'expt',
             'falt', 'frac', 'hist', 'hlig', 'lnum', 'numr', 'onum', 'ordn', 'pnum',
             'salt', 'sinf', 'smcp', 'ss01', 'ss02', 'ss03', 'ss04', 'ss05', 'ss06',
             'ss07', 'ss08', 'ss09', 'ss10', 'ss11', 'ss12', 'ss13', 'ss14', 'ss15',
