@@ -5,7 +5,7 @@ class AnimationManager {
         this.animationFrame = null;
         this.lastFrameTime = 0;
         this.frameInterval = 1000 / this.app.frameRate;
-        this.isLooping = true;
+        this.isLooping = false; // Don't loop by default
     }
 
     static togglePlayback(app) {

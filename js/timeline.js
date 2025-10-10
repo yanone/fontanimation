@@ -19,10 +19,25 @@ class TimelineManager {
     updateTimeRuler() {
         const timeRuler = document.getElementById('timeRuler');
         const totalFrames = this.app.totalFrames;
-        const rulerWidth = timeRuler.offsetWidth || 800;
 
-        // Clear existing ruler marks
-        timeRuler.innerHTML = '';
+        // Calculate timeline width - minimum 20px per second, more for longer durations
+        const minPixelsPerSecond = 80;
+        const timelineWidth = Math.max(800, this.app.duration * minPixelsPerSecond);
+
+        // Set the timeline ruler width
+        timeRuler.style.width = `${timelineWidth}px`;
+
+        // Clear only the time marks, not the cursor
+        const existingMarks = timeRuler.querySelectorAll('.time-mark');
+        existingMarks.forEach(mark => mark.remove());
+
+        // Ensure cursor exists
+        let timeCursor = document.getElementById('timeCursor');
+        if (!timeCursor) {
+            timeCursor = document.createElement('div');
+            timeCursor.id = 'timeCursor';
+            timeRuler.appendChild(timeCursor);
+        }
 
         // Calculate optimal mark spacing
         const targetMarks = 20;
@@ -33,7 +48,7 @@ class TimelineManager {
         for (let i = 0; i <= totalFrames; i += roundedStep) {
             const mark = document.createElement('div');
             mark.className = 'time-mark';
-            mark.style.left = `${(i / totalFrames) * 100}%`;
+            mark.style.left = `${(i / totalFrames) * timelineWidth}px`;
 
             const label = document.createElement('div');
             label.className = 'time-label';
@@ -48,7 +63,7 @@ class TimelineManager {
             if (i % roundedStep !== 0) {
                 const mark = document.createElement('div');
                 mark.className = 'time-mark';
-                mark.style.left = `${(i / totalFrames) * 100}%`;
+                mark.style.left = `${(i / totalFrames) * timelineWidth}px`;
                 mark.style.height = '50%';
                 mark.style.top = '50%';
                 mark.style.background = '#505050';
@@ -606,10 +621,61 @@ class TimelineManager {
     updateCursor() {
         const timeCursor = document.getElementById('timeCursor');
         const timelineHeader = document.getElementById('timelineHeader');
+        const timeRuler = document.getElementById('timeRuler');
 
-        if (timelineHeader.offsetWidth > 0) {
-            const percentage = (this.app.currentFrame / this.app.totalFrames) * 100;
-            timeCursor.style.left = `${Math.min(99, percentage)}%`;
+        if (!timeCursor || !timeRuler || !timelineHeader) {
+            return;
         }
+
+        // Calculate cursor position based on timeline width, not percentage
+        const minPixelsPerSecond = 80;
+        const timelineWidth = Math.max(800, this.app.duration * minPixelsPerSecond);
+        const cursorPosition = (this.app.currentFrame / this.app.totalFrames) * timelineWidth;
+
+        // Position the cursor within the timeRuler
+        timeCursor.style.left = `${cursorPosition}px`;
+
+        // Auto-scroll during playback to keep cursor visible
+        if (this.app.isPlaying) {
+            this.autoScroll(cursorPosition, timelineWidth);
+        }
+    }
+
+    autoScroll(cursorPosition, timelineWidth) {
+        const timelineHeader = document.getElementById('timelineHeader');
+        const timelineLayers = document.getElementById('timelineLayers');
+
+        if (!timelineHeader || !timelineLayers) return;
+
+        const headerWidth = timelineHeader.clientWidth;
+        const currentScrollLeft = timelineHeader.scrollLeft;
+        const margin = Math.min(100, headerWidth * 0.1); // Adaptive margin, max 100px
+
+        // Only auto-scroll if cursor is completely outside visible area
+        let newScrollLeft = currentScrollLeft;
+
+        if (cursorPosition < currentScrollLeft) {
+            // Cursor is completely off-screen to the left
+            newScrollLeft = Math.max(0, cursorPosition - margin);
+        } else if (cursorPosition > currentScrollLeft + headerWidth) {
+            // Cursor is completely off-screen to the right
+            newScrollLeft = Math.min(timelineWidth - headerWidth, cursorPosition - headerWidth + margin);
+        }
+
+        // Only scroll if there's a significant change (reduces jitter)
+        if (Math.abs(newScrollLeft - currentScrollLeft) > 5) {
+            this.smoothScrollTo(newScrollLeft);
+        }
+    }
+
+    smoothScrollTo(targetScrollLeft) {
+        const timelineHeader = document.getElementById('timelineHeader');
+        const timelineLayers = document.getElementById('timelineLayers');
+
+        if (!timelineHeader || !timelineLayers) return;
+
+        // Synchronize both header and layers scrolling
+        timelineHeader.scrollLeft = targetScrollLeft;
+        timelineLayers.scrollLeft = targetScrollLeft;
     }
 }

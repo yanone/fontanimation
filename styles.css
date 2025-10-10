@@ -542,8 +542,9 @@ body {
     height: 100%;
     background: #ff6b00;
     cursor: ew-resize;
-    z-index: 10;
+    z-index: 100;
     box-shadow: 0 0 4px rgba(255, 107, 0, 0.5);
+    pointer-events: auto;
 }
 
 #timeCursor::before {
