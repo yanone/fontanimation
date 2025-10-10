@@ -194,44 +194,15 @@ class UIManager {
         `;
         featuresContainer.appendChild(title);
 
-        // Group features by type
-        const featureGroups = {
-            'Stylistic Sets': [],
-            'Number Forms': [],
-            'Ligatures': [],
-            'Other Features': []
-        };
-
-        Object.entries(features).forEach(([tag, featureInfo]) => {
-            if (tag.match(/^ss\d{2}$/)) {
-                featureGroups['Stylistic Sets'].push([tag, featureInfo]);
-            } else if (['lnum', 'onum', 'pnum', 'tnum', 'frac', 'numr', 'dnom', 'sups', 'subs', 'sinf', 'ordn'].includes(tag)) {
-                featureGroups['Number Forms'].push([tag, featureInfo]);
-            } else if (['liga', 'dlig', 'hlig', 'clig'].includes(tag)) {
-                featureGroups['Ligatures'].push([tag, featureInfo]);
-            } else {
-                featureGroups['Other Features'].push([tag, featureInfo]);
-            }
+        // Sort features alphabetically by four-digit tag
+        const sortedFeatures = Object.entries(features).sort(([tagA], [tagB]) => {
+            return tagA.localeCompare(tagB);
         });
 
-        Object.entries(featureGroups).forEach(([groupName, groupFeatures]) => {
-            if (groupFeatures.length === 0) return;
-
-            const groupTitle = document.createElement('div');
-            groupTitle.textContent = groupName;
-            groupTitle.style.cssText = `
-                font-size: 11px;
-                color: #888888;
-                margin: 12px 0 6px 0;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-            `;
-            featuresContainer.appendChild(groupTitle);
-
-            groupFeatures.forEach(([tag, featureInfo]) => {
-                const featureControl = UIManager.createFeatureControl(tag, featureInfo, textObject, app);
-                featuresContainer.appendChild(featureControl);
-            });
+        // Create feature controls in alphabetical order
+        sortedFeatures.forEach(([tag, featureInfo]) => {
+            const featureControl = UIManager.createFeatureControl(tag, featureInfo, textObject, app);
+            featuresContainer.appendChild(featureControl);
         });
     }
 
