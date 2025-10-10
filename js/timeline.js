@@ -619,6 +619,7 @@ class TimelineManager {
     }
 
     updateCursor() {
+        console.log('Updating cursor position');
         const timeCursor = document.getElementById('timeCursor');
         const timelineHeader = document.getElementById('timelineHeader');
         const timeRuler = document.getElementById('timeRuler');
@@ -679,3 +680,6 @@ class TimelineManager {
         timelineLayers.scrollLeft = targetScrollLeft;
     }
 }
+
+// Expose TimelineManager to window object
+window.TimelineManager = TimelineManager;

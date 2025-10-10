@@ -481,11 +481,5 @@ class FontManager {
     }
 }
 
-// Initialize font manager when app is ready
-window.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-        if (window.app) {
-            window.app.fontManager = new FontManager(window.app);
-        }
-    }, 100);
-});
+// Expose FontManager to window object
+window.FontManager = FontManager;
