@@ -490,7 +490,7 @@ body {
 
 .feature-control label {
     font-size: 11px;
-    color: #cccccc;
+    color: #ffffff;
     margin-bottom: 0;
     cursor: pointer;
     flex: 1;
@@ -500,6 +500,18 @@ body {
     font-size: 10px;
     color: #888888;
     margin-top: 2px;
+}
+
+.feature-tag {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 11px;
+    font-weight: bold;
+    color: #666666;
+    background: rgba(0, 120, 212, 0.3);
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-right: 8px;
+    display: inline-block;
 }
 
 /* Curve Editor */

@@ -223,7 +223,7 @@ class UIManager {
         const label = document.createElement('label');
         label.htmlFor = checkbox.id;
         label.innerHTML = `
-            <strong>${featureInfo.name}</strong> (${tag})
+            <span class="feature-tag">${tag}</span> ${featureInfo.name}
             ${featureInfo.description ? `<div class="feature-description">${featureInfo.description}</div>` : ''}
         `;
 
