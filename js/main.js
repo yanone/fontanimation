@@ -38,14 +38,71 @@ class FontAnimationApp {
     setupCanvas() {
         this.canvas = document.getElementById('mainCanvas');
         this.ctx = this.canvas.getContext('2d');
+        this.devicePixelRatio = window.devicePixelRatio || 1;
         this.updateCanvasSize();
         this.centerCanvas();
+
+        // Listen for device pixel ratio changes (moving between different displays)
+        this.setupPixelRatioListener();
+    }
+
+    setupPixelRatioListener() {
+        // Create a media query to detect changes in device pixel ratio
+        const mediaQuery = window.matchMedia(`(resolution: ${this.devicePixelRatio}dppx)`);
+
+        const handlePixelRatioChange = () => {
+            const newRatio = window.devicePixelRatio || 1;
+            if (newRatio !== this.devicePixelRatio) {
+                this.devicePixelRatio = newRatio;
+                this.updateCanvasSize(); // Reconfigure canvas for new pixel ratio
+            }
+        };
+
+        // Use the newer addEventListener if available, fallback to addListener
+        if (mediaQuery.addEventListener) {
+            mediaQuery.addEventListener('change', handlePixelRatioChange);
+        } else {
+            mediaQuery.addListener(handlePixelRatioChange);
+        }
+
+        // Also listen for window resize events which might indicate zoom changes
+        window.addEventListener('resize', () => {
+            // Debounce resize events
+            clearTimeout(this.resizeTimeout);
+            this.resizeTimeout = setTimeout(() => {
+                const newRatio = window.devicePixelRatio || 1;
+                if (newRatio !== this.devicePixelRatio) {
+                    this.devicePixelRatio = newRatio;
+                    this.updateCanvasSize();
+                }
+            }, 100);
+        });
     }
 
     updateCanvasSize() {
-        this.canvas.width = this.canvasWidth;
-        this.canvas.height = this.canvasHeight;
+        // Store current device pixel ratio in case it changed
+        this.devicePixelRatio = window.devicePixelRatio || 1;
+
+        // Set the actual canvas size to account for device pixel ratio
+        this.canvas.width = this.canvasWidth * this.devicePixelRatio;
+        this.canvas.height = this.canvasHeight * this.devicePixelRatio;
+
+        // Set the CSS size to maintain the visual size
+        this.canvas.style.width = this.canvasWidth + 'px';
+        this.canvas.style.height = this.canvasHeight + 'px';
         this.canvas.style.backgroundColor = this.canvasBackground;
+
+        // Reset and scale the context to match the device pixel ratio
+        this.ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset any existing transforms
+        this.ctx.scale(this.devicePixelRatio, this.devicePixelRatio);
+
+        // Enable high-quality text rendering
+        this.ctx.textRenderingOptimization = 'optimizeQuality';
+        this.ctx.imageSmoothingEnabled = true;
+        this.ctx.imageSmoothingQuality = 'high';
+        this.ctx.textBaseline = 'top';
+        this.ctx.textAlign = 'left';
+
         this.totalFrames = Math.ceil(this.duration * this.frameRate);
         this.redraw();
     }
@@ -243,8 +300,11 @@ class FontAnimationApp {
 
         this.canvas.addEventListener('mousedown', (e) => {
             const rect = this.canvas.getBoundingClientRect();
-            const x = (e.clientX - rect.left) / this.zoom - this.panX / this.zoom;
-            const y = (e.clientY - rect.top) / this.zoom - this.panY / this.zoom;
+            // Calculate coordinates accounting for CSS scaling and device pixel ratio
+            const scaleX = this.canvasWidth / rect.width;
+            const scaleY = this.canvasHeight / rect.height;
+            const x = (e.clientX - rect.left) * scaleX / this.zoom - this.panX / this.zoom;
+            const y = (e.clientY - rect.top) * scaleY / this.zoom - this.panY / this.zoom;
 
             if (this.currentTool === 'text') {
                 // Prompt for text input or use default
@@ -274,8 +334,11 @@ class FontAnimationApp {
             if (!isDragging || !this.selectedObject) return;
 
             const rect = this.canvas.getBoundingClientRect();
-            const x = (e.clientX - rect.left) / this.zoom - this.panX / this.zoom;
-            const y = (e.clientY - rect.top) / this.zoom - this.panY / this.zoom;
+            // Calculate coordinates accounting for CSS scaling and device pixel ratio
+            const scaleX = this.canvasWidth / rect.width;
+            const scaleY = this.canvasHeight / rect.height;
+            const x = (e.clientX - rect.left) * scaleX / this.zoom - this.panX / this.zoom;
+            const y = (e.clientY - rect.top) * scaleY / this.zoom - this.panY / this.zoom;
 
             const deltaX = x - dragStartX;
             const deltaY = y - dragStartY;

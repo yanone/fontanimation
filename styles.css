@@ -248,6 +248,16 @@ body {
     border-radius: 4px;
     cursor: grab;
     transition: transform 0.1s ease;
+
+    /* Ensure high-quality rendering on high-DPI displays */
+    image-rendering: -webkit-optimize-contrast;
+    /* Webkit - smooth but crisp */
+    image-rendering: optimize-quality;
+    /* Standard - prioritize quality */
+
+    /* Enable hardware acceleration for better performance */
+    will-change: transform;
+    transform: translateZ(0);
 }
 
 #mainCanvas.grabbing {
