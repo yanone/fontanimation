@@ -544,11 +544,7 @@ body {
     height: 100%;
     position: relative;
     flex-shrink: 0;
-    background: repeating-linear-gradient(to right,
-            #404040 0px,
-            #404040 1px,
-            transparent 1px,
-            transparent 20px);
+    background: #121212;
 }
 
 .time-mark {
