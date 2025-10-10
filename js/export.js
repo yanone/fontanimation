@@ -232,8 +232,15 @@ class ExportManager {
 
         // Apply rotation if present
         if (props.rotation && props.rotation !== 0) {
-            // Get text metrics for proper rotation center
-            context.font = `${props.fontSize}px "${textObject.fontFamily}"`;
+            // Get text metrics for proper rotation center with fallback fonts
+            let fontString;
+            if (this.app.fonts.has(textObject.fontFamily)) {
+                fontString = `${props.fontSize}px "${textObject.fontFamily}"`;
+            } else {
+                fontString = `${props.fontSize}px Arial, sans-serif`;
+            }
+
+            context.font = fontString;
             const metrics = context.measureText(textObject.text);
             const centerX = props.x + metrics.width / 2;
             const centerY = props.y + props.fontSize / 2;
@@ -243,8 +250,15 @@ class ExportManager {
             context.translate(-centerX, -centerY);
         }
 
-        // Apply font settings
-        context.font = `${props.fontSize}px "${textObject.fontFamily}"`;
+        // Apply font settings with fallback fonts if needed
+        let fontString;
+        if (this.app.fonts.has(textObject.fontFamily)) {
+            fontString = `${props.fontSize}px "${textObject.fontFamily}"`;
+        } else {
+            fontString = `${props.fontSize}px Arial, sans-serif`;
+        }
+
+        context.font = fontString;
         context.fillStyle = props.color;
         context.textBaseline = 'top';
 

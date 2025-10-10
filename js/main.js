@@ -22,6 +22,7 @@ class FontAnimationApp {
         this.history = [];
         this.historyIndex = -1;
         this.maxHistory = 50;
+        this.missingFonts = new Set(); // Track fonts that were missing when project was loaded
 
         this.init();
     }
@@ -617,12 +618,36 @@ class FontAnimationApp {
 
         const props = this.getObjectPropertiesAtFrame(obj, this.currentFrame);
 
-        this.ctx.font = `${props.fontSize}px "${obj.fontFamily}"`;
+        // Check if font is available in both our font map and document.fonts
+        const fontAvailable = this.fonts.has(obj.fontFamily) && this.isFontLoaded(obj.fontFamily);
+        
+        let fontString;
+        if (fontAvailable) {
+            fontString = `${props.fontSize}px "${obj.fontFamily}"`;
+        } else {
+            // Use fallback font when the desired font is not available
+            fontString = `${props.fontSize}px Arial, sans-serif`;
+        }
+
+        this.ctx.font = fontString;
         this.ctx.fillStyle = props.color;
         this.ctx.textBaseline = 'top';
 
         this.ctx.fillText(obj.text, props.x, props.y);
         this.ctx.restore();
+    }
+
+    // Check if a font is actually loaded and ready to use
+    isFontLoaded(fontFamily) {
+        // First check if the font is in document.fonts and loaded
+        for (const font of document.fonts) {
+            if (font.family === fontFamily && font.status === 'loaded') {
+                return true;
+            }
+        }
+
+        // Fallback: try to detect if font is available by checking document.fonts
+        return document.fonts.check(`16px "${fontFamily}"`);
     }
 
     drawSelection(obj) {
@@ -631,10 +656,19 @@ class FontAnimationApp {
         // Create temporary canvas for text measurement
         const tempCanvas = document.createElement('canvas');
         const tempCtx = tempCanvas.getContext('2d');
-        tempCtx.font = `${props.fontSize}px "${obj.fontFamily}"`;
-        const metrics = tempCtx.measureText(obj.text);
-
-        this.ctx.save();
+        
+        // Use proper canvas font syntax with fallbacks
+        const fontAvailable = this.fonts.has(obj.fontFamily) && this.isFontLoaded(obj.fontFamily);
+        
+        let fontString;
+        if (fontAvailable) {
+            fontString = `${props.fontSize}px "${obj.fontFamily}"`;
+        } else {
+            fontString = `${props.fontSize}px Arial, sans-serif`;
+        }
+        
+        tempCtx.font = fontString;
+        const metrics = tempCtx.measureText(obj.text);        this.ctx.save();
         this.ctx.strokeStyle = '#0078d4';
         this.ctx.lineWidth = 2;
         this.ctx.setLineDash([8, 4]);
@@ -892,6 +926,7 @@ class FontAnimationApp {
         this.duration = 5;
         this.history = [];
         this.historyIndex = -1;
+        this.missingFonts.clear(); // Clear any previously missing fonts
 
         // Update UI
         document.getElementById('canvasWidth').value = this.canvasWidth;
@@ -956,6 +991,10 @@ class FontAnimationApp {
     loadProjectData(project) {
         const missingFonts = project.fonts.filter(fontName => !this.fonts.has(fontName));
 
+        // Store missing fonts for later checking
+        this.missingFonts.clear();
+        missingFonts.forEach(font => this.missingFonts.add(font));
+
         if (missingFonts.length > 0) {
             const modal = document.getElementById('warningModal');
             const list = document.getElementById('missingFontsList');
@@ -989,6 +1028,50 @@ class FontAnimationApp {
         this.updateTimeline();
         this.updateRightPanel();
         this.redraw();
+    }
+
+    // Check if any previously missing fonts are now available and update text objects
+    checkForResolvedMissingFonts() {
+        if (this.missingFonts.size === 0) {
+            return;
+        }
+
+        const resolvedFonts = [];
+        for (const fontName of this.missingFonts) {
+            if (this.fonts.has(fontName)) {
+                resolvedFonts.push(fontName);
+                this.missingFonts.delete(fontName);
+            }
+        }
+
+        if (resolvedFonts.length > 0) {
+            console.log('Resolved missing fonts:', resolvedFonts);
+            console.log('Available fonts in app.fonts:', Array.from(this.fonts.keys()));
+
+            // Update any text objects that were using fallback fonts
+            let hasUpdates = false;
+            this.textObjects.forEach(obj => {
+                if (resolvedFonts.includes(obj.fontFamily)) {
+                    console.log(`Text object "${obj.text}" can now use font: ${obj.fontFamily}`);
+                    hasUpdates = true;
+                }
+            });
+
+            if (hasUpdates) {
+                console.log('Updating UI and redrawing canvas...');
+
+                // Update the right panel in case the selected object's font is now available
+                this.updateRightPanel();
+
+                // Trigger a redraw to show the correct fonts
+                this.redraw();
+
+                if (window.UIManager) {
+                    const fontList = resolvedFonts.join(', ');
+                    window.UIManager.createNotification(`Font(s) now available: ${fontList}`, 'success');
+                }
+            }
+        }
     }
 }
 

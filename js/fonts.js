@@ -27,6 +27,21 @@ class FontManager {
         this.updateFontList();
         this.updateFontSelect();
 
+        // Check if any previously missing fonts are now available
+        if (this.app.checkForResolvedMissingFonts) {
+            this.app.checkForResolvedMissingFonts();
+        }
+
+        // Small delay to ensure fonts are fully ready, then trigger multiple redraws
+        setTimeout(() => {
+            if (this.app.redraw) {
+                this.app.redraw();
+                // Force additional redraws to ensure font changes are visible
+                setTimeout(() => this.app.redraw(), 50);
+                setTimeout(() => this.app.redraw(), 200);
+            }
+        }, 100);
+
         if (window.UIManager) {
             window.UIManager.createNotification(`Loaded ${files.length} font(s)`, 'success');
         }
@@ -56,6 +71,9 @@ class FontManager {
                     const fontFace = new FontFace(fontFamily, `url(${fontUrl})`);
                     await fontFace.load();
                     document.fonts.add(fontFace);
+
+                    // Wait a bit more to ensure the font is fully ready
+                    await document.fonts.ready;
 
                     // Store font data
                     const fontInfo = {
