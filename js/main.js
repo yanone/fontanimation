@@ -620,7 +620,7 @@ class FontAnimationApp {
 
         // Check if font is available in both our font map and document.fonts
         const fontAvailable = this.fonts.has(obj.fontFamily) && this.isFontLoaded(obj.fontFamily);
-        
+
         let fontString;
         if (fontAvailable) {
             fontString = `${props.fontSize}px "${obj.fontFamily}"`;
@@ -656,19 +656,19 @@ class FontAnimationApp {
         // Create temporary canvas for text measurement
         const tempCanvas = document.createElement('canvas');
         const tempCtx = tempCanvas.getContext('2d');
-        
+
         // Use proper canvas font syntax with fallbacks
         const fontAvailable = this.fonts.has(obj.fontFamily) && this.isFontLoaded(obj.fontFamily);
-        
+
         let fontString;
         if (fontAvailable) {
             fontString = `${props.fontSize}px "${obj.fontFamily}"`;
         } else {
             fontString = `${props.fontSize}px Arial, sans-serif`;
         }
-        
+
         tempCtx.font = fontString;
-        const metrics = tempCtx.measureText(obj.text);        this.ctx.save();
+        const metrics = tempCtx.measureText(obj.text); this.ctx.save();
         this.ctx.strokeStyle = '#0078d4';
         this.ctx.lineWidth = 2;
         this.ctx.setLineDash([8, 4]);
