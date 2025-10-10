@@ -266,6 +266,10 @@ body {
     cursor: text;
 }
 
+#mainCanvas.select-cursor {
+    cursor: default;
+}
+
 #mainCanvas.arrow-cursor {
     cursor: default;
 }
