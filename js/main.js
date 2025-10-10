@@ -981,7 +981,7 @@ class FontAnimationApp {
             // Set button to exporting state
             exportBtn.disabled = true;
             exportBtn.classList.add('exporting');
-            exportIcon.textContent = '⏳';
+            exportIcon.textContent = 'hourglass_empty';
             exportBtn.title = 'Exporting...';
 
             // Perform export
@@ -996,7 +996,7 @@ class FontAnimationApp {
             // Reset button state
             exportBtn.disabled = false;
             exportBtn.classList.remove('exporting');
-            exportIcon.textContent = '📹';
+            exportIcon.textContent = 'videocam';
             exportBtn.title = 'Export Video';
         }
     }

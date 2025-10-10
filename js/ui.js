@@ -285,11 +285,11 @@ class UIManager {
         const icon = playBtn.querySelector('span');
 
         if (isPlaying) {
-            icon.textContent = '⏸';
+            icon.textContent = 'pause';
             playBtn.title = 'Pause (Space)';
             playBtn.classList.add('active');
         } else {
-            icon.textContent = '▶';
+            icon.textContent = 'play_arrow';
             playBtn.title = 'Play (Space)';
             playBtn.classList.remove('active');
         }
