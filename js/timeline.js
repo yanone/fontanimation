@@ -12,19 +12,8 @@ class TimelineManager {
     }
 
     setupScrollSynchronization() {
-        const timelineHeader = document.getElementById('timelineHeader');
-        const timelineLayers = document.getElementById('timelineLayers');
-
-        if (!timelineHeader || !timelineLayers) return;
-
-        // Synchronize scrolling between header and layers
-        timelineHeader.addEventListener('scroll', () => {
-            timelineLayers.scrollLeft = timelineHeader.scrollLeft;
-        });
-
-        timelineLayers.addEventListener('scroll', () => {
-            timelineHeader.scrollLeft = timelineLayers.scrollLeft;
-        });
+        // No longer needed - timeline scrolls as a single unit
+        // Keeping the method for compatibility but with no functionality
     }
 
     // Helper method to calculate timeline width using settings
@@ -46,6 +35,12 @@ class TimelineManager {
 
         // Calculate timeline width using settings
         const timelineWidth = this.calculateTimelineWidth();
+
+        // Set the timeline content wrapper width to establish scrollable area
+        const timelineContent = document.getElementById('timelineContent');
+        if (timelineContent) {
+            timelineContent.style.width = `${150 + timelineWidth}px`; // 150px for layer headers + timeline width
+        }
 
         // Set the timeline ruler width
         timeRuler.style.width = `${timelineWidth}px`;
@@ -737,14 +732,13 @@ class TimelineManager {
     }
 
     autoScroll(cursorPosition, timelineWidth) {
-        const timelineHeader = document.getElementById('timelineHeader');
-        const timelineLayers = document.getElementById('timelineLayers');
+        const timelineContainer = document.getElementById('timelineContainer');
 
-        if (!timelineHeader || !timelineLayers) return;
+        if (!timelineContainer) return;
 
-        const headerWidth = timelineHeader.clientWidth;
-        const currentScrollLeft = timelineHeader.scrollLeft;
-        const margin = Math.min(100, headerWidth * 0.1); // Adaptive margin, max 100px
+        const containerWidth = timelineContainer.clientWidth;
+        const currentScrollLeft = timelineContainer.scrollLeft;
+        const margin = Math.min(100, containerWidth * 0.1); // Adaptive margin, max 100px
 
         // Only auto-scroll if cursor is completely outside visible area
         let newScrollLeft = currentScrollLeft;
@@ -752,9 +746,9 @@ class TimelineManager {
         if (cursorPosition < currentScrollLeft) {
             // Cursor is completely off-screen to the left
             newScrollLeft = Math.max(0, cursorPosition - margin);
-        } else if (cursorPosition > currentScrollLeft + headerWidth) {
+        } else if (cursorPosition > currentScrollLeft + containerWidth) {
             // Cursor is completely off-screen to the right
-            newScrollLeft = Math.min(timelineWidth - headerWidth, cursorPosition - headerWidth + margin);
+            newScrollLeft = Math.min(timelineWidth - containerWidth, cursorPosition - containerWidth + margin);
         }
 
         // Only scroll if there's a significant change (reduces jitter)
@@ -764,14 +758,12 @@ class TimelineManager {
     }
 
     smoothScrollTo(targetScrollLeft) {
-        const timelineHeader = document.getElementById('timelineHeader');
-        const timelineLayers = document.getElementById('timelineLayers');
+        const timelineContainer = document.getElementById('timelineContainer');
 
-        if (!timelineHeader || !timelineLayers) return;
+        if (!timelineContainer) return;
 
-        // Synchronize both header and layers scrolling
-        timelineHeader.scrollLeft = targetScrollLeft;
-        timelineLayers.scrollLeft = targetScrollLeft;
+        // Scroll the unified timeline container
+        timelineContainer.scrollLeft = targetScrollLeft;
     }
 }
 

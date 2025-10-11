@@ -552,14 +552,26 @@ body {
     flex-direction: column;
 }
 
+#timelineContainer {
+    flex: 1;
+    overflow-x: auto;
+    overflow-y: hidden;
+    position: relative;
+}
+
+#timelineContent {
+    display: flex;
+    flex-direction: column;
+    min-width: 100%;
+}
+
 #timelineHeader {
     height: 40px;
     background: #2b2b2b;
     border-bottom: 1px solid #404040;
     position: relative;
     display: flex;
-    overflow-x: auto;
-    overflow-y: hidden;
+    flex-shrink: 0;
 }
 
 #timelineHeader::before {
@@ -633,7 +645,7 @@ body {
 #timelineLayers {
     flex: 1;
     overflow-y: auto;
-    overflow-x: auto;
+    overflow-x: hidden;
 }
 
 .timeline-layer {
@@ -660,7 +672,7 @@ body {
 .layer-content {
     position: relative;
     background: #1e1e1e;
-    flex-shrink: 0;
+    flex: 1;
 }
 
 .keyframe {
