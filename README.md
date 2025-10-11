@@ -14,7 +14,9 @@ An online version will be made available soon.
 
 ## Why This App Exists
 
-Most video editors don't expose variable font settings and OpenType features to users, making it impossible to create sophisticated typography animations directly within video editing software. This tool fills that gap by providing a dedicated environment for creating text animations that leverage the full power of modern typography.
+Most video editors don't expose variable font settings and OpenType features to users, making it impossible to create sophisticated typography animations directly within video editing software. This tool fills that gap by providing a dedicated environment for creating text animations that leverage the full power of modern typography and render them into a video file to be used in video editing.
+
+Since videos don’t support alpha channels, you would choose a certain background color and make that disappear in video production.
 
 ## What It Does
 
