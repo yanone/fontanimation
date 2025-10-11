@@ -318,15 +318,11 @@ class FontAnimationApp {
             const y = (e.clientY - rect.top) * scaleY / this.zoom - this.panY / this.zoom;
 
             if (this.currentTool === 'text') {
-                // Prompt for text input or use default
+                // Prompt for text input
                 let text = prompt('Enter text:', 'Sample Text');
-                if (text === null) {
-                    text = 'Sample Text'; // Use default if cancelled
-                }
-                if (text.trim()) {
+                // Only create text object if user didn't cancel and provided text
+                if (text !== null && text.trim()) {
                     this.createTextObject(x, y, text.trim());
-                } else {
-                    this.createTextObject(x, y, 'Sample Text');
                 }
             } else if (this.currentTool === 'select') {
                 const clickedObject = this.selectObjectAt(x, y);
