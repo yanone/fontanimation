@@ -6,6 +6,8 @@ A web-based typography animation tool for creating variable font animations with
 
 In order to run this locally on your computer, check out the repo and then run `python3 -m http.server 8000` so that files other than `index.html` can get served over a "network connection", which is a security requirement by modern browsers.
 
+An online version will be made available soon.
+
 ## Why This App Exists
 
 Most video editors don't expose variable font settings and OpenType features to users, making it impossible to create sophisticated typography animations directly within video editing software. This tool fills that gap by providing a dedicated environment for creating text animations that leverage the full power of modern typography.
