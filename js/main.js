@@ -1054,6 +1054,9 @@ class FontAnimationApp {
         this.frameRate = state.frameRate;
         this.duration = state.duration;
 
+        // Clear selection to prevent lingering selection boxes
+        this.selectedObject = null;
+
         // Update UI
         document.getElementById('canvasWidth').value = this.canvasWidth;
         document.getElementById('canvasHeight').value = this.canvasHeight;
@@ -1064,6 +1067,11 @@ class FontAnimationApp {
         this.updateCanvasSize();
         this.updateTimeline();
         this.redraw();
+
+        // Update the right panel to reflect the cleared selection
+        if (window.UIManager) {
+            window.UIManager.updateRightPanel();
+        }
     }
 
     // Placeholder methods to be implemented in other files
