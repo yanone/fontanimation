@@ -748,6 +748,14 @@ class TimelineManager {
         const currentScrollLeft = timelineContainer.scrollLeft;
         const margin = Math.min(100, containerWidth * 0.1); // Adaptive margin, max 100px
 
+        // Special case: when at frame 0, always scroll all the way left to show layer labels
+        if (this.app.currentFrame === 0) {
+            if (currentScrollLeft > 0) {
+                this.smoothScrollTo(0);
+            }
+            return;
+        }
+
         // Only auto-scroll if cursor is completely outside visible area
         let newScrollLeft = currentScrollLeft;
 
