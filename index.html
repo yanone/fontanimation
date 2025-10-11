@@ -44,6 +44,7 @@
                     <span class="time-label">Time:</span>
                     <span id="currentTimeDisplay">0s+0f</span>
                 </div>
+                <button id="aboutBtn" title="About Font Animation Studio">About</button>
             </div>
         </div>
 
@@ -175,6 +176,47 @@
             <div class="modal-buttons">
                 <button id="cancelExport">Cancel</button>
                 <button id="confirmExport" disabled>Export</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- About Modal -->
+    <div id="aboutModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>About Font Animation Studio</h2>
+            <div class="about-content">
+                <p>Font Animation Studio is a professional typography animation tool that lets you create stunning text
+                    animations with OpenType features and advanced timeline controls of variable font axes.</p>
+
+                <h3>Features</h3>
+                <ul>
+                    <li>Advanced typography with OpenType feature support</li>
+                    <li>Professional timeline with keyframe animation</li>
+                    <li>Multiple video export formats (WebM, MP4)</li>
+                    <li>Font upload and management</li>
+                    <li>Interpolation curves for smooth animations</li>
+                    <li>Variable font axis control</li>
+                </ul>
+
+                <h3>Keyboard Shortcuts</h3>
+                <div class="shortcuts-grid">
+                    <div><kbd>Space</kbd> Play/Pause</div>
+                    <div><kbd>←/→</kbd> Navigate frames</div>
+                    <div><kbd>Cmd+←/→</kbd> First/Last frame</div>
+                    <div><kbd>Cmd+E</kbd> Export video</div>
+                    <div><kbd>Cmd+Z</kbd> Undo/Redo</div>
+                    <div><kbd>Esc</kbd> Close modals</div>
+                </div>
+
+                <div class="about-footer">
+                    <p>Open source project available on GitHub:</p>
+                    <a href="https://github.com/yanone/fontanimation" target="_blank" rel="noopener noreferrer"
+                        class="github-link">
+                        <span class="material-symbols-outlined">open_in_new</span>
+                        github.com/yanone/fontanimation
+                    </a>
+                </div>
             </div>
         </div>
     </div>

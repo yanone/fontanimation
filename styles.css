@@ -921,6 +921,109 @@ body {
     margin: 0;
 }
 
+/* About Modal */
+.about-content {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.about-content h3 {
+    color: #ffffff;
+    margin: 20px 0 12px 0;
+    font-size: 14px;
+    border-bottom: 1px solid #404040;
+    padding-bottom: 6px;
+}
+
+.about-content ul {
+    margin: 0 0 16px 0;
+    padding-left: 16px;
+}
+
+.about-content li {
+    margin-bottom: 6px;
+    color: #cccccc;
+    font-size: 12px;
+}
+
+.shortcuts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin: 12px 0;
+    font-size: 12px;
+}
+
+.shortcuts-grid div {
+    display: flex;
+    align-items: center;
+    color: #cccccc;
+}
+
+.shortcuts-grid kbd {
+    background: #404040;
+    border: 1px solid #555555;
+    border-radius: 3px;
+    padding: 2px 6px;
+    margin-right: 8px;
+    font-size: 10px;
+    color: #ffffff;
+    font-family: monospace;
+}
+
+.about-footer {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #404040;
+}
+
+.about-footer p {
+    margin: 0 0 12px 0;
+    color: #cccccc;
+    font-size: 12px;
+}
+
+.github-link {
+    display: inline-flex;
+    align-items: center;
+    color: #0078d4;
+    text-decoration: none;
+    font-size: 13px;
+    padding: 8px 12px;
+    border: 1px solid #0078d4;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.github-link:hover {
+    background: rgba(0, 120, 212, 0.1);
+    border-color: #106ebe;
+    color: #106ebe;
+}
+
+.github-link .material-symbols-outlined {
+    font-size: 16px;
+    margin-right: 6px;
+}
+
+#aboutBtn {
+    background: transparent;
+    border: 1px solid #404040;
+    color: #cccccc;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s ease;
+    margin-left: 16px;
+}
+
+#aboutBtn:hover {
+    background: #353535;
+    border-color: #505050;
+    color: #ffffff;
+}
+
 /* Scrollbars */
 ::-webkit-scrollbar {
     width: 8px;

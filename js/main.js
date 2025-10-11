@@ -332,6 +332,9 @@ class FontAnimationApp {
         document.getElementById('playBtn').addEventListener('click', () => this.togglePlayback());
         document.getElementById('exportBtn').addEventListener('click', () => this.exportVideo());
 
+        // About
+        document.getElementById('aboutBtn').addEventListener('click', () => this.showAboutModal());
+
         // Undo/Redo
         document.getElementById('undoBtn').addEventListener('click', () => this.undo());
         document.getElementById('redoBtn').addEventListener('click', () => this.redo());
@@ -353,6 +356,15 @@ class FontAnimationApp {
         document.getElementById('continueAnyway').addEventListener('click', () => {
             document.getElementById('warningModal').style.display = 'none';
         });
+
+        // About modal close handler
+        const aboutModal = document.getElementById('aboutModal');
+        const aboutCloseBtn = aboutModal.querySelector('.close');
+        if (aboutCloseBtn) {
+            aboutCloseBtn.addEventListener('click', () => {
+                aboutModal.style.display = 'none';
+            });
+        }
     }
 
     setupTimelineEventListeners() {
@@ -1237,6 +1249,13 @@ class FontAnimationApp {
         if (window.currentExportPromise) {
             window.currentExportPromise.resolve(null);
             window.currentExportPromise = null;
+        }
+    }
+
+    showAboutModal() {
+        const modal = document.getElementById('aboutModal');
+        if (modal) {
+            modal.style.display = 'flex';
         }
     }
 
