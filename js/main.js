@@ -637,7 +637,10 @@ class FontAnimationApp {
                     break;
                 case 'arrowleft':
                     e.preventDefault();
-                    if (e.shiftKey) {
+                    if (e.metaKey || e.ctrlKey) {
+                        // Cmd+Left: Jump to first frame
+                        this.goToStart();
+                    } else if (e.shiftKey) {
                         this.jumpBackward(10);
                     } else {
                         this.stepBackward();
@@ -645,7 +648,10 @@ class FontAnimationApp {
                     break;
                 case 'arrowright':
                     e.preventDefault();
-                    if (e.shiftKey) {
+                    if (e.metaKey || e.ctrlKey) {
+                        // Cmd+Right: Jump to last frame
+                        this.goToEnd();
+                    } else if (e.shiftKey) {
                         this.jumpForward(10);
                     } else {
                         this.stepForward();
@@ -1142,6 +1148,24 @@ class FontAnimationApp {
     jumpBackward(frames = 10) {
         const targetFrame = Math.max(this.currentFrame - frames, 0);
         this.setCurrentFrame(targetFrame);
+    }
+
+    goToStart() {
+        if (window.AnimationManager) {
+            if (!this.animationManager) {
+                this.animationManager = new window.AnimationManager(this);
+            }
+            this.animationManager.goToStart();
+        }
+    }
+
+    goToEnd() {
+        if (window.AnimationManager) {
+            if (!this.animationManager) {
+                this.animationManager = new window.AnimationManager(this);
+            }
+            this.animationManager.goToEnd();
+        }
     }
 
     updateRightPanel() {
