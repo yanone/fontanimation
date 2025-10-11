@@ -678,9 +678,39 @@ class TimelineManager {
         // Update cursor extensions in all layers
         this.updateCursorExtensions(adjustedPosition);
 
+        // Update keyframe highlighting based on current frame
+        this.updateCurrentKeyframeHighlight();
+
         // Auto-scroll during playback to keep cursor visible
         if (this.app.isPlaying) {
             this.autoScroll(cursorPosition, timelineWidth);
+        }
+    }
+
+    updateCurrentKeyframeHighlight() {
+        const timelineLayers = document.getElementById('timelineLayers');
+        if (!timelineLayers) return;
+
+        console.log(`Highlighting keyframes for frame ${this.app.currentFrame}`);
+
+        // Remove all current class from keyframes
+        const allKeyframes = timelineLayers.querySelectorAll('.keyframe');
+        allKeyframes.forEach(keyframe => {
+            keyframe.classList.remove('current');
+        });
+
+        // Add current class to keyframes that match the current frame
+        const currentKeyframes = timelineLayers.querySelectorAll(`.keyframe[data-frame="${this.app.currentFrame}"]`);
+        currentKeyframes.forEach(keyframe => {
+            keyframe.classList.add('current');
+            console.log(`Applied 'current' class to keyframe at frame ${keyframe.dataset.frame}`);
+        });
+
+        // Force a repaint to ensure the enhanced visual effects are applied
+        if (currentKeyframes.length > 0) {
+            currentKeyframes.forEach(keyframe => {
+                keyframe.style.transform = keyframe.style.transform; // Trigger reflow
+            });
         }
     }
 
