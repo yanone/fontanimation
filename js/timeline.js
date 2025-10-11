@@ -122,6 +122,9 @@ class TimelineManager {
             const layer = this.createLayer(textObject, index);
             timelineLayers.appendChild(layer);
         });
+
+        // Update cursor extensions for new layers
+        this.updateCursorExtensions((this.app.currentFrame / this.app.totalFrames) * this.calculateTimelineWidth() - 1);
     }
 
     createLayer(textObject, index) {
@@ -669,12 +672,38 @@ class TimelineManager {
 
         // Offset by half the cursor width (1px) to center align with keyframes
         // Cursor is 2px wide, so we subtract 1px to center it
-        timeCursor.style.left = `${cursorPosition - 1}px`;
+        const adjustedPosition = cursorPosition - 1;
+        timeCursor.style.left = `${adjustedPosition}px`;
+
+        // Update cursor extensions in all layers
+        this.updateCursorExtensions(adjustedPosition);
 
         // Auto-scroll during playback to keep cursor visible
         if (this.app.isPlaying) {
             this.autoScroll(cursorPosition, timelineWidth);
         }
+    }
+
+    updateCursorExtensions(cursorPosition) {
+        const timelineLayers = document.getElementById('timelineLayers');
+        if (!timelineLayers) return;
+
+        const layers = timelineLayers.querySelectorAll('.timeline-layer');
+        layers.forEach(layer => {
+            const content = layer.querySelector('.layer-content');
+            if (!content) return;
+
+            // Find or create cursor extension element
+            let cursorExtension = content.querySelector('.cursor-extension');
+            if (!cursorExtension) {
+                cursorExtension = document.createElement('div');
+                cursorExtension.className = 'cursor-extension';
+                content.appendChild(cursorExtension);
+            }
+
+            // Position the cursor extension to match the main cursor
+            cursorExtension.style.left = `${cursorPosition}px`;
+        });
     }
 
     autoScroll(cursorPosition, timelineWidth) {

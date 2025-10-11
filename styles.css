@@ -619,6 +619,17 @@ body {
     border-bottom: 8px solid #ff6b00;
 }
 
+.cursor-extension {
+    position: absolute;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background: #ff6b00;
+    opacity: 0.6;
+    z-index: 1;
+    pointer-events: none;
+}
+
 #timelineLayers {
     flex: 1;
     overflow-y: auto;
