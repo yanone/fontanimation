@@ -27,7 +27,164 @@ class FontAnimationApp {
         this.init();
     }
 
+    checkBrowserCompatibility() {
+        const incompatibleFeatures = [];
+        const warnings = [];
+
+        // Check for essential features
+        if (!window.FontFace) {
+            incompatibleFeatures.push('FontFace API (required for custom font loading)');
+        }
+
+        if (!document.fonts) {
+            incompatibleFeatures.push('CSS Font Loading API');
+        }
+
+        if (!window.MediaRecorder) {
+            warnings.push('MediaRecorder API (required for video export)');
+        }
+
+        if (!HTMLCanvasElement.prototype.toBlob) {
+            warnings.push('Canvas.toBlob() (required for image export)');
+        }
+
+        if (!window.requestAnimationFrame) {
+            incompatibleFeatures.push('requestAnimationFrame (required for smooth animation)');
+        }
+
+        // Check for ES6+ features
+        try {
+            eval('class Test {}');
+            eval('const test = () => {};');
+            eval('const {x} = {x:1}');
+        } catch (e) {
+            incompatibleFeatures.push('ES6+ JavaScript features (classes, arrow functions, destructuring)');
+        }
+
+        // Check Canvas 2D context
+        const testCanvas = document.createElement('canvas');
+        const testCtx = testCanvas.getContext('2d');
+        if (!testCtx || !testCtx.fillText) {
+            incompatibleFeatures.push('Canvas 2D text rendering');
+        }
+
+        // Check for CSS Grid and Flexbox
+        const testDiv = document.createElement('div');
+        testDiv.style.display = 'grid';
+        if (testDiv.style.display !== 'grid') {
+            incompatibleFeatures.push('CSS Grid Layout');
+        }
+
+        testDiv.style.display = 'flex';
+        if (testDiv.style.display !== 'flex') {
+            incompatibleFeatures.push('CSS Flexbox Layout');
+        }
+
+        // Show compatibility warnings
+        if (incompatibleFeatures.length > 0 || warnings.length > 0) {
+            this.showCompatibilityWarning(incompatibleFeatures, warnings);
+            return incompatibleFeatures.length === 0; // Continue if only warnings, stop if critical features missing
+        }
+
+        return true;
+    }
+
+    showCompatibilityWarning(incompatibleFeatures, warnings) {
+        // Create compatibility warning modal
+        const modal = document.createElement('div');
+        modal.className = 'modal compatibility-modal';
+        modal.style.display = 'flex';
+        modal.style.zIndex = '10000';
+
+        const isBlocked = incompatibleFeatures.length > 0;
+        const title = isBlocked ? 'Browser Not Supported' : 'Limited Browser Support';
+        const message = isBlocked
+            ? 'Your browser is missing essential features required for this application.'
+            : 'Your browser is missing some features. The app will work but with limited functionality.';
+
+        let compatibleBrowsers = `
+            <div class="compatible-browsers">
+                <h4>Recommended Browsers:</h4>
+                <ul>
+                    <li><strong>Chrome 88+</strong> - Full feature support</li>
+                    <li><strong>Firefox 85+</strong> - Full feature support</li>
+                    <li><strong>Safari 14+</strong> - Full feature support</li>
+                    <li><strong>Edge 88+</strong> - Full feature support</li>
+                </ul>
+            </div>
+        `;
+
+        modal.innerHTML = `
+            <div class="modal-content compatibility-content">
+                <h2 style="color: ${isBlocked ? '#d32f2f' : '#f57c00'}">${title}</h2>
+                <p>${message}</p>
+                
+                ${incompatibleFeatures.length > 0 ? `
+                    <div class="missing-features">
+                        <h4>Missing Critical Features:</h4>
+                        <ul>
+                            ${incompatibleFeatures.map(feature => `<li>${feature}</li>`).join('')}
+                        </ul>
+                    </div>
+                ` : ''}
+                
+                ${warnings.length > 0 ? `
+                    <div class="limited-features">
+                        <h4>Limited Features:</h4>
+                        <ul>
+                            ${warnings.map(feature => `<li>${feature}</li>`).join('')}
+                        </ul>
+                    </div>
+                ` : ''}
+                
+                ${compatibleBrowsers}
+                
+                <div class="modal-buttons">
+                    ${!isBlocked ? '<button id="continue-anyway" class="primary">Continue Anyway</button>' : ''}
+                    <button id="close-compatibility">Close</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Handle button clicks
+        const continueBtn = modal.querySelector('#continue-anyway');
+        const closeBtn = modal.querySelector('#close-compatibility');
+
+        if (continueBtn) {
+            continueBtn.addEventListener('click', () => {
+                modal.remove();
+            });
+        }
+
+        closeBtn.addEventListener('click', () => {
+            modal.remove();
+            if (isBlocked) {
+                // Hide the main app interface
+                const app = document.getElementById('app');
+                if (app) {
+                    app.style.display = 'none';
+                }
+                // Show a simple message
+                document.body.innerHTML += `
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100vh; background: #2b2b2b; color: white; font-family: sans-serif; text-align: center;">
+                        <div>
+                            <h1>Browser Not Supported</h1>
+                            <p>Please use a modern browser to access Font Animation Studio.</p>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+    }
+
     init() {
+        // Check browser compatibility first
+        if (!this.checkBrowserCompatibility()) {
+            return; // Stop initialization if browser is incompatible
+        }
+
         this.setupCanvas();
         this.setupEventListeners();
         this.setupKeyboardShortcuts();

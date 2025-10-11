@@ -769,6 +769,73 @@ body {
     color: #ffffff;
 }
 
+/* Compatibility Modal */
+.compatibility-modal {
+    backdrop-filter: blur(8px);
+}
+
+.compatibility-content {
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.compatibility-content h4 {
+    color: #ffffff;
+    margin: 16px 0 8px 0;
+    font-size: 14px;
+}
+
+.missing-features {
+    background: rgba(211, 47, 47, 0.1);
+    border: 1px solid #d32f2f;
+    border-radius: 4px;
+    padding: 12px;
+    margin: 16px 0;
+}
+
+.missing-features h4 {
+    color: #f48fb1;
+    margin-top: 0;
+}
+
+.limited-features {
+    background: rgba(245, 124, 0, 0.1);
+    border: 1px solid #f57c00;
+    border-radius: 4px;
+    padding: 12px;
+    margin: 16px 0;
+}
+
+.limited-features h4 {
+    color: #ffcc02;
+    margin-top: 0;
+}
+
+.compatible-browsers {
+    background: rgba(0, 120, 212, 0.1);
+    border: 1px solid #0078d4;
+    border-radius: 4px;
+    padding: 12px;
+    margin: 16px 0;
+}
+
+.compatible-browsers h4 {
+    color: #64b5f6;
+    margin-top: 0;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 24px;
+}
+
+.modal-buttons button {
+    margin: 0;
+}
+
 /* Scrollbars */
 ::-webkit-scrollbar {
     width: 8px;
