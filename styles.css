@@ -788,6 +788,72 @@ body {
     color: #ffffff;
 }
 
+/* Export Format Modal */
+#formatOptions {
+    margin: 20px 0;
+}
+
+.format-option {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    padding: 12px;
+    border: 1px solid #404040;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.format-option:hover {
+    background: #353535;
+    border-color: #505050;
+}
+
+.format-option.selected {
+    background: rgba(0, 120, 212, 0.2);
+    border-color: #0078d4;
+}
+
+.format-option input[type="radio"] {
+    margin-right: 12px;
+    accent-color: #0078d4;
+}
+
+.format-info {
+    flex: 1;
+}
+
+.format-name {
+    font-weight: 500;
+    color: #ffffff;
+    margin-bottom: 4px;
+}
+
+.format-description {
+    font-size: 11px;
+    color: #cccccc;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 24px;
+}
+
+.modal-buttons button {
+    margin-top: 0;
+}
+
+.modal-buttons button:disabled {
+    background: #505050;
+    cursor: not-allowed;
+}
+
+.modal-buttons button:disabled:hover {
+    background: #505050;
+}
+
 /* Compatibility Modal */
 .compatibility-modal {
     backdrop-filter: blur(8px);

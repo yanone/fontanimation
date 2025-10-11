@@ -4,6 +4,7 @@ class ExportManager {
         this.app = app;
         this.isExporting = false;
         this.supportedFormats = this.detectSupportedFormats();
+        this.lastSelectedFormat = null; // Remember last selected format for the session
     }
 
     static async exportVideo(app) {
@@ -45,13 +46,18 @@ class ExportManager {
         }
 
         try {
-            this.isExporting = true;
+            // Show format selection dialog
+            const selectedFormat = await this.showFormatSelectionDialog();
+            if (!selectedFormat) {
+                return; // User cancelled
+            }
 
+            this.isExporting = true;
             const loadingOverlay = window.UIManager?.showLoadingOverlay('Preparing export...');
 
             // Choose export method based on capabilities
             if (this.supportsVideoRecording()) {
-                await this.exportWithVideoRecording();
+                await this.exportWithVideoRecording(selectedFormat);
             } else {
                 await this.exportWithFrameSequence();
             }
@@ -80,7 +86,126 @@ class ExportManager {
             Object.keys(this.supportedFormats).length > 0;
     }
 
-    async exportWithVideoRecording() {
+    async showFormatSelectionDialog() {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('exportFormatModal');
+            const formatOptions = document.getElementById('formatOptions');
+            const confirmButton = document.getElementById('confirmExport');
+            const cancelButton = document.getElementById('cancelExport');
+            const closeButton = modal.querySelector('.close');
+
+            // Clear previous options
+            formatOptions.innerHTML = '';
+
+            // Define format information
+            const formatInfo = {
+                'video/webm;codecs=vp9': {
+                    name: 'WebM (VP9)',
+                    description: 'High quality, good compression, modern browsers'
+                },
+                'video/webm;codecs=vp8': {
+                    name: 'WebM (VP8)',
+                    description: 'Good quality, wider browser support'
+                },
+                'video/mp4;codecs=h264': {
+                    name: 'MP4 (H.264)',
+                    description: 'Universal compatibility, good quality'
+                },
+                'video/mp4': {
+                    name: 'MP4',
+                    description: 'Universal compatibility'
+                }
+            };
+
+            let selectedFormat = null;
+
+            // Create format options
+            const supportedFormatKeys = Object.keys(this.supportedFormats);
+            let defaultSelectionMade = false;
+
+            supportedFormatKeys.forEach((format, index) => {
+                const info = formatInfo[format] || { name: format, description: 'Standard format' };
+
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'format-option';
+
+                const radio = document.createElement('input');
+                radio.type = 'radio';
+                radio.name = 'videoFormat';
+                radio.value = format;
+                radio.id = `format_${index}`;
+
+                const label = document.createElement('label');
+                label.htmlFor = `format_${index}`;
+                label.className = 'format-info';
+
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'format-name';
+                nameDiv.textContent = info.name;
+
+                const descDiv = document.createElement('div');
+                descDiv.className = 'format-description';
+                descDiv.textContent = info.description;
+
+                label.appendChild(nameDiv);
+                label.appendChild(descDiv);
+
+                optionDiv.appendChild(radio);
+                optionDiv.appendChild(label);
+
+                // Handle selection
+                optionDiv.addEventListener('click', () => {
+                    // Clear previous selections
+                    document.querySelectorAll('.format-option').forEach(opt => opt.classList.remove('selected'));
+                    optionDiv.classList.add('selected');
+                    radio.checked = true;
+                    selectedFormat = format;
+                    confirmButton.disabled = false;
+                });
+
+                formatOptions.appendChild(optionDiv);
+
+                // Select last used format if available, otherwise select first option
+                const shouldSelect = (this.lastSelectedFormat && format === this.lastSelectedFormat) ||
+                    (!this.lastSelectedFormat && index === 0);
+
+                if (shouldSelect && !defaultSelectionMade) {
+                    optionDiv.click();
+                    defaultSelectionMade = true;
+                }
+            });
+
+            // Show modal
+            modal.style.display = 'flex';
+
+            // Handle buttons
+            const handleConfirm = () => {
+                // Remember the selected format for this session
+                this.lastSelectedFormat = selectedFormat;
+                modal.style.display = 'none';
+                cleanup();
+                resolve(selectedFormat);
+            };
+
+            const handleCancel = () => {
+                modal.style.display = 'none';
+                cleanup();
+                resolve(null);
+            };
+
+            const cleanup = () => {
+                confirmButton.removeEventListener('click', handleConfirm);
+                cancelButton.removeEventListener('click', handleCancel);
+                closeButton.removeEventListener('click', handleCancel);
+            };
+
+            confirmButton.addEventListener('click', handleConfirm);
+            cancelButton.addEventListener('click', handleCancel);
+            closeButton.addEventListener('click', handleCancel);
+        });
+    }
+
+    async exportWithVideoRecording(selectedFormat = null) {
         // Create canvas with absolute pixel dimensions (ignore device pixel ratio for export)
         const canvas = document.createElement('canvas');
         canvas.width = this.app.canvasWidth;
@@ -96,24 +221,13 @@ class ExportManager {
         context.textBaseline = 'top';
         context.textAlign = 'left';
 
-        // Choose best available format
-        const preferredFormats = [
-            'video/webm;codecs=vp9',
-            'video/webm;codecs=vp8',
-            'video/mp4;codecs=h264',
-            'video/mp4'
-        ];
-
-        let selectedFormat = null;
-        for (const format of preferredFormats) {
-            if (this.supportedFormats[format]) {
-                selectedFormat = format;
-                break;
-            }
+        // Use the selected format from the dialog
+        if (!selectedFormat) {
+            throw new Error('No video format selected');
         }
 
-        if (!selectedFormat) {
-            throw new Error('No supported video format found');
+        if (!this.supportedFormats[selectedFormat]) {
+            throw new Error(`Selected format ${selectedFormat} is not supported`);
         }
 
         // Create video stream
