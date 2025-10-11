@@ -169,7 +169,9 @@ class CanvasManager {
 
         // Update timeline if object was modified
         if (this.objectWasModified) {
-            this.app.timelineManager?.updateKeyframeForCurrentFrame();
+            if (this.app.timeline) {
+                this.app.timeline.update();
+            }
             this.objectWasModified = false;
         }
     }
@@ -240,7 +242,9 @@ class CanvasManager {
         if (moved) {
             event.preventDefault();
             this.render();
-            this.app.timelineManager?.updateKeyframeForCurrentFrame();
+            if (this.app.timeline) {
+                this.app.timeline.update();
+            }
             if (window.UIManager) {
                 window.UIManager.updateRightPanel();
             }
@@ -288,8 +292,12 @@ class CanvasManager {
         const deltaX = pos.x - this.dragStartPos.x;
         const deltaY = pos.y - this.dragStartPos.y;
 
-        this.app.selectedObject.x = this.objectStartPos.x + deltaX;
-        this.app.selectedObject.y = this.objectStartPos.y + deltaY;
+        const newX = this.objectStartPos.x + deltaX;
+        const newY = this.objectStartPos.y + deltaY;
+
+        // Use updateObjectProperty to ensure keyframes are created
+        this.app.updateObjectProperty(this.app.selectedObject, 'x', newX);
+        this.app.updateObjectProperty(this.app.selectedObject, 'y', newY);
 
         this.render();
         this.objectWasModified = true;
