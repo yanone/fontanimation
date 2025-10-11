@@ -234,43 +234,83 @@ class ExportManager {
             throw new Error(`Selected format ${selectedFormat} is not supported`);
         }
 
-        // Create video stream
+        // Create video stream with higher frame rate capture for better compatibility
         const stream = canvas.captureStream(this.app.frameRate);
-        const mediaRecorder = new MediaRecorder(stream, {
+
+        // Configure MediaRecorder with proper options
+        const mediaRecorderOptions = {
             mimeType: selectedFormat,
             videoBitsPerSecond: 5000000 // 5 Mbps
-        });
+        };
 
+        // For MP4, try to use a more compatible configuration
+        if (selectedFormat.includes('mp4')) {
+            // Request keyframe every second for better compatibility
+            mediaRecorderOptions.videoBitsPerSecond = 8000000; // Higher bitrate for MP4
+        }
+
+        const mediaRecorder = new MediaRecorder(stream, mediaRecorderOptions);
         const chunks = [];
 
         mediaRecorder.ondataavailable = (event) => {
-            if (event.data.size > 0) {
+            if (event.data && event.data.size > 0) {
                 chunks.push(event.data);
+                console.log(`Data chunk received: ${event.data.size} bytes`);
             }
         };
 
         return new Promise((resolve, reject) => {
             mediaRecorder.onstop = () => {
+                console.log(`Total chunks collected: ${chunks.length}`);
+                if (chunks.length === 0) {
+                    reject(new Error('No video data was recorded. Please try again.'));
+                    return;
+                }
+
                 const blob = new Blob(chunks, { type: selectedFormat });
+                console.log(`Final blob size: ${blob.size} bytes`);
+
+                if (blob.size < 1000) { // Less than 1KB is likely invalid
+                    reject(new Error('Video file appears to be invalid. Please try exporting again.'));
+                    return;
+                }
+
                 const extension = selectedFormat.includes('mp4') ? 'mp4' : 'webm';
                 this.downloadBlob(blob, `animation.${extension}`);
                 resolve();
             };
 
             mediaRecorder.onerror = (error) => {
-                reject(new Error('MediaRecorder error: ' + error.message));
+                console.error('MediaRecorder error:', error);
+                reject(new Error('MediaRecorder error: ' + (error.message || 'Unknown error')));
             };
 
-            // Start recording
-            mediaRecorder.start();
+            mediaRecorder.onstart = () => {
+                console.log('MediaRecorder started with format:', selectedFormat);
+            };
 
-            // Render animation frames
-            this.renderAnimationToCanvas(canvas, context, () => {
-                // Add a small delay before stopping to ensure all frames are captured
-                setTimeout(() => {
-                    mediaRecorder.stop();
-                }, 500);
-            });
+            // Wait a bit before starting recording to ensure stream is ready
+            setTimeout(() => {
+                try {
+                    // Request data every 100ms for better MP4 compatibility
+                    mediaRecorder.start(100);
+
+                    // Start rendering animation after a brief delay
+                    setTimeout(() => {
+                        this.renderAnimationToCanvas(canvas, context, () => {
+                            // Wait longer before stopping, especially for MP4
+                            const stopDelay = selectedFormat.includes('mp4') ? 1000 : 500;
+                            setTimeout(() => {
+                                if (mediaRecorder.state === 'recording') {
+                                    mediaRecorder.stop();
+                                }
+                            }, stopDelay);
+                        });
+                    }, 100);
+                } catch (error) {
+                    reject(new Error('Failed to start recording: ' + error.message));
+                }
+            }, 100);
         });
     }
 
@@ -436,9 +476,17 @@ class ExportManager {
 
         const renderNextFrame = () => {
             if (frame >= this.app.totalFrames) {
+                console.log(`Animation rendering complete. Total frames: ${frame}`);
                 onComplete();
                 return;
             }
+
+            // Clear canvas before rendering each frame
+            context.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Set background
+            context.fillStyle = this.app.canvasBackground;
+            context.fillRect(0, 0, canvas.width, canvas.height);
 
             this.renderFrame(frame, canvas, context);
             frame++;
@@ -449,10 +497,18 @@ class ExportManager {
                 window.UIManager.showExportProgress(progress);
             }
 
-            setTimeout(renderNextFrame, frameInterval);
+            // Use requestAnimationFrame for better timing consistency
+            if (frame < this.app.totalFrames) {
+                setTimeout(() => {
+                    requestAnimationFrame(renderNextFrame);
+                }, frameInterval);
+            } else {
+                onComplete();
+            }
         };
 
-        renderNextFrame();
+        // Start rendering the first frame
+        requestAnimationFrame(renderNextFrame);
     }
 
     async createZipSequence(frames) {
