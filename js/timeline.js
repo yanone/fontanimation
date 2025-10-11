@@ -172,7 +172,7 @@ class TimelineManager {
         // Position based on frame using pixel positioning to match timeline ruler
         const timelineWidth = this.calculateTimelineWidth();
         const pixelPosition = (keyframe.frame / this.app.totalFrames) * timelineWidth;
-        
+
         // Offset by half the keyframe width (7px) to center align with cursor
         // Keyframe is 14px wide, so we subtract 7px to center it
         keyframeElement.style.left = `${pixelPosition - 7}px`;
