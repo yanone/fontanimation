@@ -201,40 +201,61 @@ class FontAnimationApp {
     setupTimelineEventListeners() {
         const timeCursor = document.getElementById('timeCursor');
         const timelineHeader = document.getElementById('timelineHeader');
+        const timeRuler = document.getElementById('timeRuler');
 
         let isDraggingCursor = false;
 
-        timeCursor.addEventListener('mousedown', (e) => {
-            isDraggingCursor = true;
-            e.preventDefault();
-        });
-
-        timelineHeader.addEventListener('mousemove', (e) => {
-            if (!isDraggingCursor) return;
-
-            const timeRuler = document.getElementById('timeRuler');
-            if (!timeRuler) return;
-
+        // Helper function to calculate frame from mouse position
+        const getFrameFromMouseEvent = (e) => {
+            if (!timeRuler) return 0;
             const rect = timeRuler.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const frame = Math.round((x / rect.width) * this.totalFrames);
-            this.setCurrentFrame(Math.max(0, Math.min(frame, this.totalFrames - 1)));
+            return Math.max(0, Math.min(frame, this.totalFrames - 1));
+        };
+
+        // Handle mouse down on cursor (existing functionality)
+        timeCursor.addEventListener('mousedown', (e) => {
+            isDraggingCursor = true;
+            e.preventDefault();
+            e.stopPropagation();
         });
 
+        // Handle mouse down on timeline ruler (new functionality)
+        timeRuler.addEventListener('mousedown', (e) => {
+            // Only start dragging if not clicking on the cursor itself
+            if (e.target === timeCursor) return;
+
+            isDraggingCursor = true;
+
+            // Immediately set the frame for the click position
+            const frame = getFrameFromMouseEvent(e);
+            this.setCurrentFrame(frame);
+
+            e.preventDefault();
+        });
+
+        // Handle mouse move (works for both cursor drag and ruler drag)
+        timelineHeader.addEventListener('mousemove', (e) => {
+            if (!isDraggingCursor) return;
+
+            const frame = getFrameFromMouseEvent(e);
+            this.setCurrentFrame(frame);
+        });
+
+        // Handle mouse up (stop dragging)
         document.addEventListener('mouseup', () => {
             isDraggingCursor = false;
         });
 
+        // Keep the click handler for backwards compatibility, but it's now less needed
         timelineHeader.addEventListener('click', (e) => {
+            // Skip if we were dragging (to avoid double-setting the frame)
+            if (isDraggingCursor) return;
             if (e.target === timeCursor) return;
 
-            const timeRuler = document.getElementById('timeRuler');
-            if (!timeRuler) return;
-
-            const rect = timeRuler.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const frame = Math.round((x / rect.width) * this.totalFrames);
-            this.setCurrentFrame(Math.max(0, Math.min(frame, this.totalFrames - 1)));
+            const frame = getFrameFromMouseEvent(e);
+            this.setCurrentFrame(frame);
         });
     }
 
