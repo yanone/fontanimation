@@ -2,15 +2,9 @@
 
 A web-based typography animation tool for creating variable font animations with OpenType feature control.
 
-## Development Stage
+## 🚀 Live Demo
 
-Development is in pre-alpha stage. Random things might not be working.
-
-## Run Quickly For Testing:
-
-In order to run this locally on your computer, check out the repo and then run `python3 -m http.server 8000` so that files other than `index.html` can get served over a "network connection", which is a security requirement by modern browsers.
-
-An online version will be made available soon.
+**Try the app live at**: [https://yanone.github.io/fontanimation](https://yanone.github.io/fontanimation)
 
 ## Why This App Exists
 
@@ -57,10 +51,27 @@ Font Animation Studio allows you to:
 
 1. Open the app in a modern web browser
 2. Upload your variable font files using the upload button
-3. Create text objects on the canvas
+3. Create text objects on the canvas using the Text Tool
 4. Adjust typography settings and OpenType features
 5. Set keyframes on the timeline to create animations
 6. Export your animation for use in video projects
+
+## ⌨️ Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Space` | Play/Pause animation |
+| `←/→` | Navigate frame by frame |
+| `Shift+←/→` | Jump 10 frames |
+| `Cmd+←/→` | Jump to first/last frame |
+| `Cmd+E` | Export video |
+| `Cmd+Z` | Undo |
+| `Cmd+Shift+Z` | Redo |
+| `Escape` | Close modals |
+| `H` | Hand tool |
+| `T` | Text tool |
+| `V` | Select tool |
+| `Z` | Zoom tool |
 
 ## Browser Requirements
 
@@ -69,6 +80,18 @@ Font Animation Studio allows you to:
   - Canvas API
   - ES6+ JavaScript features
   - CSS Grid and Flexbox
+
+## 🛠 Development
+
+To run this locally:
+```bash
+git clone https://github.com/yanone/fontanimation.git
+cd fontanimation
+python3 -m http.server 8000
+```
+Then open `http://localhost:8000` in your browser.
+
+> **Note**: Files must be served over HTTP (not file://) due to browser security requirements for font loading and export features.
 
 ## Technical Details
 
