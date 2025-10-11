@@ -88,6 +88,8 @@ class ExportManager {
 
     async showFormatSelectionDialog() {
         return new Promise((resolve) => {
+            // Store resolve function globally for Escape key handling
+            window.currentExportPromise = { resolve };
             const modal = document.getElementById('exportFormatModal');
             const formatOptions = document.getElementById('formatOptions');
             const confirmButton = document.getElementById('confirmExport');
@@ -197,6 +199,8 @@ class ExportManager {
                 confirmButton.removeEventListener('click', handleConfirm);
                 cancelButton.removeEventListener('click', handleCancel);
                 closeButton.removeEventListener('click', handleCancel);
+                // Clear global promise reference
+                window.currentExportPromise = null;
             };
 
             confirmButton.addEventListener('click', handleConfirm);

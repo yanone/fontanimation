@@ -601,6 +601,10 @@ class FontAnimationApp {
             }
 
             switch (e.key.toLowerCase()) {
+                case 'escape':
+                    e.preventDefault();
+                    this.closeAllModals();
+                    break;
                 case 'h':
                     this.setTool('hand');
                     break;
@@ -1216,6 +1220,23 @@ class FontAnimationApp {
             exportBtn.classList.remove('exporting');
             exportIcon.textContent = 'videocam';
             exportBtn.title = 'Export Video';
+        }
+    }
+
+    closeAllModals() {
+        // Close all visible modals
+        const modals = document.querySelectorAll('.modal');
+        modals.forEach(modal => {
+            if (modal.style.display === 'flex' || modal.style.display === 'block') {
+                modal.style.display = 'none';
+            }
+        });
+
+        // Also trigger any specific modal cleanup if needed
+        // For export modal, we need to resolve the promise to prevent hanging
+        if (window.currentExportPromise) {
+            window.currentExportPromise.resolve(null);
+            window.currentExportPromise = null;
         }
     }
 
