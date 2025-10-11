@@ -169,7 +169,10 @@ class TimelineManager {
         // Position based on frame using pixel positioning to match timeline ruler
         const timelineWidth = this.calculateTimelineWidth();
         const pixelPosition = (keyframe.frame / this.app.totalFrames) * timelineWidth;
-        keyframeElement.style.left = `${pixelPosition}px`;
+        
+        // Offset by half the keyframe width (7px) to center align with cursor
+        // Keyframe is 14px wide, so we subtract 7px to center it
+        keyframeElement.style.left = `${pixelPosition - 7}px`;
 
         // Check if selected
         if (this.isKeyframeSelected(textObject.id, keyframe.frame)) {
@@ -664,8 +667,9 @@ class TimelineManager {
         const timelineWidth = this.calculateTimelineWidth();
         const cursorPosition = (this.app.currentFrame / this.app.totalFrames) * timelineWidth;
 
-        // Position the cursor within the timeRuler
-        timeCursor.style.left = `${cursorPosition}px`;
+        // Offset by half the cursor width (1px) to center align with keyframes
+        // Cursor is 2px wide, so we subtract 1px to center it
+        timeCursor.style.left = `${cursorPosition - 1}px`;
 
         // Auto-scroll during playback to keep cursor visible
         if (this.app.isPlaying) {
