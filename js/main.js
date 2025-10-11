@@ -657,6 +657,13 @@ class FontAnimationApp {
                         this.stepForward();
                     }
                     break;
+                case 'e':
+                    if (e.metaKey || e.ctrlKey) {
+                        e.preventDefault();
+                        // Cmd+E: Export video
+                        this.exportVideo();
+                    }
+                    break;
             }
         });
     }
