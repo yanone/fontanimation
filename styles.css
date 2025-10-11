@@ -683,7 +683,7 @@ body {
 }
 
 .keyframe.selected {
-    background: #ff6b00;
+    background: #dddddd;
     border-color: #ffffff;
     box-shadow: 0 2px 8px rgba(255, 107, 0, 0.4);
 }
