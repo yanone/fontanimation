@@ -615,7 +615,7 @@ class FontAnimationApp {
             };
             obj.keyframes.push(newKeyframe);
             obj.keyframes.sort((a, b) => a.frame - b.frame);
-            
+
             // Update timeline UI when new keyframes are created
             if (this.timeline) {
                 this.timeline.update();
