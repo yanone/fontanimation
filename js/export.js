@@ -81,15 +81,13 @@ class ExportManager {
     }
 
     async exportWithVideoRecording() {
-        // Create high-DPI canvas for crisp video output
-        const devicePixelRatio = window.devicePixelRatio || 1;
+        // Create canvas with absolute pixel dimensions (ignore device pixel ratio for export)
         const canvas = document.createElement('canvas');
-        canvas.width = this.app.canvasWidth * devicePixelRatio;
-        canvas.height = this.app.canvasHeight * devicePixelRatio;
+        canvas.width = this.app.canvasWidth;
+        canvas.height = this.app.canvasHeight;
         const context = canvas.getContext('2d');
 
-        // Scale context to match device pixel ratio
-        context.scale(devicePixelRatio, devicePixelRatio);
+        // No scaling - use absolute pixel dimensions for consistent video output
 
         // Enable high-quality text rendering
         context.textRenderingOptimization = 'optimizeQuality';
@@ -164,15 +162,11 @@ class ExportManager {
         }
 
         const frames = [];
-        // Create high-DPI canvas for crisp image output
-        const devicePixelRatio = window.devicePixelRatio || 1;
+        // Create canvas with absolute pixel dimensions
         const canvas = document.createElement('canvas');
-        canvas.width = this.app.canvasWidth * devicePixelRatio;
-        canvas.height = this.app.canvasHeight * devicePixelRatio;
+        canvas.width = this.app.canvasWidth;
+        canvas.height = this.app.canvasHeight;
         const context = canvas.getContext('2d');
-
-        // Scale context to match device pixel ratio
-        context.scale(devicePixelRatio, devicePixelRatio);
 
         // Enable high-quality text rendering
         context.textRenderingOptimization = 'optimizeQuality';
@@ -423,15 +417,11 @@ class ExportManager {
 
     // Export single frame as image
     exportCurrentFrame() {
-        // Create high-DPI canvas for crisp image output
-        const devicePixelRatio = window.devicePixelRatio || 1;
+        // Create canvas with absolute pixel dimensions
         const canvas = document.createElement('canvas');
-        canvas.width = this.app.canvasWidth * devicePixelRatio;
-        canvas.height = this.app.canvasHeight * devicePixelRatio;
+        canvas.width = this.app.canvasWidth;
+        canvas.height = this.app.canvasHeight;
         const context = canvas.getContext('2d');
-
-        // Scale context to match device pixel ratio
-        context.scale(devicePixelRatio, devicePixelRatio);
 
         // Enable high-quality text rendering
         context.textRenderingOptimization = 'optimizeQuality';
