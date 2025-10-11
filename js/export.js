@@ -234,7 +234,7 @@ class ExportManager {
             throw new Error(`Selected format ${selectedFormat} is not supported`);
         }
 
-        // Create video stream with higher frame rate capture for better compatibility
+        // Create video stream with desired frame rate
         const stream = canvas.captureStream(this.app.frameRate);
 
         // Configure MediaRecorder with proper options
@@ -473,10 +473,14 @@ class ExportManager {
     async renderAnimationToCanvas(canvas, context, onComplete) {
         const frameInterval = 1000 / this.app.frameRate;
         let frame = 0;
+        let startTime = performance.now();
 
-        const renderNextFrame = () => {
+        const renderNextFrame = (currentTime) => {
             if (frame >= this.app.totalFrames) {
+                const actualDuration = (performance.now() - startTime) / 1000;
+                const expectedDuration = this.app.totalFrames / this.app.frameRate;
                 console.log(`Animation rendering complete. Total frames: ${frame}`);
+                console.log(`Actual duration: ${actualDuration.toFixed(2)}s, Expected: ${expectedDuration.toFixed(2)}s`);
                 onComplete();
                 return;
             }
@@ -497,18 +501,19 @@ class ExportManager {
                 window.UIManager.showExportProgress(progress);
             }
 
-            // Use requestAnimationFrame for better timing consistency
+            // Calculate when the next frame should be rendered
             if (frame < this.app.totalFrames) {
-                setTimeout(() => {
-                    requestAnimationFrame(renderNextFrame);
-                }, frameInterval);
+                const nextFrameTime = startTime + (frame * frameInterval);
+                const delay = Math.max(0, nextFrameTime - performance.now());
+
+                setTimeout(renderNextFrame, delay);
             } else {
                 onComplete();
             }
         };
 
-        // Start rendering the first frame
-        requestAnimationFrame(renderNextFrame);
+        // Start rendering immediately
+        renderNextFrame(startTime);
     }
 
     async createZipSequence(frames) {
