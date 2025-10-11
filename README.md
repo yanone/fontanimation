@@ -4,7 +4,7 @@ A web-based typography animation tool for creating variable font animations with
 
 ## Development Stage
 
-Development is in pre-alpha stage. Random things might now be working.
+Development is in pre-alpha stage. Random things might not be working.
 
 ## Run Quickly For Testing:
 
