@@ -3,6 +3,7 @@ class TimelineManager {
     constructor(app) {
         this.app = app;
         this.selectedKeyframes = [];
+        this.isDraggingCursor = false;
         this.setup();
     }
 
@@ -61,6 +62,9 @@ class TimelineManager {
             timeCursor = document.createElement('div');
             timeCursor.id = 'timeCursor';
             timeRuler.appendChild(timeCursor);
+
+            // Set up cursor dragging
+            this.setupCursorDragging(timeCursor);
         }
 
         // Calculate optimal mark spacing
@@ -676,9 +680,13 @@ class TimelineManager {
         // Update keyframe highlighting based on current frame
         this.updateCurrentKeyframeHighlight();
 
-        // Auto-scroll during playback to keep cursor visible
-        if (this.app.isPlaying) {
-            this.autoScroll(cursorPosition, timelineWidth);
+        // Auto-scroll to keep cursor visible during playback or navigation
+        // Skip auto-scroll if user is currently dragging the cursor
+        if (!this.isDraggingCursor) {
+            // Add 150px offset for layer headers when calculating scroll position
+            const scrollableCursorPosition = cursorPosition + 150;
+            const totalScrollableWidth = 150 + timelineWidth;
+            this.autoScroll(scrollableCursorPosition, totalScrollableWidth);
         }
     }
 
@@ -764,6 +772,38 @@ class TimelineManager {
 
         // Scroll the unified timeline container
         timelineContainer.scrollLeft = targetScrollLeft;
+    }
+
+    setupCursorDragging(timeCursor) {
+        timeCursor.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            this.isDraggingCursor = true;
+
+            const timeRuler = document.getElementById('timeRuler');
+            const timelineContainer = document.getElementById('timelineContainer');
+
+            const handleMouseMove = (e) => {
+                const rect = timeRuler.getBoundingClientRect();
+                const containerScrollLeft = timelineContainer.scrollLeft;
+                const x = e.clientX - rect.left + containerScrollLeft;
+
+                // Convert pixel position to frame
+                const pixelsPerFrame = this.calculateTimelineWidth() / this.app.totalFrames;
+                const frame = Math.round(x / pixelsPerFrame);
+                const clampedFrame = Math.max(0, Math.min(frame, this.app.totalFrames - 1));
+
+                this.app.setCurrentFrame(clampedFrame);
+            };
+
+            const handleMouseUp = () => {
+                this.isDraggingCursor = false;
+                document.removeEventListener('mousemove', handleMouseMove);
+                document.removeEventListener('mouseup', handleMouseUp);
+            };
+
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+        });
     }
 }
 
