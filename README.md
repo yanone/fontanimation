@@ -2,6 +2,10 @@
 
 A web-based typography animation tool for creating variable font animations with OpenType feature control.
 
+## Development Stage
+
+Development is in pre-alpha stage. Random things might now be working.
+
 ## Run Quickly For Testing:
 
 In order to run this locally on your computer, check out the repo and then run `python3 -m http.server 8000` so that files other than `index.html` can get served over a "network connection", which is a security requirement by modern browsers.
