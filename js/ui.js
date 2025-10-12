@@ -128,6 +128,19 @@ class UIManager {
             app.toggleKeyframe(textObject, propertyName);
         });
 
+        // Add transition button for this axis
+        const transitionBtn = document.createElement('button');
+        transitionBtn.className = 'transition-btn';
+        transitionBtn.dataset.property = propertyName;
+        transitionBtn.textContent = '⟋';
+        transitionBtn.title = 'Edit Transition Curve';
+        transitionBtn.addEventListener('click', (e) => {
+            // Don't open if button is disabled
+            if (transitionBtn.disabled) return;
+
+            window.TransitionEditor.openModal(textObject, propertyName, app);
+        });
+
         const rangeInput = document.createElement('input');
         rangeInput.type = 'range';
         rangeInput.min = axisInfo.min;
@@ -191,6 +204,7 @@ class UIManager {
         });
 
         rangeContainer.appendChild(keyframeBtn);
+        rangeContainer.appendChild(transitionBtn);
         rangeContainer.appendChild(rangeInput);
         rangeContainer.appendChild(numberInput);
         rangeContainer.appendChild(valueDisplay);
@@ -495,6 +509,66 @@ class UIManager {
                 }
             }
         });
+
+        // Update transition button states
+        UIManager.updateTransitionButtonStates(textObject, app);
+    }
+
+    static updateTransitionButtonStates(textObject, app) {
+        if (!textObject) return;
+
+        document.querySelectorAll('.transition-btn').forEach(btn => {
+            const property = btn.dataset.property;
+            if (property) {
+                const hasKeyframe = app.hasKeyframe(textObject, property, app.currentFrame);
+                const isLastKeyframe = UIManager.isLastKeyframe(textObject, property, app.currentFrame);
+                const hasCustomCurve = UIManager.hasCustomTransition(textObject, property, app.currentFrame);
+
+                // Enable/disable button based on keyframe existence and position
+                // Disable if no keyframe OR if it's the last keyframe (can't transition from last)
+                const shouldDisable = !hasKeyframe || isLastKeyframe;
+                btn.disabled = shouldDisable;
+
+                // Update tooltip based on state
+                if (!hasKeyframe) {
+                    btn.title = 'No keyframe at current frame';
+                } else if (isLastKeyframe) {
+                    btn.title = 'Cannot edit transition on last keyframe';
+                } else {
+                    btn.title = 'Edit Transition Curve';
+                }
+
+                // Update visual state for custom curves
+                if (hasCustomCurve && !shouldDisable) {
+                    btn.classList.add('has-curve');
+                } else {
+                    btn.classList.remove('has-curve');
+                }
+            }
+        });
+    }
+
+    static hasCustomTransition(textObject, property, frame) {
+        if (!textObject.keyframes[property]) return false;
+
+        const keyframe = textObject.keyframes[property].find(kf => kf.frame === frame);
+        return keyframe && keyframe.curve &&
+            !(keyframe.curve.x1 === 0 && keyframe.curve.y1 === 0 &&
+                keyframe.curve.x2 === 1 && keyframe.curve.y2 === 1);
+    }
+
+    static isLastKeyframe(textObject, property, frame) {
+        if (!textObject.keyframes[property] || textObject.keyframes[property].length === 0) {
+            return false;
+        }
+
+        const keyframes = textObject.keyframes[property];
+
+        // Find the keyframe with the highest frame number
+        const lastKeyframe = keyframes.reduce((max, kf) => kf.frame > max.frame ? kf : max);
+
+        // Check if the current frame matches the last keyframe's frame
+        return frame === lastKeyframe.frame;
     }
 }
 

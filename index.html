@@ -111,6 +111,8 @@
                         <div class="property-input-group">
                             <input type="number" id="fontSize" value="48" min="1">
                             <button class="keyframe-btn" data-property="fontSize" title="Add/Remove Keyframe">◆</button>
+                            <button class="transition-btn" data-property="fontSize"
+                                title="Edit Transition Curve">⟋</button>
                         </div>
                     </div>
                     <div class="property-group">
@@ -118,6 +120,8 @@
                         <div class="property-input-group">
                             <input type="color" id="fontColor" value="#000000">
                             <button class="keyframe-btn" data-property="color" title="Add/Remove Keyframe">◆</button>
+                            <button class="transition-btn" data-property="color"
+                                title="Edit Transition Curve">⟋</button>
                         </div>
                     </div>
                     <div class="property-group">
@@ -133,6 +137,7 @@
                         <div class="property-input-group">
                             <input type="number" id="textX" value="0" step="0.1">
                             <button class="keyframe-btn" data-property="x" title="Add/Remove Keyframe">◆</button>
+                            <button class="transition-btn" data-property="x" title="Edit Transition Curve">⟋</button>
                         </div>
                     </div>
                     <div class="property-group">
@@ -140,6 +145,7 @@
                         <div class="property-input-group">
                             <input type="number" id="textY" value="0" step="0.1">
                             <button class="keyframe-btn" data-property="y" title="Add/Remove Keyframe">◆</button>
+                            <button class="transition-btn" data-property="y" title="Edit Transition Curve">⟋</button>
                         </div>
                     </div>
                     <div class="property-group">
@@ -255,6 +261,47 @@
         </div>
     </div>
 
+    <!-- Transition Editor Modal -->
+    <div id="transitionModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Edit Transition Curve</h2>
+            <div class="transition-editor">
+                <div class="curve-preview">
+                    <canvas id="transitionCanvas" width="300" height="200"></canvas>
+                </div>
+                <div class="curve-controls">
+                    <div class="control-group">
+                        <label>Control Point 1:</label>
+                        <div class="control-inputs">
+                            <input type="number" id="x1" min="0" max="1" step="0.01" value="0.25">
+                            <input type="number" id="y1" min="0" max="1" step="0.01" value="0.25">
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label>Control Point 2:</label>
+                        <div class="control-inputs">
+                            <input type="number" id="x2" min="0" max="1" step="0.01" value="0.75">
+                            <input type="number" id="y2" min="0" max="1" step="0.01" value="0.75">
+                        </div>
+                    </div>
+                    <div class="preset-curves">
+                        <button class="preset-btn" data-curve="0,0,1,1">Linear</button>
+                        <button class="preset-btn" data-curve="0.25,0.1,0.25,1">Ease</button>
+                        <button class="preset-btn" data-curve="0.42,0,1,1">Ease In</button>
+                        <button class="preset-btn" data-curve="0,0,0.58,1">Ease Out</button>
+                        <button class="preset-btn" data-curve="0.42,0,0.58,1">Ease In Out</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="applyTransition" class="btn-primary">Apply</button>
+                <button id="resetTransition" class="btn-secondary">Reset to Linear</button>
+                <button id="cancelTransition" class="btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <script src="js/settings.js"></script>
     <script src="js/main.js"></script>
     <script src="js/fonts.js"></script>
@@ -264,6 +311,7 @@
     <script src="js/export.js"></script>
     <script src="js/canvas.js"></script>
     <script src="js/tools.js"></script>
+    <script src="js/transition-editor.js"></script>
 </body>
 
 </html>

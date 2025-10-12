@@ -185,9 +185,9 @@ Defines easing curve for animation interpolation:
 | Property | Type | Description | Range |
 |----------|------|-------------|-------|
 | `x1` | number | First control point X | 0.0-1.0 |
-| `y1` | number | First control point Y | Any number |
+| `y1` | number | First control point Y | 0.0-1.0 |
 | `x2` | number | Second control point X | 0.0-1.0 |
-| `y2` | number | Second control point Y | Any number |
+| `y2` | number | Second control point Y | 0.0-1.0 |
 
 ---
 

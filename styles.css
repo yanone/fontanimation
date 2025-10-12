@@ -468,6 +468,50 @@ body {
     background: #ffdd22;
 }
 
+.transition-btn {
+    width: 24px;
+    height: 24px;
+    background: #404040;
+    border: 1px solid #606060;
+    color: #888888;
+    border-radius: 3px;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.transition-btn:hover {
+    background: #505050;
+    border-color: #707070;
+}
+
+.transition-btn.has-curve {
+    background: #ff4444;
+    border-color: #ff6666;
+    color: #ffffff;
+}
+
+.transition-btn.has-curve:hover {
+    background: #ff6666;
+}
+
+.transition-btn:disabled {
+    background: #2a2a2a;
+    border-color: #3a3a3a;
+    color: #555555;
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.transition-btn:disabled:hover {
+    background: #2a2a2a;
+    border-color: #3a3a3a;
+}
+
 .range-container {
     display: flex;
     align-items: center;
@@ -864,8 +908,12 @@ body {
     border-radius: 8px;
     padding: 24px;
     max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
     color: #ffffff;
     box-shadow: 0 16px 64px rgba(0, 0, 0, 0.4);
+    position: relative;
 }
 
 .modal-content h2 {
@@ -1231,4 +1279,134 @@ body {
     #rightPanel {
         display: none;
     }
+}
+
+/* Transition Editor Modal */
+#transitionModal .modal-content {
+    max-width: 600px;
+    width: 95%;
+}
+
+.transition-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px 0;
+}
+
+.curve-preview {
+    display: flex;
+    justify-content: center;
+}
+
+#transitionCanvas {
+    border: 1px solid #606060;
+    background: #2a2a2a;
+    border-radius: 4px;
+    cursor: crosshair;
+}
+
+.curve-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.control-group label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #e0e0e0;
+}
+
+.control-inputs {
+    display: flex;
+    gap: 10px;
+}
+
+.control-inputs input {
+    flex: 1;
+    padding: 8px;
+    background: #404040;
+    border: 1px solid #606060;
+    border-radius: 4px;
+    color: #e0e0e0;
+    font-size: 14px;
+}
+
+.control-inputs input:focus {
+    outline: none;
+    border-color: #0078d4;
+}
+
+.preset-curves {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.preset-btn {
+    padding: 8px 12px;
+    background: #404040;
+    border: 1px solid #606060;
+    border-radius: 4px;
+    color: #e0e0e0;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s ease;
+}
+
+.preset-btn:hover {
+    background: #505050;
+    border-color: #707070;
+}
+
+.preset-btn:active {
+    background: #0078d4;
+    border-color: #0088ff;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding-top: 20px;
+    border-top: 1px solid #606060;
+}
+
+.btn-primary {
+    padding: 10px 20px;
+    background: #0078d4;
+    border: none;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.2s ease;
+}
+
+.btn-primary:hover {
+    background: #106ebe;
+}
+
+.btn-secondary {
+    padding: 10px 20px;
+    background: #404040;
+    border: 1px solid #606060;
+    border-radius: 4px;
+    color: #e0e0e0;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+    background: #505050;
+    border-color: #707070;
 }

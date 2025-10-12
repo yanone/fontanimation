@@ -451,6 +451,21 @@ class FontAnimationApp {
                 }
             });
         });
+
+        // Transition button event listeners
+        document.querySelectorAll('.transition-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+
+                // Don't open if button is disabled
+                if (btn.disabled) return;
+
+                const property = btn.dataset.property;
+                if (this.selectedObject && window.TransitionEditor) {
+                    window.TransitionEditor.openModal(this.selectedObject, property, this);
+                }
+            });
+        });
     }
 
     // Toggle keyframe for a property at current frame
@@ -786,7 +801,12 @@ class FontAnimationApp {
 
         // Interpolate between keyframes
         if (beforeKeyframe && afterKeyframe) {
-            const progress = (frame - beforeKeyframe.frame) / (afterKeyframe.frame - beforeKeyframe.frame);
+            let progress = (frame - beforeKeyframe.frame) / (afterKeyframe.frame - beforeKeyframe.frame);
+
+            // Apply Bezier curve if present on the beforeKeyframe
+            if (beforeKeyframe.curve) {
+                progress = this.evaluateBezierCurve(progress, beforeKeyframe.curve);
+            }
 
             if (property === 'color') {
                 // Color interpolation
@@ -1213,16 +1233,80 @@ class FontAnimationApp {
     }
 
     evaluateBezierCurve(t, curve) {
-        const cp1x = curve.cp1x / 100;
-        const cp1y = curve.cp1y / 100;
-        const cp2x = curve.cp2x / 100;
-        const cp2y = curve.cp2y / 100;
+        // Handle edge cases
+        if (t <= 0) return 0;
+        if (t >= 1) return 1;
 
+        // Cubic bezier curve evaluation for timing functions
+        // P0 = (0,0), P1 = (x1, y1), P2 = (x2, y2), P3 = (1,1)
+        const x1 = curve.x1;
+        const y1 = curve.y1;
+        const x2 = curve.x2;
+        const y2 = curve.y2;
+
+        // Use a more robust method: binary search followed by Newton-Raphson refinement
+        let paramT = this.solveBezierX(t, x1, x2);
+
+        // Now calculate Y with the solved parameter
+        return this.bezierY(paramT, y1, y2);
+    }
+
+    solveBezierX(x, x1, x2) {
+        // Binary search for initial guess
+        let t0 = 0;
+        let t1 = 1;
+        let t = x; // Start with linear approximation
+
+        // Binary search to get close
+        for (let i = 0; i < 8; i++) {
+            const currentX = this.bezierX(t, x1, x2);
+            if (Math.abs(currentX - x) < 0.0001) break;
+
+            if (currentX < x) {
+                t0 = t;
+            } else {
+                t1 = t;
+            }
+            t = (t0 + t1) / 2;
+        }
+
+        // Newton-Raphson refinement
+        for (let i = 0; i < 4; i++) {
+            const currentX = this.bezierX(t, x1, x2);
+            const dx = currentX - x;
+            if (Math.abs(dx) < 0.0001) break;
+
+            const derivative = this.bezierXDerivative(t, x1, x2);
+            if (Math.abs(derivative) < 0.0001) break;
+
+            const newT = t - dx / derivative;
+            // Clamp to valid range
+            t = Math.max(0, Math.min(1, newT));
+        }
+
+        return t;
+    }
+
+    bezierX(t, x1, x2) {
+        // Cubic bezier X coordinate: 3(1-t)²t*x1 + 3(1-t)t²*x2 + t³
         const mt = 1 - t;
-        const mt2 = mt * mt;
-        const t2 = t * t;
+        return 3 * mt * mt * t * x1 + 3 * mt * t * t * x2 + t * t * t;
+    }
 
-        return 3 * mt2 * t * cp1y + 3 * mt * t2 * cp2y + t2 * t;
+    bezierY(t, y1, y2) {
+        // Cubic bezier Y coordinate: 3(1-t)²t*y1 + 3(1-t)t²*y2 + t³
+        const mt = 1 - t;
+        return 3 * mt * mt * t * y1 + 3 * mt * t * t * y2 + t * t * t;
+    }
+
+    bezierXDerivative(t, x1, x2) {
+        // Derivative of bezier X coordinate
+        // d/dt [3(1-t)²t*x1 + 3(1-t)t²*x2 + t³]
+        // = 3x1(1-t)² - 6x1(1-t)t + 6x2(1-t)t - 3x2t² + 3t²
+        // = 3x1(1-t)² + 3t(2x2(1-t) - 2x1(1-t) - x2t + t)
+        // = 3x1(1-t)² + 3t((2x2 - 2x1)(1-t) + t(1 - x2))
+        const mt = 1 - t;
+        return 3 * x1 * mt * mt + 6 * (x2 - x1) * mt * t + 3 * (1 - x2) * t * t;
     }
 
     hexToRgb(hex) {
