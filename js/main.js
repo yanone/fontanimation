@@ -401,6 +401,7 @@ class FontAnimationApp {
         document.getElementById('textContent').addEventListener('input', (e) => {
             if (this.selectedObject) {
                 this.selectedObject.text = e.target.value;
+                this.updateTimeline(); // Update timeline to reflect text change
                 this.redraw();
             }
         });
