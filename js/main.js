@@ -981,17 +981,73 @@ class FontAnimationApp {
         let fontString;
         if (fontAvailable) {
             fontString = `${props.fontSize}px "${obj.fontFamily}"`;
+
+            // Apply variable font axes if available
+            if (props.variableAxes && Object.keys(props.variableAxes).length > 0) {
+                console.log('Applying variable font axes:', props.variableAxes);
+                this.applyVariableFontToCanvas(obj.fontFamily, props.fontSize, props.variableAxes);
+            } else {
+                this.ctx.font = fontString;
+            }
         } else {
             // Use fallback font when the desired font is not available
             fontString = `${props.fontSize}px Arial, sans-serif`;
+            this.ctx.font = fontString;
         }
-
-        this.ctx.font = fontString;
         this.ctx.fillStyle = props.color;
         this.ctx.textBaseline = 'top';
 
         this.ctx.fillText(obj.text, props.x, props.y);
+
+        // Clean up canvas styles if variable fonts were applied
+        if (this._originalCanvasStyles) {
+            const canvas = this.ctx.canvas;
+            canvas.style.fontFamily = this._originalCanvasStyles.fontFamily || '';
+            canvas.style.fontVariationSettings = this._originalCanvasStyles.fontVariationSettings || '';
+            canvas.style.fontSize = '';
+            delete this._originalCanvasStyles;
+        }
+
         this.ctx.restore();
+    }
+
+    // Apply variable font settings to canvas context
+    applyVariableFontToCanvas(fontFamily, fontSize, variableAxes) {
+        try {
+            // Create font-variation-settings string
+            let fontVariationSettings = '';
+            Object.entries(variableAxes).forEach(([tag, value]) => {
+                fontVariationSettings += `"${tag}" ${value}, `;
+            });
+            fontVariationSettings = fontVariationSettings.replace(/, $/, '');
+
+            console.log('Applying font variation settings:', fontVariationSettings);
+
+            // Apply variable font settings to the canvas element temporarily
+            // This is the most reliable cross-browser approach for variable fonts in canvas
+            const canvas = this.ctx.canvas;
+            const originalFontFamily = canvas.style.fontFamily;
+            const originalFontVariationSettings = canvas.style.fontVariationSettings;
+
+            // Set the font properties on the canvas element
+            canvas.style.fontFamily = `"${fontFamily}"`;
+            canvas.style.fontVariationSettings = fontVariationSettings;
+            canvas.style.fontSize = `${fontSize}px`;
+
+            // Apply the font to the context
+            this.ctx.font = `${fontSize}px "${fontFamily}"`;
+
+            // Store original styles for cleanup
+            this._originalCanvasStyles = {
+                fontFamily: originalFontFamily,
+                fontVariationSettings: originalFontVariationSettings
+            };
+
+        } catch (error) {
+            console.warn('Failed to apply variable font settings to canvas:', error);
+            // Fallback to basic font
+            this.ctx.font = `${fontSize}px "${fontFamily}"`;
+        }
     }
 
     // Check if a font is actually loaded and ready to use

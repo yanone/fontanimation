@@ -214,6 +214,14 @@ class ExportManager {
         const canvas = document.createElement('canvas');
         canvas.width = this.app.canvasWidth;
         canvas.height = this.app.canvasHeight;
+        
+        // Add canvas to DOM temporarily for CSS styles to work (needed for variable fonts)
+        canvas.style.position = 'absolute';
+        canvas.style.left = '-9999px';
+        canvas.style.top = '-9999px';
+        canvas.style.visibility = 'hidden';
+        document.body.appendChild(canvas);
+        
         const context = canvas.getContext('2d');
 
         // No scaling - use absolute pixel dimensions for consistent video output
@@ -277,11 +285,23 @@ class ExportManager {
 
                 const extension = selectedFormat.includes('mp4') ? 'mp4' : 'webm';
                 this.downloadBlob(blob, `animation.${extension}`);
+                
+                // Clean up the temporary canvas
+                if (canvas.parentNode) {
+                    document.body.removeChild(canvas);
+                }
+                
                 resolve();
             };
 
             mediaRecorder.onerror = (error) => {
                 console.error('MediaRecorder error:', error);
+                
+                // Clean up the temporary canvas on error
+                if (canvas.parentNode) {
+                    document.body.removeChild(canvas);
+                }
+                
                 reject(new Error('MediaRecorder error: ' + (error.message || 'Unknown error')));
             };
 
@@ -324,6 +344,14 @@ class ExportManager {
         const canvas = document.createElement('canvas');
         canvas.width = this.app.canvasWidth;
         canvas.height = this.app.canvasHeight;
+        
+        // Add canvas to DOM temporarily for CSS styles to work (needed for variable fonts)
+        canvas.style.position = 'absolute';
+        canvas.style.left = '-9999px';
+        canvas.style.top = '-9999px';
+        canvas.style.visibility = 'hidden';
+        document.body.appendChild(canvas);
+        
         const context = canvas.getContext('2d');
 
         // Enable high-quality text rendering
@@ -363,6 +391,11 @@ class ExportManager {
             // Export individual frames
             await this.exportIndividualFrames(frames);
         }
+        
+        // Clean up the temporary canvas
+        if (canvas.parentNode) {
+            document.body.removeChild(canvas);
+        }
     }
 
     renderFrame(frame, canvas, context) {
@@ -380,11 +413,19 @@ class ExportManager {
     renderTextObjectAtFrame(textObject, frame, context) {
         const props = this.app.getObjectPropertiesAtFrame(textObject, frame);
 
+        console.log('Export: Rendering text object at frame', frame, 'with props:', {
+            x: props.x,
+            y: props.y,
+            fontSize: props.fontSize,
+            color: props.color,
+            variableAxes: props.variableAxes
+        });
+
         context.save();
 
         // Apply rotation if present
         if (props.rotation && props.rotation !== 0) {
-            // Get text metrics for proper rotation center with fallback fonts
+            // Set up temporary font for measuring (will be properly set later with variable axes)
             let fontString;
             if (this.app.fonts.has(textObject.fontFamily)) {
                 fontString = `${props.fontSize}px "${textObject.fontFamily}"`;
@@ -402,72 +443,164 @@ class ExportManager {
             context.translate(-centerX, -centerY);
         }
 
-        // Apply font settings with fallback fonts if needed
-        let fontString;
+        // Apply font settings with variable axes and features
         if (this.app.fonts.has(textObject.fontFamily)) {
-            fontString = `${props.fontSize}px "${textObject.fontFamily}"`;
+            console.log('Export: Font available, applying font features for', textObject.fontFamily);
+            // Apply variable font settings if available
+            this.applyFontFeatures(textObject, props, context);
         } else {
-            fontString = `${props.fontSize}px Arial, sans-serif`;
+            console.log('Export: Font not available, using fallback for', textObject.fontFamily);
+            // Use fallback font when the desired font is not available
+            context.font = `${props.fontSize}px Arial, sans-serif`;
         }
 
-        context.font = fontString;
         context.fillStyle = props.color;
         context.textBaseline = 'top';
-
-        // Apply variable font settings if available
-        if (this.app.fontManager && this.app.fonts.has(textObject.fontFamily)) {
-            this.applyFontFeatures(textObject, props, context);
-        }
 
         // Render text with antialiasing
         context.textRenderingOptimization = 'optimizeQuality';
         context.fillText(textObject.text, props.x, props.y);
 
+        // Clean up canvas styles if variable fonts or features were applied
+        this.cleanupCanvasStyles(context);
+
         context.restore();
     }
 
+    cleanupCanvasStyles(context) {
+        const canvas = context.canvas;
+        
+        // Clean up variable font styles
+        if (this._originalExportCanvasStyles) {
+            canvas.style.fontFamily = this._originalExportCanvasStyles.fontFamily || '';
+            canvas.style.fontVariationSettings = this._originalExportCanvasStyles.fontVariationSettings || '';
+            canvas.style.fontSize = '';
+            delete this._originalExportCanvasStyles;
+        }
+        
+        // Clean up OpenType feature styles
+        if (this._originalCanvasFeatureSettings !== undefined) {
+            canvas.style.fontFeatureSettings = this._originalCanvasFeatureSettings || '';
+            delete this._originalCanvasFeatureSettings;
+        }
+    }
+
     applyFontFeatures(textObject, props, context) {
-        // Create temporary element to apply CSS font features
-        const tempElement = document.createElement('div');
-        tempElement.style.cssText = `
-            position: absolute;
-            left: -9999px;
-            top: -9999px;
-            font-size: ${props.fontSize}px;
-            font-family: "${textObject.fontFamily}";
-            white-space: nowrap;
-            visibility: hidden;
-        `;
-
-        // Apply variable axes
-        if (props.variableAxes && Object.keys(props.variableAxes).length > 0) {
-            const variations = Object.entries(props.variableAxes)
-                .map(([tag, value]) => `"${tag}" ${value}`)
-                .join(', ');
-            tempElement.style.fontVariationSettings = variations;
-        }
-
-        // Apply OpenType features
-        if (props.openTypeFeatures && Object.keys(props.openTypeFeatures).length > 0) {
-            const features = Object.entries(props.openTypeFeatures)
-                .filter(([tag, enabled]) => enabled)
-                .map(([tag]) => `"${tag}" 1`)
-                .join(', ');
-            if (features) {
-                tempElement.style.fontFeatureSettings = features;
+        try {
+            console.log('Export: applyFontFeatures called with variable axes:', props.variableAxes);
+            
+            // Apply variable axes using the same reliable method as the main app
+            if (props.variableAxes && Object.keys(props.variableAxes).length > 0) {
+                console.log('Export: Applying variable axes:', Object.keys(props.variableAxes));
+                this.applyVariableFontToCanvas(textObject.fontFamily, props.fontSize, props.variableAxes, context);
+            } else {
+                console.log('Export: No variable axes found, setting basic font');
+                // Set basic font if no variable axes
+                context.font = `${props.fontSize}px "${textObject.fontFamily}"`;
             }
+
+            // Apply OpenType features if present
+            if (props.openTypeFeatures && Object.keys(props.openTypeFeatures).length > 0) {
+                // For OpenType features, we still need the DOM approach as Canvas doesn't support font-feature-settings directly
+                const canvas = context.canvas;
+                const features = Object.entries(props.openTypeFeatures)
+                    .filter(([tag, enabled]) => enabled)
+                    .map(([tag]) => `"${tag}" 1`)
+                    .join(', ');
+                
+                if (features) {
+                    const originalFontFeatureSettings = canvas.style.fontFeatureSettings;
+                    canvas.style.fontFeatureSettings = features;
+                    
+                    // Re-apply font with features
+                    context.font = `${props.fontSize}px "${textObject.fontFamily}"`;
+                    
+                    // Store for cleanup
+                    this._originalCanvasFeatureSettings = originalFontFeatureSettings;
+                }
+            }
+        } catch (error) {
+            console.warn('Failed to apply font features in export:', error);
+            // Fallback to basic font
+            context.font = `${props.fontSize}px "${textObject.fontFamily}"`;
         }
+    }
 
-        tempElement.textContent = textObject.text;
-        document.body.appendChild(tempElement);
+    // Apply variable font settings to canvas context (enhanced approach for export)
+    applyVariableFontToCanvas(fontFamily, fontSize, variableAxes, context) {
+        try {
+            // Create font-variation-settings string
+            let fontVariationSettings = '';
+            Object.entries(variableAxes).forEach(([tag, value]) => {
+                fontVariationSettings += `"${tag}" ${value}, `;
+            });
+            fontVariationSettings = fontVariationSettings.replace(/, $/, '');
 
-        // Apply computed font to canvas context
-        const computedStyle = window.getComputedStyle(tempElement);
-        if (computedStyle.font) {
-            context.font = computedStyle.font;
+            console.log('Export: Applying font variation settings:', fontVariationSettings);
+
+            // Try multiple approaches for better compatibility
+            
+            // Approach 1: CSS on canvas element (original approach)
+            const canvas = context.canvas;
+            const originalFontFamily = canvas.style.fontFamily;
+            const originalFontVariationSettings = canvas.style.fontVariationSettings;
+            
+            canvas.style.fontFamily = `"${fontFamily}"`;
+            canvas.style.fontVariationSettings = fontVariationSettings;
+            canvas.style.fontSize = `${fontSize}px`;
+            
+            // Approach 2: Try using FontFace API for more reliable font loading
+            if (window.FontFace && !this._exportFontCache) {
+                this._exportFontCache = new Map();
+            }
+            
+            const cacheKey = `${fontFamily}-${fontVariationSettings}`;
+            if (this._exportFontCache && !this._exportFontCache.has(cacheKey)) {
+                try {
+                    // Create a font face with variable settings
+                    const uniqueFontName = `${fontFamily}-export-${Date.now()}`;
+                    const fontFace = new FontFace(uniqueFontName, `local("${fontFamily}")`, {
+                        fontVariationSettings: fontVariationSettings
+                    });
+                    
+                    // Load the font and add it to document fonts
+                    fontFace.load().then(() => {
+                        document.fonts.add(fontFace);
+                        this._exportFontCache.set(cacheKey, uniqueFontName);
+                        console.log('Export: Added font face:', uniqueFontName);
+                    }).catch(err => {
+                        console.warn('Export: FontFace load failed:', err);
+                        this._exportFontCache.set(cacheKey, fontFamily);
+                    });
+                    
+                    // Use the unique font name
+                    context.font = `${fontSize}px "${uniqueFontName}", "${fontFamily}"`;
+                    this._exportFontCache.set(cacheKey, uniqueFontName);
+                } catch (fontFaceError) {
+                    console.warn('Export: FontFace API not supported or failed:', fontFaceError);
+                    // Fall back to canvas CSS approach
+                    context.font = `${fontSize}px "${fontFamily}"`;
+                }
+            } else if (this._exportFontCache && this._exportFontCache.has(cacheKey)) {
+                // Use cached font
+                const cachedFontName = this._exportFontCache.get(cacheKey);
+                context.font = `${fontSize}px "${cachedFontName}", "${fontFamily}"`;
+            } else {
+                // Standard canvas CSS approach
+                context.font = `${fontSize}px "${fontFamily}"`;
+            }
+            
+            // Store original styles for cleanup
+            this._originalExportCanvasStyles = {
+                fontFamily: originalFontFamily,
+                fontVariationSettings: originalFontVariationSettings
+            };
+            
+        } catch (error) {
+            console.warn('Export: Failed to apply variable font settings to canvas:', error);
+            // Fallback to basic font
+            context.font = `${fontSize}px "${fontFamily}"`;
         }
-
-        document.body.removeChild(tempElement);
     }
 
     async renderAnimationToCanvas(canvas, context, onComplete) {
@@ -600,6 +733,14 @@ class ExportManager {
         const canvas = document.createElement('canvas');
         canvas.width = this.app.canvasWidth;
         canvas.height = this.app.canvasHeight;
+        
+        // Add canvas to DOM temporarily for CSS styles to work (needed for variable fonts)
+        canvas.style.position = 'absolute';
+        canvas.style.left = '-9999px';
+        canvas.style.top = '-9999px';
+        canvas.style.visibility = 'hidden';
+        document.body.appendChild(canvas);
+        
         const context = canvas.getContext('2d');
 
         // Enable high-quality text rendering
@@ -614,6 +755,11 @@ class ExportManager {
         canvas.toBlob((blob) => {
             const frameNumber = this.app.currentFrame.toString().padStart(4, '0');
             this.downloadBlob(blob, `frame_${frameNumber}.png`);
+            
+            // Clean up the temporary canvas
+            if (canvas.parentNode) {
+                document.body.removeChild(canvas);
+            }
         }, 'image/png', 1.0);
     }
 
