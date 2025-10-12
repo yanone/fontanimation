@@ -13,8 +13,19 @@ class TimelineManager {
     }
 
     setupScrollSynchronization() {
-        // No longer needed - timeline scrolls as a single unit
-        // Keeping the method for compatibility but with no functionality
+        // Synchronize vertical scrolling between layer names and layer content
+        const layerNames = document.getElementById('timelineLayerNames');
+        const layerContent = document.getElementById('timelineLayers');
+        
+        if (layerNames && layerContent) {
+            layerNames.addEventListener('scroll', () => {
+                layerContent.scrollTop = layerNames.scrollTop;
+            });
+            
+            layerContent.addEventListener('scroll', () => {
+                layerNames.scrollTop = layerContent.scrollTop;
+            });
+        }
     }
 
     // Helper method to calculate timeline width using settings
@@ -36,20 +47,21 @@ class TimelineManager {
 
         // Calculate timeline width using settings
         const timelineWidth = this.calculateTimelineWidth();
+        console.log(`Timeline width calculated: ${timelineWidth}px (duration: ${this.app.duration}s, total frames: ${totalFrames})`);
 
         // Set the timeline content wrapper width to establish scrollable area
         const timelineContent = document.getElementById('timelineContent');
         if (timelineContent) {
-            timelineContent.style.width = `${150 + timelineWidth}px`; // 150px for layer headers + timeline width
+            timelineContent.style.width = `${timelineWidth}px`; // Timeline width only, layer headers are in separate column
         }
 
         // Set the timeline ruler width
         timeRuler.style.width = `${timelineWidth}px`;
 
-        // Set all layer content widths to match
-        const layerContents = document.querySelectorAll('.layer-content');
-        layerContents.forEach(content => {
-            content.style.width = `${timelineWidth}px`;
+        // Set all timeline layer widths to match
+        const timelineLayers = document.querySelectorAll('.timeline-layer');
+        timelineLayers.forEach(layer => {
+            layer.style.width = `${timelineWidth}px`;
         });
 
         // Clear only the time marks, not the cursor
@@ -115,15 +127,52 @@ class TimelineManager {
 
     updateLayers() {
         const timelineLayers = document.getElementById('timelineLayers');
+        const timelineLayerNames = document.getElementById('timelineLayerNames');
         timelineLayers.innerHTML = '';
+        timelineLayerNames.innerHTML = '';
 
         this.app.textObjects.forEach((textObject, index) => {
-            const layer = this.createLayer(textObject, index);
-            timelineLayers.appendChild(layer);
+            const layerName = this.createLayerName(textObject, index);
+            const layerContent = this.createLayerContent(textObject, index);
+            
+            timelineLayerNames.appendChild(layerName);
+            timelineLayers.appendChild(layerContent);
         });
 
         // Update cursor extensions for new layers
         this.updateCursorExtensions((this.app.currentFrame / this.app.totalFrames) * this.calculateTimelineWidth() - 1);
+    }
+
+    createLayerName(textObject, index) {
+        const layerName = document.createElement('div');
+        layerName.className = 'timeline-layer-name';
+        layerName.dataset.objectId = textObject.id;
+        layerName.textContent = textObject.text.length > 15
+            ? textObject.text.substring(0, 15) + '...'
+            : textObject.text || `Layer ${index + 1}`;
+        layerName.title = textObject.text;
+
+        return layerName;
+    }
+
+    createLayerContent(textObject, index) {
+        const layer = document.createElement('div');
+        layer.className = 'timeline-layer';
+        layer.dataset.objectId = textObject.id;
+
+        // Add keyframes
+        textObject.keyframes.forEach(keyframe => {
+            const keyframeElement = this.createKeyframe(keyframe, textObject);
+            layer.appendChild(keyframeElement);
+        });
+
+        // Add keyframe spans between keyframes
+        this.addKeyframeSpans(layer, textObject);
+
+        // Add event listeners
+        this.setupLayerEventListeners(layer, textObject);
+
+        return layer;
     }
 
     createLayer(textObject, index) {
@@ -209,7 +258,8 @@ class TimelineManager {
     }
 
     setupLayerEventListeners(layer, textObject) {
-        const content = layer.querySelector('.layer-content');
+        // In the new structure, the layer element itself is the content area
+        const content = layer;
 
         // Double-click to add keyframe
         content.addEventListener('dblclick', (e) => {
@@ -683,10 +733,8 @@ class TimelineManager {
         // Auto-scroll to keep cursor visible during playback or navigation
         // Skip auto-scroll if user is currently dragging the cursor
         if (!this.isDraggingCursor) {
-            // Add 150px offset for layer headers when calculating scroll position
-            const scrollableCursorPosition = cursorPosition + 150;
-            const totalScrollableWidth = 150 + timelineWidth;
-            this.autoScroll(scrollableCursorPosition, totalScrollableWidth);
+            // No offset needed since layer names are now in a separate fixed column
+            this.autoScroll(cursorPosition, timelineWidth);
         }
     }
 
@@ -723,8 +771,8 @@ class TimelineManager {
 
         const layers = timelineLayers.querySelectorAll('.timeline-layer');
         layers.forEach(layer => {
-            const content = layer.querySelector('.layer-content');
-            if (!content) return;
+            // In the new structure, the layer itself is the content area
+            const content = layer;
 
             // Find or create cursor extension element
             let cursorExtension = content.querySelector('.cursor-extension');
@@ -747,14 +795,6 @@ class TimelineManager {
         const containerWidth = timelineContainer.clientWidth;
         const currentScrollLeft = timelineContainer.scrollLeft;
         const margin = Math.min(100, containerWidth * 0.1); // Adaptive margin, max 100px
-
-        // Special case: when at frame 0, always scroll all the way left to show layer labels
-        if (this.app.currentFrame === 0) {
-            if (currentScrollLeft > 0) {
-                this.smoothScrollTo(0);
-            }
-            return;
-        }
 
         // Only auto-scroll if cursor is completely outside visible area
         let newScrollLeft = currentScrollLeft;

@@ -140,14 +140,27 @@
 
         <!-- Timeline -->
         <div id="timeline">
-            <div id="timelineContainer">
-                <div id="timelineContent">
-                    <div id="timelineHeader">
-                        <div id="timeRuler">
-                            <div id="timeCursor"></div>
+            <div id="timelineLayout">
+                <!-- Fixed layer names column -->
+                <div id="timelineLeftColumn">
+                    <div id="timelineHeaderLeft">
+                        <div class="layer-names-header">Layers</div>
+                    </div>
+                    <div id="timelineLayerNames"></div>
+                </div>
+                
+                <!-- Scrollable timeline content -->
+                <div id="timelineRightColumn">
+                    <div id="timelineContainer">
+                        <div id="timelineContent">
+                            <div id="timelineHeader">
+                                <div id="timeRuler">
+                                    <div id="timeCursor"></div>
+                                </div>
+                            </div>
+                            <div id="timelineLayers"></div>
                         </div>
                     </div>
-                    <div id="timelineLayers"></div>
                 </div>
             </div>
         </div>
