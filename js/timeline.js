@@ -286,7 +286,8 @@ class TimelineManager {
         this.app.setKeyframe(textObject, property, frame, currentValue);
 
         this.updateLayers();
-        this.app.redraw();
+        this.app.redraw(); // Repaint canvas
+        this.app.updateRightPanel(); // Recalculate numerical values in UI
         this.app.saveState();
     }
 
@@ -343,7 +344,8 @@ class TimelineManager {
             keyframes[keyframeIndex].frame = newFrame;
             keyframes.sort((a, b) => a.frame - b.frame);
             this.updateLayers();
-            this.app.redraw();
+            this.app.redraw(); // Repaint canvas
+            this.app.updateRightPanel(); // Recalculate numerical values in UI
         }
     }
 
@@ -508,6 +510,8 @@ class TimelineManager {
         textObject.keyframes.sort((a, b) => a.frame - b.frame);
 
         this.update();
+        this.app.redraw(); // Repaint canvas
+        this.app.updateRightPanel(); // Recalculate numerical values in UI
         this.app.saveState();
 
         if (window.UIManager) {
@@ -521,7 +525,8 @@ class TimelineManager {
             textObject.keyframes.splice(keyframeIndex, 1);
             this.clearKeyframeSelection();
             this.update();
-            this.app.redraw();
+            this.app.redraw(); // Repaint canvas
+            this.app.updateRightPanel(); // Recalculate numerical values in UI
             this.app.saveState();
 
             if (window.UIManager) {
@@ -540,7 +545,8 @@ class TimelineManager {
             keyframe.frame = newFrame;
             textObject.keyframes.sort((a, b) => a.frame - b.frame);
             this.update();
-            this.app.redraw();
+            this.app.redraw(); // Repaint canvas
+            this.app.updateRightPanel(); // Recalculate numerical values in UI
         }
     }
 

@@ -458,6 +458,7 @@ class FontAnimationApp {
 
         this.timeline.update();
         this.updateRightPanel();
+        this.redraw(); // Repaint canvas to reflect changes
         this.saveState();
     }
 
