@@ -248,13 +248,13 @@ class ExportManager {
         // Configure MediaRecorder with proper options
         const mediaRecorderOptions = {
             mimeType: selectedFormat,
-            videoBitsPerSecond: 5000000 // 5 Mbps
+            videoBitsPerSecond: 20000000 // 20 Mbps - High bitrate for sharp text rendering
         };
 
         // For MP4, try to use a more compatible configuration
         if (selectedFormat.includes('mp4')) {
             // Request keyframe every second for better compatibility
-            mediaRecorderOptions.videoBitsPerSecond = 8000000; // Higher bitrate for MP4
+            mediaRecorderOptions.videoBitsPerSecond = 25000000; // 25 Mbps - Very high bitrate for crisp MP4 text
         }
 
         const mediaRecorder = new MediaRecorder(stream, mediaRecorderOptions);
