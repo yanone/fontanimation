@@ -84,16 +84,8 @@ class AnimationManager {
     }
 
     seekToFrame(frame) {
-        this.app.currentFrame = Math.max(0, Math.min(frame, this.app.totalFrames - 1));
-
-        if (this.app.timeline) {
-            this.app.timeline.updateCursor();
-        }
-
-        // Update frame and time display
-        this.app.updateFrameTimeDisplay();
-
-        this.app.redraw();
+        const clampedFrame = Math.max(0, Math.min(frame, this.app.totalFrames - 1));
+        this.app.setCurrentFrame(clampedFrame);
     }
 
     getFrameRate() {

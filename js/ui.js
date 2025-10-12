@@ -16,24 +16,33 @@ class UIManager {
         const fontSelect = document.getElementById('fontSelect');
         fontSelect.value = textObject.fontFamily;
 
+        // Get current property values using the app's helper method
+        const currentX = app.getPropertyValue(textObject, 'x');
+        const currentY = app.getPropertyValue(textObject, 'y');
+        const currentFontSize = app.getPropertyValue(textObject, 'fontSize');
+        const currentColor = app.getPropertyValue(textObject, 'color');
+
         // Update font size
-        document.getElementById('fontSize').value = textObject.fontSize;
+        document.getElementById('fontSize').value = currentFontSize;
 
         // Update color
-        document.getElementById('fontColor').value = textObject.color;
+        document.getElementById('fontColor').value = currentColor;
 
         // Update text content
         document.getElementById('textContent').value = textObject.text;
 
         // Update position
-        document.getElementById('textX').value = textObject.x.toFixed(1);
-        document.getElementById('textY').value = textObject.y.toFixed(1);
+        document.getElementById('textX').value = currentX.toFixed(1);
+        document.getElementById('textY').value = currentY.toFixed(1);
 
         // Update variable axes
         UIManager.updateVariableAxes(textObject, app);
 
         // Update OpenType features
         UIManager.updateOpenTypeFeatures(textObject, app);
+
+        // Update keyframe button states based on current frame
+        UIManager.updateKeyframeButtonStates(textObject, app);
     }
 
     static updateVariableAxes(textObject, app) {
@@ -79,12 +88,22 @@ class UIManager {
         const rangeContainer = document.createElement('div');
         rangeContainer.className = 'range-container';
 
+        // Add keyframe button for this axis
+        const keyframeBtn = document.createElement('button');
+        keyframeBtn.className = 'keyframe-btn';
+        keyframeBtn.dataset.property = tag;
+        keyframeBtn.textContent = '◆';
+        keyframeBtn.title = 'Add/Remove Keyframe';
+        keyframeBtn.addEventListener('click', () => {
+            app.toggleKeyframe(textObject, tag);
+        });
+
         const rangeInput = document.createElement('input');
         rangeInput.type = 'range';
         rangeInput.min = axisInfo.min;
         rangeInput.max = axisInfo.max;
         rangeInput.step = (axisInfo.max - axisInfo.min) / 200; // More granular steps
-        rangeInput.value = textObject.variableAxes[tag] || axisInfo.default;
+        rangeInput.value = app.getPropertyValue(textObject, tag) || axisInfo.default;
 
         const numberInput = document.createElement('input');
         numberInput.type = 'number';
@@ -141,6 +160,7 @@ class UIManager {
             app.saveState();
         });
 
+        rangeContainer.appendChild(keyframeBtn);
         rangeContainer.appendChild(rangeInput);
         rangeContainer.appendChild(numberInput);
         rangeContainer.appendChild(valueDisplay);
@@ -151,20 +171,8 @@ class UIManager {
     }
 
     static updateAxisValue(tag, value, textObject, app) {
-        if (!textObject.variableAxes) {
-            textObject.variableAxes = {};
-        }
-        textObject.variableAxes[tag] = value;
-
-        // Update current keyframe if exists
-        const currentKeyframe = textObject.keyframes.find(kf => kf.frame === app.currentFrame);
-        if (currentKeyframe) {
-            if (!currentKeyframe.properties.variableAxes) {
-                currentKeyframe.properties.variableAxes = {};
-            }
-            currentKeyframe.properties.variableAxes[tag] = value;
-        }
-
+        // Set keyframe for this variable axis at current frame
+        app.setKeyframe(textObject, tag, app.currentFrame, value);
         app.redraw();
     }
 
@@ -432,6 +440,24 @@ class UIManager {
         if (overlay) {
             overlay.remove();
         }
+    }
+
+    static updateKeyframeButtonStates(textObject, app) {
+        if (!textObject) return;
+
+        document.querySelectorAll('.keyframe-btn').forEach(btn => {
+            const property = btn.dataset.property;
+            if (property) {
+                const hasKeyframe = app.hasKeyframe(textObject, property, app.currentFrame);
+
+                // Be explicit about adding/removing the class instead of using toggle
+                if (hasKeyframe) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            }
+        });
     }
 }
 

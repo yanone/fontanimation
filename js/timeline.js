@@ -144,97 +144,123 @@ class TimelineManager {
     }
 
     createLayerName(textObject, index) {
-        const layerName = document.createElement('div');
-        layerName.className = 'timeline-layer-name';
-        layerName.dataset.objectId = textObject.id;
-        layerName.textContent = textObject.text.length > 15
+        const layerGroup = document.createElement('div');
+        layerGroup.className = 'timeline-layer-group';
+        layerGroup.dataset.objectId = textObject.id;
+
+        // Main text object header
+        const mainHeader = document.createElement('div');
+        mainHeader.className = 'timeline-layer-name main-layer';
+        mainHeader.textContent = textObject.text.length > 15
             ? textObject.text.substring(0, 15) + '...'
             : textObject.text || `Layer ${index + 1}`;
-        layerName.title = textObject.text;
+        mainHeader.title = textObject.text;
+        layerGroup.appendChild(mainHeader);
 
-        return layerName;
+        // Property sub-layers
+        const properties = ['x', 'y', 'fontSize', 'color'];
+        properties.forEach(property => {
+            const subLayer = document.createElement('div');
+            subLayer.className = 'timeline-layer-name sub-layer';
+            subLayer.dataset.property = property;
+            subLayer.textContent = this.getPropertyDisplayName(property);
+            layerGroup.appendChild(subLayer);
+        });
+
+        // Variable font axes sub-layers
+        Object.keys(textObject.keyframes).forEach(property => {
+            if (!properties.includes(property)) {
+                const subLayer = document.createElement('div');
+                subLayer.className = 'timeline-layer-name sub-layer';
+                subLayer.dataset.property = property;
+                subLayer.textContent = property;
+                layerGroup.appendChild(subLayer);
+            }
+        });
+
+        return layerGroup;
     }
 
     createLayerContent(textObject, index) {
-        const layer = document.createElement('div');
-        layer.className = 'timeline-layer';
-        layer.dataset.objectId = textObject.id;
+        const layerGroup = document.createElement('div');
+        layerGroup.className = 'timeline-layer-group';
+        layerGroup.dataset.objectId = textObject.id;
 
-        // Add keyframes
-        textObject.keyframes.forEach(keyframe => {
-            const keyframeElement = this.createKeyframe(keyframe, textObject);
+        // Main layer (empty spacer)
+        const mainLayer = document.createElement('div');
+        mainLayer.className = 'timeline-layer main-layer';
+        layerGroup.appendChild(mainLayer);
+
+        // Property sub-layers
+        const properties = ['x', 'y', 'fontSize', 'color'];
+        properties.forEach(property => {
+            const subLayer = this.createPropertyLayer(textObject, property);
+            layerGroup.appendChild(subLayer);
+        });
+
+        // Variable font axes sub-layers
+        Object.keys(textObject.keyframes).forEach(property => {
+            if (!properties.includes(property)) {
+                const subLayer = this.createPropertyLayer(textObject, property);
+                layerGroup.appendChild(subLayer);
+            }
+        });
+
+        return layerGroup;
+    }
+
+    createPropertyLayer(textObject, property) {
+        const layer = document.createElement('div');
+        layer.className = 'timeline-layer sub-layer';
+        layer.dataset.objectId = textObject.id;
+        layer.dataset.property = property;
+
+        // Add existing keyframes for this property
+        const keyframes = textObject.keyframes[property] || [];
+        keyframes.forEach(keyframe => {
+            const keyframeElement = this.createPropertyKeyframe(keyframe, textObject, property);
             layer.appendChild(keyframeElement);
         });
 
         // Add keyframe spans between keyframes
-        this.addKeyframeSpans(layer, textObject);
+        this.addPropertyKeyframeSpans(layer, textObject, property);
 
         // Add event listeners
-        this.setupLayerEventListeners(layer, textObject);
+        this.setupPropertyLayerEventListeners(layer, textObject, property);
 
         return layer;
     }
 
-    createLayer(textObject, index) {
-        const layer = document.createElement('div');
-        layer.className = 'timeline-layer';
-        layer.dataset.objectId = textObject.id;
-
-        // Layer header
-        const header = document.createElement('div');
-        header.className = 'layer-header';
-        header.textContent = textObject.text.length > 15
-            ? textObject.text.substring(0, 15) + '...'
-            : textObject.text || `Layer ${index + 1}`;
-        header.title = textObject.text;
-        layer.appendChild(header);
-
-        // Layer content
-        const content = document.createElement('div');
-        content.className = 'layer-content';
-
-        // Add keyframes
-        textObject.keyframes.forEach(keyframe => {
-            const keyframeElement = this.createKeyframe(keyframe, textObject);
-            content.appendChild(keyframeElement);
-        });
-
-        // Add keyframe spans between keyframes
-        this.addKeyframeSpans(content, textObject);
-
-        layer.appendChild(content);
-
-        // Add event listeners
-        this.setupLayerEventListeners(layer, textObject);
-
-        return layer;
+    getPropertyDisplayName(property) {
+        const displayNames = {
+            x: 'X Position',
+            y: 'Y Position',
+            fontSize: 'Font Size',
+            color: 'Color'
+        };
+        return displayNames[property] || property;
     }
 
-    createKeyframe(keyframe, textObject) {
+    createPropertyKeyframe(keyframe, textObject, property) {
         const keyframeElement = document.createElement('div');
         keyframeElement.className = 'keyframe';
         keyframeElement.dataset.frame = keyframe.frame;
+        keyframeElement.dataset.property = property;
         keyframeElement.dataset.objectId = textObject.id;
-        keyframeElement.title = `Frame ${keyframe.frame}`;
 
-        // Position based on frame using pixel positioning to match timeline ruler
         const timelineWidth = this.calculateTimelineWidth();
-        const pixelPosition = (keyframe.frame / this.app.totalFrames) * timelineWidth;
-
-        // Offset by half the keyframe width (7px) to center align with cursor
-        // Keyframe is 14px wide, so we subtract 7px to center it
-        keyframeElement.style.left = `${pixelPosition - 7}px`;
-
-        // Check if selected
-        if (this.isKeyframeSelected(textObject.id, keyframe.frame)) {
-            keyframeElement.classList.add('selected');
-        }
+        const position = (keyframe.frame / this.app.totalFrames) * timelineWidth;
+        // Center the keyframe dot by subtracting half its width (7px)
+        keyframeElement.style.left = `${position - 7}px`;
 
         return keyframeElement;
     }
 
-    addKeyframeSpans(content, textObject) {
-        const keyframes = textObject.keyframes.sort((a, b) => a.frame - b.frame);
+    addPropertyKeyframeSpans(content, textObject, property) {
+        const keyframes = textObject.keyframes[property] || [];
+        if (keyframes.length < 2) return;
+
+        const timelineWidth = this.calculateTimelineWidth();
 
         for (let i = 0; i < keyframes.length - 1; i++) {
             const startFrame = keyframes[i].frame;
@@ -242,11 +268,7 @@ class TimelineManager {
 
             const span = document.createElement('div');
             span.className = 'keyframe-span';
-            span.dataset.startFrame = startFrame;
-            span.dataset.endFrame = endFrame;
-            span.dataset.objectId = textObject.id;
 
-            const timelineWidth = this.calculateTimelineWidth();
             const startPosition = (startFrame / this.app.totalFrames) * timelineWidth;
             const endPosition = (endFrame / this.app.totalFrames) * timelineWidth;
 
@@ -257,18 +279,101 @@ class TimelineManager {
         }
     }
 
+    setupPropertyLayerEventListeners(layer, textObject, property) {
+        // Keyframe selection and dragging
+        layer.addEventListener('mousedown', (e) => {
+            if (e.target.classList.contains('keyframe')) {
+                this.handlePropertyKeyframeMouseDown(e, textObject, property);
+            }
+        });
+    }
+
+    addPropertyKeyframe(textObject, property, frame) {
+        // Get current value at this frame or use a default
+        const currentValue = this.app.getPropertyValue(textObject, property, frame);
+        this.app.setKeyframe(textObject, property, frame, currentValue);
+
+        this.updateLayers();
+        this.app.redraw();
+        this.app.saveState();
+    }
+
+    handlePropertyKeyframeMouseDown(e, textObject, property) {
+        const keyframe = e.target;
+        const frame = parseInt(keyframe.dataset.frame);
+
+        // Select keyframe
+        if (!e.shiftKey && !e.ctrlKey && !e.metaKey) {
+            this.clearKeyframeSelection();
+        }
+        this.selectPropertyKeyframe(textObject.id, property, frame);
+
+        // Start dragging
+        let isDragging = false;
+        const startX = e.clientX;
+        const startFrame = frame;
+
+        const onMouseMove = (e) => {
+            if (!isDragging && Math.abs(e.clientX - startX) > 5) {
+                isDragging = true;
+            }
+
+            if (isDragging) {
+                const rect = keyframe.parentElement.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const timelineWidth = this.calculateTimelineWidth();
+                const newFrame = Math.max(0, Math.min(this.app.totalFrames - 1,
+                    Math.round((x / timelineWidth) * this.app.totalFrames)));
+
+                this.movePropertyKeyframe(textObject, property, startFrame, newFrame);
+            }
+        };
+
+        const onMouseUp = () => {
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+
+            if (isDragging) {
+                this.app.saveState();
+            }
+        };
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    }
+
+    movePropertyKeyframe(textObject, property, oldFrame, newFrame) {
+        const keyframes = textObject.keyframes[property];
+        if (!keyframes) return;
+
+        const keyframeIndex = keyframes.findIndex(kf => kf.frame === oldFrame);
+        if (keyframeIndex >= 0) {
+            keyframes[keyframeIndex].frame = newFrame;
+            keyframes.sort((a, b) => a.frame - b.frame);
+            this.updateLayers();
+            this.app.redraw();
+        }
+    }
+
+    selectPropertyKeyframe(objectId, property, frame) {
+        // Implementation for keyframe selection
+        // This will be used for visual feedback and deletion
+    }
+
+    clearKeyframeSelection() {
+        // Clear all selected keyframes
+        document.querySelectorAll('.keyframe.selected').forEach(kf => {
+            kf.classList.remove('selected');
+        });
+    }
+
+
+
+
+
     setupLayerEventListeners(layer, textObject) {
         // In the new structure, the layer element itself is the content area
         const content = layer;
-
-        // Double-click to add keyframe
-        content.addEventListener('dblclick', (e) => {
-            const rect = content.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const timelineWidth = this.calculateTimelineWidth();
-            const frame = Math.round((x / timelineWidth) * this.app.totalFrames);
-            this.addKeyframe(textObject, frame);
-        });
 
         // Keyframe selection and dragging
         content.addEventListener('mousedown', (e) => {

@@ -51,45 +51,78 @@ Each text object represents an animated text element on the canvas.
   "id": 1697123456789,
   "text": "Sample Text",
   "fontFamily": "Arial",
-  "x": 100,
-  "y": 150,
-  "fontSize": 48,
-  "color": "#000000",
-  "variableAxes": {},
   "openTypeFeatures": {},
-  "keyframes": [...]
+  "keyframes": {
+    "x": [...],
+    "y": [...],
+    "fontSize": [...],
+    "color": [...],
+    "wght": [...],
+    "wdth": [...]
+  }
 }
 ```
 
 ### Text Object Properties
 
+#### Static Properties (never change during animation)
 | Property | Type | Required | Description | Default | Range/Format |
 |----------|------|----------|-------------|---------|--------------|
 | `id` | number | ✅ | Unique identifier (timestamp) | `Date.now()` | Positive integer |
 | `text` | string | ✅ | Text content to display | `"Sample Text"` | Any string, max ~500 chars |
 | `fontFamily` | string | ✅ | Font family name | `"Arial"` | Valid font name |
-| `x` | number | ✅ | Horizontal position | `0` | Any number (pixels) |
-| `y` | number | ✅ | Vertical position | `0` | Any number (pixels) |
-| `fontSize` | number | ✅ | Font size in pixels | `48` | 1-200 |
-| `color` | string | ✅ | Text color | `"#000000"` | Hex color code |
-| `variableAxes` | object | ✅ | Variable font axis values | `{}` | See Variable Axes |
 | `openTypeFeatures` | object | ✅ | OpenType feature settings | `{}` | See OpenType Features |
-| `keyframes` | array | ✅ | Animation keyframes | `[...]` | Array of Keyframe objects |
 
-### Variable Axes Structure
+#### Dynamic Properties (stored in keyframes)
+| Property | Type | Required | Description | Default | Range/Format |
+|----------|------|----------|-------------|---------|--------------|
+| `keyframes` | object | ✅ | Property-specific keyframe arrays | `{}` | See Keyframes Object |
 
-For variable fonts, stores axis values:
+### Keyframes Object Structure
+
+Dynamic properties are organized by property name, each containing an array of keyframes:
 
 ```json
 {
-  "wght": 400,
-  "wdth": 100,
-  "opsz": 14
+  "x": [
+    { "frame": 0, "value": 100, "curve": {...} },
+    { "frame": 60, "value": 400, "curve": {...} }
+  ],
+  "y": [
+    { "frame": 0, "value": 150 },
+    { "frame": 60, "value": 300 }
+  ],
+  "fontSize": [
+    { "frame": 30, "value": 72 }
+  ],
+  "wght": [
+    { "frame": 0, "value": 400 },
+    { "frame": 90, "value": 900 }
+  ]
+}
+```
+
+### Variable Font Axes
+
+Variable font axes are now stored as individual keyframe arrays within the keyframes object. Each axis becomes its own animatable property:
+
+```json
+{
+  "keyframes": {
+    "wght": [
+      { "frame": 0, "value": 400 },
+      { "frame": 60, "value": 900 }
+    ],
+    "wdth": [
+      { "frame": 30, "value": 75 },
+      { "frame": 90, "value": 125 }
+    ]
+  }
 }
 ```
 
 - **Key:** 4-character axis tag (e.g., `"wght"`, `"wdth"`, `"opsz"`)
-- **Value:** Numeric axis value within font's supported range
+- **Value:** Array of keyframe objects with frame/value pairs
 
 ### OpenType Features Structure
 
@@ -111,20 +144,12 @@ Stores enabled OpenType features:
 
 ## Keyframe Structure
 
-Keyframes define property values at specific timeline positions for animation.
+Individual keyframes define a single property value at a specific timeline position.
 
 ```json
 {
-  "frame": 0,
-  "properties": {
-    "x": 100,
-    "y": 150,
-    "fontSize": 48,
-    "color": "#000000",
-    "rotation": 0,
-    "variableAxes": {},
-    "openTypeFeatures": {}
-  },
+  "frame": 60,
+  "value": 400,
   "curve": {
     "x1": 0.25,
     "y1": 0.1,
@@ -139,12 +164,10 @@ Keyframes define property values at specific timeline positions for animation.
 | Property | Type | Required | Description | Default |
 |----------|------|----------|-------------|---------|
 | `frame` | number | ✅ | Timeline frame number | `0` |
-| `properties` | object | ✅ | Property values at this frame | See Properties Object |
+| `value` | any | ✅ | Property value at this frame | Property-dependent |
 | `curve` | object | ❌ | Bezier curve for interpolation | Linear interpolation |
 
-### Properties Object
-
-Contains animatable property values:
+### Animatable Properties
 
 | Property | Type | Description | Range |
 |----------|------|-------------|-------|
@@ -152,8 +175,7 @@ Contains animatable property values:
 | `y` | number | Vertical position | Any number |
 | `fontSize` | number | Font size in pixels | 1-200 |
 | `color` | string | Text color | Hex color code |
-| `variableAxes` | object | Variable font axes | Font-specific ranges |
-| `openTypeFeatures` | object | OpenType features | Boolean values |
+| `{axis}` | number | Variable font axis (e.g., `wght`, `wdth`) | Font-specific ranges |
 
 ### Bezier Curve Object
 
@@ -198,63 +220,47 @@ Contains canvas and animation settings:
 
 ```json
 {
-  "version": "1.1",
+  "version": "1.2",
   "textObjects": [
     {
       "id": 1697123456789,
       "text": "Hello World",
       "fontFamily": "Inter",
-      "x": 100,
-      "y": 100,
-      "fontSize": 48,
-      "color": "#ff0000",
-      "variableAxes": {
-        "wght": 600
-      },
       "openTypeFeatures": {
         "liga": true,
         "kern": true
       },
-      "keyframes": [
-        {
-          "frame": 0,
-          "properties": {
-            "x": 100,
-            "y": 100,
-            "fontSize": 48,
-            "color": "#ff0000",
-            "variableAxes": {
-              "wght": 600
-            },
-            "openTypeFeatures": {
-              "liga": true,
-              "kern": true
+      "keyframes": {
+        "x": [
+          { "frame": 0, "value": 100 },
+          { 
+            "frame": 150, 
+            "value": 500,
+            "curve": {
+              "x1": 0.25,
+              "y1": 0.1,
+              "x2": 0.25,
+              "y2": 1.0
             }
           }
-        },
-        {
-          "frame": 150,
-          "properties": {
-            "x": 500,
-            "y": 300,
-            "fontSize": 72,
-            "color": "#0000ff",
-            "variableAxes": {
-              "wght": 900
-            },
-            "openTypeFeatures": {
-              "liga": true,
-              "kern": true
-            }
-          },
-          "curve": {
-            "x1": 0.25,
-            "y1": 0.1,
-            "x2": 0.25,
-            "y2": 1.0
-          }
-        }
-      ]
+        ],
+        "y": [
+          { "frame": 0, "value": 100 },
+          { "frame": 150, "value": 300 }
+        ],
+        "fontSize": [
+          { "frame": 0, "value": 48 },
+          { "frame": 150, "value": 72 }
+        ],
+        "color": [
+          { "frame": 0, "value": "#ff0000" },
+          { "frame": 150, "value": "#0000ff" }
+        ],
+        "wght": [
+          { "frame": 0, "value": 600 },
+          { "frame": 150, "value": 900 }
+        ]
+      }
     }
   ],
   "settings": {
@@ -318,6 +324,14 @@ Properties are validated on load:
 ---
 
 ## Version History
+
+### Version 1.2 (October 12, 2025)
+- **BREAKING CHANGE:** Complete keyframe system overhaul
+- Separated static properties (text, fontFamily, openTypeFeatures) from dynamic properties
+- Dynamic properties now stored as property-specific keyframe arrays
+- Individual keyframes now contain single values instead of property bundles
+- Variable font axes moved from nested objects to individual keyframe arrays
+- Simplified interpolation with per-keyframe curve definitions
 
 ### Version 1.1 (October 10, 2025)
 - **BREAKING CHANGE:** Removed `rotation` property from text objects

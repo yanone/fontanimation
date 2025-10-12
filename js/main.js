@@ -342,8 +342,8 @@ class FontAnimationApp {
         // Canvas interactions
         this.setupCanvasEventListeners();
 
-        // Timeline
-        this.setupTimelineEventListeners();
+        // Timeline ruler interaction
+        this.setupTimelineRulerClick();
 
         // Right panel
         this.setupRightPanelEventListeners();
@@ -367,66 +367,7 @@ class FontAnimationApp {
         }
     }
 
-    setupTimelineEventListeners() {
-        const timeCursor = document.getElementById('timeCursor');
-        const timelineHeader = document.getElementById('timelineHeader');
-        const timeRuler = document.getElementById('timeRuler');
 
-        let isDraggingCursor = false;
-
-        // Helper function to calculate frame from mouse position
-        const getFrameFromMouseEvent = (e) => {
-            if (!timeRuler) return 0;
-            const rect = timeRuler.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const frame = Math.round((x / rect.width) * this.totalFrames);
-            return Math.max(0, Math.min(frame, this.totalFrames - 1));
-        };
-
-        // Handle mouse down on cursor (existing functionality)
-        timeCursor.addEventListener('mousedown', (e) => {
-            isDraggingCursor = true;
-            e.preventDefault();
-            e.stopPropagation();
-        });
-
-        // Handle mouse down on timeline ruler (new functionality)
-        timeRuler.addEventListener('mousedown', (e) => {
-            // Only start dragging if not clicking on the cursor itself
-            if (e.target === timeCursor) return;
-
-            isDraggingCursor = true;
-
-            // Immediately set the frame for the click position
-            const frame = getFrameFromMouseEvent(e);
-            this.setCurrentFrame(frame);
-
-            e.preventDefault();
-        });
-
-        // Handle mouse move (works for both cursor drag and ruler drag)
-        timelineHeader.addEventListener('mousemove', (e) => {
-            if (!isDraggingCursor) return;
-
-            const frame = getFrameFromMouseEvent(e);
-            this.setCurrentFrame(frame);
-        });
-
-        // Handle mouse up (stop dragging)
-        document.addEventListener('mouseup', () => {
-            isDraggingCursor = false;
-        });
-
-        // Keep the click handler for backwards compatibility, but it's now less needed
-        timelineHeader.addEventListener('click', (e) => {
-            // Skip if we were dragging (to avoid double-setting the frame)
-            if (isDraggingCursor) return;
-            if (e.target === timeCursor) return;
-
-            const frame = getFrameFromMouseEvent(e);
-            this.setCurrentFrame(frame);
-        });
-    }
 
     setupRightPanelEventListeners() {
         // Text properties
@@ -490,6 +431,87 @@ class FontAnimationApp {
         document.getElementById('textY').addEventListener('change', () => {
             this.saveState();
         });
+
+        // Keyframe button event listeners
+        document.querySelectorAll('.keyframe-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const property = btn.dataset.property;
+                if (this.selectedObject) {
+                    this.toggleKeyframe(this.selectedObject, property);
+                }
+            });
+        });
+    }
+
+    // Toggle keyframe for a property at current frame
+    toggleKeyframe(textObject, property) {
+        if (this.hasKeyframe(textObject, property, this.currentFrame)) {
+            // Remove keyframe
+            this.removeKeyframe(textObject, property, this.currentFrame);
+        } else {
+            // Add keyframe with current value
+            const currentValue = this.getPropertyValue(textObject, property, this.currentFrame);
+            this.setKeyframe(textObject, property, this.currentFrame, currentValue);
+        }
+
+        this.timeline.update();
+        this.updateRightPanel();
+        this.saveState();
+    }
+
+    setupTimelineRulerClick() {
+        const timeRuler = document.getElementById('timeRuler');
+        if (!timeRuler) return;
+
+        let isDragging = false;
+
+        // Helper function to calculate frame from mouse position
+        const getFrameFromEvent = (e) => {
+            const rect = timeRuler.getBoundingClientRect();
+            const timelineContainer = document.getElementById('timelineContainer');
+            const containerScrollLeft = timelineContainer ? timelineContainer.scrollLeft : 0;
+            const x = e.clientX - rect.left + containerScrollLeft;
+
+            // Convert pixel position to frame
+            const pixelsPerFrame = this.timeline.calculateTimelineWidth() / this.totalFrames;
+            const frame = Math.round(x / pixelsPerFrame);
+            return Math.max(0, Math.min(frame, this.totalFrames - 1));
+        };
+
+        // Mouse down - start dragging or click
+        timeRuler.addEventListener('mousedown', (e) => {
+            // Skip if clicking on the time cursor itself
+            if (e.target.id === 'timeCursor') return;
+
+            isDragging = true;
+            const frame = getFrameFromEvent(e);
+            this.setCurrentFrame(frame);
+
+            e.preventDefault();
+        });
+
+        // Mouse move - drag to scrub timeline
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+
+            const frame = getFrameFromEvent(e);
+            this.setCurrentFrame(frame);
+        });
+
+        // Mouse up - stop dragging
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        // Keep the click handler for backwards compatibility
+        timeRuler.addEventListener('click', (e) => {
+            // Skip if we were dragging or clicking on cursor
+            if (isDragging || e.target.id === 'timeCursor') return;
+
+            const frame = getFrameFromEvent(e);
+            this.setCurrentFrame(frame);
+        });
     }
 
     setupCanvasEventListeners() {
@@ -520,8 +542,8 @@ class FontAnimationApp {
                     isDragging = true;
                     dragStartX = x;
                     dragStartY = y;
-                    dragStartObjX = clickedObject.x;
-                    dragStartObjY = clickedObject.y;
+                    dragStartObjX = this.getPropertyValue(clickedObject, 'x');
+                    dragStartObjY = this.getPropertyValue(clickedObject, 'y');
                     this.canvas.style.cursor = 'grabbing';
                 }
             }
@@ -546,7 +568,6 @@ class FontAnimationApp {
             this.updateObjectProperty(this.selectedObject, 'x', newX);
             this.updateObjectProperty(this.selectedObject, 'y', newY);
 
-            this.updateRightPanel();
             this.redraw();
         });
 
@@ -554,6 +575,7 @@ class FontAnimationApp {
             if (isDragging) {
                 isDragging = false;
                 this.canvas.style.cursor = '';
+                this.updateRightPanel();
                 this.saveState();
             }
         });
@@ -562,6 +584,7 @@ class FontAnimationApp {
             if (isDragging) {
                 isDragging = false;
                 this.canvas.style.cursor = '';
+                this.updateRightPanel();
                 this.saveState();
             }
         });
@@ -696,6 +719,107 @@ class FontAnimationApp {
         this.canvas.classList.add(tool + '-cursor');
     }
 
+    // Helper function to get current property value for a text object
+    getPropertyValue(textObject, property, frame = this.currentFrame) {
+        const keyframes = textObject.keyframes[property];
+        if (!keyframes || keyframes.length === 0) {
+            // Return default values for properties without keyframes
+            const defaults = {
+                x: 0, y: 0, fontSize: 48, color: '#000000'
+            };
+            return defaults[property] || 0;
+        }
+
+        // Find keyframes around the current frame
+        let beforeKeyframe = null;
+        let afterKeyframe = null;
+
+        for (let i = 0; i < keyframes.length; i++) {
+            const kf = keyframes[i];
+            if (kf.frame <= frame) {
+                beforeKeyframe = kf;
+            }
+            if (kf.frame >= frame && !afterKeyframe) {
+                afterKeyframe = kf;
+                break;
+            }
+        }
+
+        // If we're exactly on a keyframe, return its value
+        if (beforeKeyframe && beforeKeyframe.frame === frame) {
+            return beforeKeyframe.value;
+        }
+
+        // If we only have a before keyframe, use its value
+        if (beforeKeyframe && !afterKeyframe) {
+            return beforeKeyframe.value;
+        }
+
+        // If we only have an after keyframe, use its value
+        if (!beforeKeyframe && afterKeyframe) {
+            return afterKeyframe.value;
+        }
+
+        // Interpolate between keyframes
+        if (beforeKeyframe && afterKeyframe) {
+            const progress = (frame - beforeKeyframe.frame) / (afterKeyframe.frame - beforeKeyframe.frame);
+
+            if (property === 'color') {
+                // Color interpolation
+                return this.interpolateColor(beforeKeyframe.value, afterKeyframe.value, progress);
+            } else {
+                // Numeric interpolation
+                return beforeKeyframe.value + (afterKeyframe.value - beforeKeyframe.value) * progress;
+            }
+        }
+
+        return 0;
+    }
+
+    // Helper function to set a keyframe for a property
+    setKeyframe(textObject, property, frame, value) {
+        if (!textObject.keyframes[property]) {
+            textObject.keyframes[property] = [];
+        }
+
+        const keyframes = textObject.keyframes[property];
+
+        // Check if keyframe already exists at this frame
+        const existingIndex = keyframes.findIndex(kf => kf.frame === frame);
+
+        if (existingIndex >= 0) {
+            // Update existing keyframe
+            keyframes[existingIndex].value = value;
+        } else {
+            // Add new keyframe and sort by frame
+            keyframes.push({ frame, value });
+            keyframes.sort((a, b) => a.frame - b.frame);
+        }
+    }
+
+    // Helper function to remove a keyframe
+    removeKeyframe(textObject, property, frame) {
+        if (!textObject.keyframes[property]) return;
+
+        const keyframes = textObject.keyframes[property];
+        const index = keyframes.findIndex(kf => kf.frame === frame);
+
+        if (index >= 0) {
+            keyframes.splice(index, 1);
+
+            // Remove property array if empty
+            if (keyframes.length === 0) {
+                delete textObject.keyframes[property];
+            }
+        }
+    }
+
+    // Helper function to check if a keyframe exists
+    hasKeyframe(textObject, property, frame) {
+        const keyframes = textObject.keyframes[property];
+        return keyframes && keyframes.some(kf => kf.frame === frame);
+    }
+
     createTextObject(x, y, text = 'Sample Text') {
         // Get available fonts from font manager or use default
         let availableFonts = [];
@@ -714,25 +838,13 @@ class FontAnimationApp {
 
         const textObject = {
             id: Date.now(),
-            x: x,
-            y: y,
             text: text,
             fontFamily: defaultFont,
-            fontSize: window.AppSettings?.get('defaultFontSize') || 48,
-            color: window.AppSettings?.get('defaultTextColor') || '#000000',
-            variableAxes: {},
             openTypeFeatures: {},
-            keyframes: [{
-                frame: this.currentFrame,
-                properties: {
-                    x: x,
-                    y: y,
-                    fontSize: window.AppSettings?.get('defaultFontSize') || 48,
-                    color: window.AppSettings?.get('defaultTextColor') || '#000000',
-                    variableAxes: {},
-                    openTypeFeatures: {}
-                }
-            }]
+            keyframes: {
+                x: [{ frame: this.currentFrame, value: x }],
+                y: [{ frame: this.currentFrame, value: y }]
+            }
         };
 
         this.textObjects.push(textObject);
@@ -798,35 +910,12 @@ class FontAnimationApp {
     updateObjectProperty(obj, property, value) {
         console.log(`Updating ${property} to ${value} for object at frame ${this.currentFrame}`);
 
-        // Update the direct property on the object
-        obj[property] = value;
+        // Set or update keyframe for this property at current frame
+        this.setKeyframe(obj, property, this.currentFrame, value);
 
-        // Also update the current keyframe if it exists
-        const currentKeyframe = obj.keyframes.find(kf => kf.frame === this.currentFrame);
-        if (currentKeyframe) {
-            console.log('Updating existing keyframe');
-            currentKeyframe.properties[property] = value;
-        } else {
-            console.log('Creating new keyframe');
-            // If no keyframe exists for current frame, create one
-            const newKeyframe = {
-                frame: this.currentFrame,
-                properties: {
-                    x: obj.x,
-                    y: obj.y,
-                    fontSize: obj.fontSize,
-                    color: obj.color,
-                    variableAxes: obj.variableAxes || {},
-                    openTypeFeatures: obj.openTypeFeatures || {}
-                }
-            };
-            obj.keyframes.push(newKeyframe);
-            obj.keyframes.sort((a, b) => a.frame - b.frame);
-
-            // Update timeline UI when new keyframes are created
-            if (this.timeline) {
-                this.timeline.update();
-            }
+        // Update timeline UI when keyframes are modified
+        if (this.timeline) {
+            this.timeline.update();
         }
 
         console.log('Object keyframes:', obj.keyframes);
@@ -926,47 +1015,24 @@ class FontAnimationApp {
     }
 
     getObjectPropertiesAtFrame(obj, frame) {
-        const keyframes = obj.keyframes.sort((a, b) => a.frame - b.frame);
+        const props = {
+            x: this.getPropertyValue(obj, 'x', frame),
+            y: this.getPropertyValue(obj, 'y', frame),
+            fontSize: this.getPropertyValue(obj, 'fontSize', frame),
+            color: this.getPropertyValue(obj, 'color', frame),
+            variableAxes: {},
+            openTypeFeatures: obj.openTypeFeatures || {}
+        };
 
-        if (keyframes.length === 0) {
-            const props = {
-                x: obj.x,
-                y: obj.y,
-                fontSize: obj.fontSize,
-                color: obj.color,
-                variableAxes: obj.variableAxes || {},
-                openTypeFeatures: obj.openTypeFeatures || {}
-            };
-            console.log('No keyframes, returning direct props:', props);
-            return props;
-        }
-
-        if (keyframes.length === 1 || frame <= keyframes[0].frame) {
-            console.log('Using first keyframe props:', keyframes[0].properties);
-            return keyframes[0].properties;
-        }
-
-        if (frame >= keyframes[keyframes.length - 1].frame) {
-            console.log('Using last keyframe props:', keyframes[keyframes.length - 1].properties);
-            return keyframes[keyframes.length - 1].properties;
-        }
-
-        // Find surrounding keyframes
-        let beforeKeyframe = keyframes[0];
-        let afterKeyframe = keyframes[keyframes.length - 1];
-
-        for (let i = 0; i < keyframes.length - 1; i++) {
-            if (frame >= keyframes[i].frame && frame <= keyframes[i + 1].frame) {
-                beforeKeyframe = keyframes[i];
-                afterKeyframe = keyframes[i + 1];
-                break;
+        // Add variable font axes
+        Object.keys(obj.keyframes).forEach(property => {
+            if (!['x', 'y', 'fontSize', 'color'].includes(property)) {
+                // This is a variable font axis
+                props.variableAxes[property] = this.getPropertyValue(obj, property, frame);
             }
-        }
+        });
 
-        // Interpolate between keyframes
-        const t = (frame - beforeKeyframe.frame) / (afterKeyframe.frame - beforeKeyframe.frame);
-
-        return this.interpolateProperties(beforeKeyframe.properties, afterKeyframe.properties, t, beforeKeyframe.curve);
+        return props;
     }
 
     interpolateProperties(start, end, t, curve = null) {
@@ -1076,7 +1142,7 @@ class FontAnimationApp {
 
     loadState(state) {
         this.textObjects = JSON.parse(JSON.stringify(state.textObjects));
-        this.currentFrame = state.currentFrame;
+        this.setCurrentFrame(state.currentFrame);
         this.canvasWidth = state.canvasWidth;
         this.canvasHeight = state.canvasHeight;
         this.canvasBackground = state.canvasBackground || '#ffffff';
@@ -1117,11 +1183,13 @@ class FontAnimationApp {
     }
 
     setCurrentFrame(frame) {
+        console.log(`setCurrentFrame called: ${this.currentFrame} → ${frame}`);
         this.currentFrame = frame;
         if (this.timeline) {
             this.timeline.updateCursor();
         }
         this.updateFrameTimeDisplay();
+        this.updateRightPanel();
         this.redraw();
     }
 
@@ -1262,7 +1330,7 @@ class FontAnimationApp {
     newProject() {
         this.textObjects = [];
         this.selectedObject = null;
-        this.currentFrame = 0;
+        this.setCurrentFrame(0);
         this.canvasWidth = window.AppSettings?.get('canvasWidth') || 1000;
         this.canvasHeight = window.AppSettings?.get('canvasHeight') || 600;
         this.canvasBackground = window.AppSettings?.get('canvasBackground') || '#ffffff';
@@ -1357,7 +1425,7 @@ class FontAnimationApp {
         }
 
         this.selectedObject = null;
-        this.currentFrame = 0;
+        this.setCurrentFrame(0);
         this.history = [];
         this.historyIndex = -1;
 

@@ -426,6 +426,48 @@ body {
     font-family: inherit;
 }
 
+.property-input-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.property-input-group input,
+.property-input-group select {
+    flex: 1;
+}
+
+.keyframe-btn {
+    width: 24px;
+    height: 24px;
+    background: #404040;
+    border: 1px solid #606060;
+    color: #888888;
+    border-radius: 3px;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.keyframe-btn:hover {
+    background: #505050;
+    border-color: #707070;
+}
+
+.keyframe-btn.active {
+    background: #ffcc00;
+    border-color: #ffdd22;
+    color: #000000;
+}
+
+.keyframe-btn.active:hover {
+    background: #ffdd22;
+}
+
 .range-container {
     display: flex;
     align-items: center;
@@ -692,25 +734,51 @@ body {
     overflow-x: hidden;
 }
 
-.timeline-layer {
-    height: 50px;
+.timeline-layer-group {
     border-bottom: 1px solid #404040;
+}
+
+.timeline-layer {
+    height: 30px;
     position: relative;
     background: #1e1e1e;
 }
 
+.timeline-layer.main-layer {
+    height: 40px;
+    background: #252525;
+}
+
+.timeline-layer.sub-layer {
+    height: 25px;
+    border-bottom: 1px solid #333333;
+}
+
 .timeline-layer-name {
-    height: 50px;
-    border-bottom: 1px solid #404040;
-    padding: 8px 12px;
+    padding: 6px 12px;
     display: flex;
     align-items: center;
-    font-size: 12px;
+    font-size: 11px;
     color: #cccccc;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     background: #2b2b2b;
+}
+
+.timeline-layer-name.main-layer {
+    height: 40px;
+    font-size: 12px;
+    font-weight: 500;
+    background: #333333;
+}
+
+.timeline-layer-name.sub-layer {
+    height: 25px;
+    padding-left: 20px;
+    background: #2b2b2b;
+    border-bottom: 1px solid #333333;
+    color: #aaaaaa;
 }
 
 .layer-header {
