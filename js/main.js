@@ -728,6 +728,20 @@ class FontAnimationApp {
             const defaults = {
                 x: 0, y: 0, fontSize: 48, color: '#000000'
             };
+            
+            // For variable axes, try to get the default from font info
+            if (property.startsWith('variableaxis:')) {
+                const axisTag = property.replace('variableaxis:', '');
+                if (this.fonts.has(textObject.fontFamily)) {
+                    const fontInfo = this.fonts.get(textObject.fontFamily);
+                    const axisInfo = fontInfo.variableAxes[axisTag];
+                    if (axisInfo) {
+                        return axisInfo.default;
+                    }
+                }
+                return 0;
+            }
+            
             return defaults[property] || 0;
         }
 
@@ -1027,9 +1041,10 @@ class FontAnimationApp {
 
         // Add variable font axes
         Object.keys(obj.keyframes).forEach(property => {
-            if (!['x', 'y', 'fontSize', 'color'].includes(property)) {
-                // This is a variable font axis
-                props.variableAxes[property] = this.getPropertyValue(obj, property, frame);
+            if (property.startsWith('variableaxis:')) {
+                // This is a variable font axis - extract the axis tag
+                const axisTag = property.replace('variableaxis:', '');
+                props.variableAxes[axisTag] = this.getPropertyValue(obj, property, frame);
             }
         });
 
@@ -1417,6 +1432,25 @@ class FontAnimationApp {
         }
 
         this.textObjects = project.textObjects || [];
+        
+        // Migrate old variable axis format to new prefixed format
+        this.textObjects.forEach(textObject => {
+            const newKeyframes = {};
+            Object.keys(textObject.keyframes || {}).forEach(property => {
+                if (['x', 'y', 'fontSize', 'color'].includes(property)) {
+                    // Keep standard properties as-is
+                    newKeyframes[property] = textObject.keyframes[property];
+                } else if (!property.startsWith('variableaxis:')) {
+                    // This looks like an old variable axis - add prefix
+                    newKeyframes[`variableaxis:${property}`] = textObject.keyframes[property];
+                } else {
+                    // Already has prefix - keep as-is
+                    newKeyframes[property] = textObject.keyframes[property];
+                }
+            });
+            textObject.keyframes = newKeyframes;
+        });
+        
         if (project.settings) {
             this.canvasWidth = project.settings.canvasWidth;
             this.canvasHeight = project.settings.canvasHeight;

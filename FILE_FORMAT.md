@@ -57,7 +57,7 @@ Each text object represents an animated text element on the canvas.
     "y": [...],
     "fontSize": [...],
     "color": [...],
-    "wght": [...],
+    "variableaxis:wght": [...],
     "wdth": [...]
   }
 }
@@ -95,7 +95,7 @@ Dynamic properties are organized by property name, each containing an array of k
   "fontSize": [
     { "frame": 30, "value": 72 }
   ],
-  "wght": [
+  "variableaxis:wght": [
     { "frame": 0, "value": 400 },
     { "frame": 90, "value": 900 }
   ]
@@ -109,11 +109,11 @@ Variable font axes are now stored as individual keyframe arrays within the keyfr
 ```json
 {
   "keyframes": {
-    "wght": [
+    "variableaxis:wght": [
       { "frame": 0, "value": 400 },
       { "frame": 60, "value": 900 }
     ],
-    "wdth": [
+    "variableaxis:wdth": [
       { "frame": 30, "value": 75 },
       { "frame": 90, "value": 125 }
     ]
@@ -121,7 +121,7 @@ Variable font axes are now stored as individual keyframe arrays within the keyfr
 }
 ```
 
-- **Key:** 4-character axis tag (e.g., `"wght"`, `"wdth"`, `"opsz"`)
+- **Key:** Variable axis property name with `variableaxis:` prefix (e.g., `"variableaxis:wght"`, `"variableaxis:wdth"`, `"variableaxis:opsz"`)
 - **Value:** Array of keyframe objects with frame/value pairs
 
 ### OpenType Features Structure
@@ -175,7 +175,7 @@ Individual keyframes define a single property value at a specific timeline posit
 | `y` | number | Vertical position | Any number |
 | `fontSize` | number | Font size in pixels | 1-200 |
 | `color` | string | Text color | Hex color code |
-| `{axis}` | number | Variable font axis (e.g., `wght`, `wdth`) | Font-specific ranges |
+| `variableaxis:{axis}` | number | Variable font axis (e.g., `variableaxis:wght`, `variableaxis:wdth`) | Font-specific ranges |
 
 ### Bezier Curve Object
 
@@ -256,7 +256,7 @@ Contains canvas and animation settings:
           { "frame": 0, "value": "#ff0000" },
           { "frame": 150, "value": "#0000ff" }
         ],
-        "wght": [
+        "variableaxis:wght": [
           { "frame": 0, "value": 600 },
           { "frame": 150, "value": 900 }
         ]

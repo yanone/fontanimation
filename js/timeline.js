@@ -223,6 +223,13 @@ class TimelineManager {
             fontSize: 'Font Size',
             color: 'Color'
         };
+        
+        // Handle variable axis properties
+        if (property.startsWith('variableaxis:')) {
+            const axisTag = property.replace('variableaxis:', '');
+            return `${axisTag} (Variable Axis)`;
+        }
+        
         return displayNames[property] || property;
     }
 

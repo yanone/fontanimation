@@ -91,11 +91,12 @@ class UIManager {
         // Add keyframe button for this axis
         const keyframeBtn = document.createElement('button');
         keyframeBtn.className = 'keyframe-btn';
-        keyframeBtn.dataset.property = tag;
+        const propertyName = `variableaxis:${tag}`;
+        keyframeBtn.dataset.property = propertyName;
         keyframeBtn.textContent = '◆';
         keyframeBtn.title = 'Add/Remove Keyframe';
         keyframeBtn.addEventListener('click', () => {
-            app.toggleKeyframe(textObject, tag);
+            app.toggleKeyframe(textObject, propertyName);
         });
 
         const rangeInput = document.createElement('input');
@@ -103,7 +104,7 @@ class UIManager {
         rangeInput.min = axisInfo.min;
         rangeInput.max = axisInfo.max;
         rangeInput.step = (axisInfo.max - axisInfo.min) / 200; // More granular steps
-        rangeInput.value = app.getPropertyValue(textObject, tag) || axisInfo.default;
+        rangeInput.value = app.getPropertyValue(textObject, propertyName) || axisInfo.default;
 
         const numberInput = document.createElement('input');
         numberInput.type = 'number';
@@ -120,7 +121,7 @@ class UIManager {
             rangeInput.value = value;
             numberInput.value = value;
             valueDisplay.textContent = parseFloat(value).toFixed(1);
-            UIManager.updateAxisValue(tag, parseFloat(value), textObject, app);
+            UIManager.updateAxisValue(propertyName, parseFloat(value), textObject, app);
         };
 
         rangeInput.addEventListener('input', (e) => {
@@ -170,9 +171,9 @@ class UIManager {
         return control;
     }
 
-    static updateAxisValue(tag, value, textObject, app) {
+    static updateAxisValue(propertyName, value, textObject, app) {
         // Set keyframe for this variable axis at current frame
-        app.setKeyframe(textObject, tag, app.currentFrame, value);
+        app.setKeyframe(textObject, propertyName, app.currentFrame, value);
         app.redraw();
     }
 
