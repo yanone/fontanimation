@@ -298,16 +298,50 @@ class UIManager {
         }
         textObject.openTypeFeatures[tag] = enabled;
 
-        // Update current keyframe if exists
-        const currentKeyframe = textObject.keyframes.find(kf => kf.frame === app.currentFrame);
-        if (currentKeyframe) {
-            if (!currentKeyframe.properties.openTypeFeatures) {
-                currentKeyframe.properties.openTypeFeatures = {};
-            }
-            currentKeyframe.properties.openTypeFeatures[tag] = enabled;
+        console.log(`OpenType feature ${tag} ${enabled ? 'enabled' : 'disabled'} for text "${textObject.text}"`);
+        console.log('Current OpenType features after change:', textObject.openTypeFeatures);
+
+        // Clear any cached canvas styles to force a clean repaint
+        if (app._originalCanvasStyles) {
+            delete app._originalCanvasStyles;
         }
 
-        app.redraw();
+        // Force canvas invalidation and repaint
+        UIManager.forceCanvasRepaint(app);
+
+        // Save state to preserve changes
+        app.saveState();
+    }
+
+    static forceCanvasRepaint(app) {
+        console.log('Force canvas repaint started');
+
+        // Clear any cached font styles on the canvas
+        const canvas = app.ctx.canvas;
+
+        // Store current canvas state for debugging
+        console.log('Before reset - Canvas styles:', {
+            fontFamily: canvas.style.fontFamily,
+            fontVariationSettings: canvas.style.fontVariationSettings,
+            fontFeatureSettings: canvas.style.fontFeatureSettings,
+            fontSize: canvas.style.fontSize
+        });
+
+        // Reset only font-related properties
+        canvas.style.fontFamily = '';
+        canvas.style.fontVariationSettings = '';
+        canvas.style.fontFeatureSettings = '';
+        canvas.style.fontSize = '';
+
+        // Clear any cached styles from the app
+        if (app._originalCanvasStyles) {
+            delete app._originalCanvasStyles;
+        }
+
+        // Restore proper canvas sizing and high-DPI scaling
+        app.updateCanvasSize();
+
+        console.log('Canvas repainted after OpenType feature change');
     }
 
     static updatePlayButton(isPlaying) {

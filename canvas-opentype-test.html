@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas OpenType Compatibility Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #2b2b2b;
+            color: white;
+        }
+
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #444;
+            border-radius: 8px;
+        }
+
+        canvas {
+            border: 1px solid #666;
+            margin: 10px 0;
+        }
+
+        .comparison {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .css-text {
+            font-size: 32px;
+            padding: 10px;
+            background: #1e1e1e;
+            border-radius: 4px;
+        }
+
+        .debug-info {
+            background: #1e1e1e;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Canvas OpenType Compatibility Test</h1>
+
+    <div class="test-section">
+        <h2>Method 1: Canvas Element Style</h2>
+        <div class="comparison">
+            <div>
+                <h4>CSS Reference (font-feature-settings):</h4>
+                <div class="css-text" style="font-family: Georgia, serif; font-feature-settings: 'smcp' 1;">Hello World
+                </div>
+            </div>
+            <div>
+                <h4>Canvas Test:</h4>
+                <canvas id="canvasMethod1" width="400" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Method 2: OffscreenCanvas Test</h2>
+        <canvas id="canvasMethod2" width="400" height="100"></canvas>
+    </div>
+
+    <div class="test-section">
+        <h2>Method 3: FontFace API Test</h2>
+        <canvas id="canvasMethod3" width="400" height="100"></canvas>
+    </div>
+
+    <div class="test-section">
+        <h2>Debugging Information</h2>
+        <div class="debug-info" id="debugInfo"></div>
+        <button onclick="runAllTests()">Run All Tests</button>
+        <button onclick="clearDebug()">Clear Debug</button>
+    </div>
+
+    <script>
+        function log(message) {
+            const debugDiv = document.getElementById('debugInfo');
+            debugDiv.innerHTML += new Date().toISOString().substr(14, 8) + ': ' + message + '<br>';
+            debugDiv.scrollTop = debugDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function clearDebug() {
+            document.getElementById('debugInfo').innerHTML = '';
+        }
+
+        function testMethod1() {
+            log('=== Method 1: Canvas Element Style ===');
+
+            const canvas = document.getElementById('canvasMethod1');
+            const ctx = canvas.getContext('2d');
+
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#1e1e1e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            try {
+                // Store original styles
+                const original = {
+                    fontFamily: canvas.style.fontFamily,
+                    fontFeatureSettings: canvas.style.fontFeatureSettings,
+                    fontSize: canvas.style.fontSize
+                };
+
+                log(`Original styles: ${JSON.stringify(original)}`);
+
+                // Apply styles to canvas element
+                canvas.style.fontFamily = 'Georgia, serif';
+                canvas.style.fontSize = '32px';
+                canvas.style.fontFeatureSettings = '"smcp" 1';
+
+                log(`Applied styles: fontFamily="${canvas.style.fontFamily}", fontFeatureSettings="${canvas.style.fontFeatureSettings}"`);
+
+                // Set context font
+                ctx.fillStyle = 'white';
+                ctx.textBaseline = 'middle';
+                ctx.font = '32px Georgia, serif';
+
+                // Draw text
+                ctx.fillText('Hello World', 10, 50);
+
+                // Check if styles are actually applied
+                const computed = window.getComputedStyle(canvas);
+                log(`Computed styles: fontFamily="${computed.fontFamily}", fontFeatureSettings="${computed.fontFeatureSettings}"`);
+
+                // Restore
+                canvas.style.fontFamily = original.fontFamily;
+                canvas.style.fontFeatureSettings = original.fontFeatureSettings;
+                canvas.style.fontSize = original.fontSize;
+
+                log('Method 1 completed');
+
+            } catch (error) {
+                log(`Method 1 error: ${error.message}`);
+            }
+        }
+
+        async function testMethod2() {
+            log('=== Method 2: OffscreenCanvas Test ===');
+
+            const canvas = document.getElementById('canvasMethod2');
+            const ctx = canvas.getContext('2d');
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#1e1e1e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            try {
+                if (typeof OffscreenCanvas !== 'undefined') {
+                    const offscreen = new OffscreenCanvas(400, 100);
+                    const offCtx = offscreen.getContext('2d');
+
+                    // Apply styles to the original canvas
+                    canvas.style.fontFamily = 'Georgia, serif';
+                    canvas.style.fontFeatureSettings = '"smcp" 1';
+
+                    offCtx.fillStyle = 'white';
+                    offCtx.textBaseline = 'middle';
+                    offCtx.font = '32px Georgia, serif';
+                    offCtx.fillText('Hello World', 10, 50);
+
+                    // Transfer to main canvas
+                    const bitmap = await offscreen.transferToImageBitmap();
+                    ctx.drawImage(bitmap, 0, 0);
+
+                    log('Method 2 (OffscreenCanvas) completed');
+                } else {
+                    log('OffscreenCanvas not supported');
+                    ctx.fillStyle = 'white';
+                    ctx.textBaseline = 'middle';
+                    ctx.font = '32px Georgia, serif';
+                    ctx.fillText('OffscreenCanvas N/A', 10, 50);
+                }
+            } catch (error) {
+                log(`Method 2 error: ${error.message}`);
+            }
+        }
+
+        async function testMethod3() {
+            log('=== Method 3: FontFace API Test ===');
+
+            const canvas = document.getElementById('canvasMethod3');
+            const ctx = canvas.getContext('2d');
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#1e1e1e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            try {
+                if (typeof FontFace !== 'undefined') {
+                    // Try to create a FontFace with OpenType features
+                    const fontFace = new FontFace('GeorgiaSmallCaps', 'local(Georgia)', {
+                        fontFeatureSettings: '"smcp" 1'
+                    });
+
+                    await fontFace.load();
+                    document.fonts.add(fontFace);
+
+                    log('FontFace loaded and added to document');
+
+                    ctx.fillStyle = 'white';
+                    ctx.textBaseline = 'middle';
+                    ctx.font = '32px GeorgiaSmallCaps, Georgia, serif';
+                    ctx.fillText('Hello World', 10, 50);
+
+                    log('Method 3 (FontFace API) completed');
+                } else {
+                    log('FontFace API not supported');
+                    ctx.fillStyle = 'white';
+                    ctx.textBaseline = 'middle';
+                    ctx.font = '32px Georgia, serif';
+                    ctx.fillText('FontFace API N/A', 10, 50);
+                }
+            } catch (error) {
+                log(`Method 3 error: ${error.message}`);
+            }
+        }
+
+        async function runAllTests() {
+            clearDebug();
+            log('Starting OpenType compatibility tests...');
+
+            // Check browser support
+            log(`Browser: ${navigator.userAgent}`);
+            log(`Canvas support: ${!!document.createElement('canvas').getContext}`);
+            log(`FontFace support: ${typeof FontFace !== 'undefined'}`);
+            log(`OffscreenCanvas support: ${typeof OffscreenCanvas !== 'undefined'}`);
+
+            testMethod1();
+            await testMethod2();
+            await testMethod3();
+
+            log('All tests completed');
+        }
+
+        // Run tests on page load
+        window.addEventListener('load', runAllTests);
+    </script>
+</body>
+
+</html>

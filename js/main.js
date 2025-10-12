@@ -1002,10 +1002,26 @@ class FontAnimationApp {
     }
 
     redraw() {
+        // Increment redraw counter for debugging
+        this._redrawCount = (this._redrawCount || 0) + 1;
+        console.log(`Redraw #${this._redrawCount} started`);
+
+        // Clear the canvas completely
         this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
 
+        // Clear any cached canvas styles to ensure fresh rendering
+        const canvas = this.ctx.canvas;
+        if (this._originalCanvasStyles) {
+            canvas.style.fontFamily = this._originalCanvasStyles.fontFamily || '';
+            canvas.style.fontVariationSettings = this._originalCanvasStyles.fontVariationSettings || '';
+            canvas.style.fontFeatureSettings = this._originalCanvasStyles.fontFeatureSettings || '';
+            canvas.style.fontSize = '';
+            delete this._originalCanvasStyles;
+        }
+
         // Draw text objects
-        this.textObjects.forEach(obj => {
+        this.textObjects.forEach((obj, index) => {
+            console.log(`Drawing text object ${index}: "${obj.text}"`);
             this.drawTextObject(obj);
         });
 
@@ -1013,6 +1029,8 @@ class FontAnimationApp {
         if (this.selectedObject) {
             this.drawSelection(this.selectedObject);
         }
+
+        console.log(`Redraw #${this._redrawCount} completed`);
     }
 
     drawTextObject(obj) {
@@ -1025,8 +1043,12 @@ class FontAnimationApp {
             y: props.y,
             fontSize: props.fontSize,
             color: props.color,
-            variableAxes: props.variableAxes
+            variableAxes: props.variableAxes,
+            openTypeFeatures: props.openTypeFeatures
         });
+
+        console.log('Text object OpenType features:', obj.openTypeFeatures);
+        console.log('Props OpenType features:', props.openTypeFeatures);
 
         // Check if font is available in both our font map and document.fonts
         const fontAvailable = this.fonts.has(obj.fontFamily) && this.isFontLoaded(obj.fontFamily);
@@ -1035,11 +1057,25 @@ class FontAnimationApp {
         if (fontAvailable) {
             fontString = `${props.fontSize}px "${obj.fontFamily}"`;
 
-            // Apply variable font axes if available
-            if (props.variableAxes && Object.keys(props.variableAxes).length > 0) {
-                console.log('Applying variable font axes:', props.variableAxes);
-                this.applyVariableFontToCanvas(obj.fontFamily, props.fontSize, props.variableAxes);
+            // Apply variable font axes and/or OpenType features if available
+            const hasVariableAxes = props.variableAxes && Object.keys(props.variableAxes).length > 0;
+            const hasOpenTypeFeatures = props.openTypeFeatures && Object.keys(props.openTypeFeatures).length > 0;
+
+            console.log(`Font features check for "${obj.text}":`, {
+                hasVariableAxes,
+                hasOpenTypeFeatures,
+                variableAxes: props.variableAxes,
+                openTypeFeatures: props.openTypeFeatures
+            });
+
+            if (hasVariableAxes || hasOpenTypeFeatures) {
+                console.log(`Applying font features to "${obj.text}":`, {
+                    variableAxes: props.variableAxes,
+                    openTypeFeatures: props.openTypeFeatures
+                });
+                this.applyFontFeaturesToCanvas(obj.fontFamily, props.fontSize, props.variableAxes, props.openTypeFeatures);
             } else {
+                console.log(`No font features for "${obj.text}", using basic font`);
                 this.ctx.font = fontString;
             }
         } else {
@@ -1047,13 +1083,34 @@ class FontAnimationApp {
             fontString = `${props.fontSize}px Arial, sans-serif`;
             this.ctx.font = fontString;
         }
-        this.ctx.fillStyle = props.color;
+        // Add visual debugging: slightly modify color when OpenType features are active
+        let fillColor = props.color;
+        const hasActiveOpenTypeFeatures = props.openTypeFeatures &&
+            Object.values(props.openTypeFeatures).some(enabled => enabled);
+
+        if (hasActiveOpenTypeFeatures) {
+            // Add a slight blue tint to indicate OpenType features are active
+            // This is just for debugging - can be removed later
+            const r = parseInt(fillColor.slice(1, 3), 16);
+            const g = parseInt(fillColor.slice(3, 5), 16);
+            const b = Math.min(255, parseInt(fillColor.slice(5, 7), 16) + 50);
+            fillColor = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+            console.log(`OpenType features active - Color changed from ${props.color} to ${fillColor}`);
+        }
+
+        this.ctx.fillStyle = fillColor;
         this.ctx.textBaseline = 'top';
         this.ctx.textAlign = obj.textAlign || 'left';
 
-        this.ctx.fillText(obj.text, props.x, props.y);
+        // Render text with OpenType features if needed
+        if (this._pendingOpenTypeFeatures) {
+            this.renderTextWithOpenTypeFeatures(obj.text, props.x, props.y, this._pendingOpenTypeFeatures);
+            delete this._pendingOpenTypeFeatures;
+        } else {
+            this.ctx.fillText(obj.text, props.x, props.y);
+        }
 
-        // Clean up canvas styles if variable fonts were applied
+        // Clean up canvas styles if variable axes were applied
         if (this._originalCanvasStyles) {
             const canvas = this.ctx.canvas;
             canvas.style.fontFamily = this._originalCanvasStyles.fontFamily || '';
@@ -1065,43 +1122,126 @@ class FontAnimationApp {
         this.ctx.restore();
     }
 
-    // Apply variable font settings to canvas context
-    applyVariableFontToCanvas(fontFamily, fontSize, variableAxes) {
+    // Render text with OpenType features using enhanced canvas approach
+    renderTextWithOpenTypeFeatures(text, x, y, featureSettings) {
         try {
-            // Create font-variation-settings string
-            let fontVariationSettings = '';
-            Object.entries(variableAxes).forEach(([tag, value]) => {
-                fontVariationSettings += `"${tag}" ${value}, `;
-            });
-            fontVariationSettings = fontVariationSettings.replace(/, $/, '');
+            console.log('Rendering text with OpenType features:', featureSettings);
 
-            console.log('Applying font variation settings:', fontVariationSettings);
-
-            // Apply variable font settings to the canvas element temporarily
-            // This is the most reliable cross-browser approach for variable fonts in canvas
+            // Try the canvas CSS approach with forced repaint
             const canvas = this.ctx.canvas;
-            const originalFontFamily = canvas.style.fontFamily;
-            const originalFontVariationSettings = canvas.style.fontVariationSettings;
+            const originalFontFeatureSettings = canvas.style.fontFeatureSettings;
 
-            // Set the font properties on the canvas element
-            canvas.style.fontFamily = `"${fontFamily}"`;
-            canvas.style.fontVariationSettings = fontVariationSettings;
-            canvas.style.fontSize = `${fontSize}px`;
+            // Apply features to canvas element
+            canvas.style.fontFeatureSettings = featureSettings.fontFeatureSettings;
 
-            // Apply the font to the context
-            this.ctx.font = `${fontSize}px "${fontFamily}"`;
+            // Force a layout reflow to ensure styles are applied
+            canvas.offsetHeight;
 
-            // Store original styles for cleanup
-            this._originalCanvasStyles = {
-                fontFamily: originalFontFamily,
-                fontVariationSettings: originalFontVariationSettings
-            };
+            // Re-apply font to context after style application
+            this.ctx.font = `${featureSettings.fontSize}px "${featureSettings.fontFamily}"`;
+
+            console.log(`Applied canvas font-feature-settings: "${canvas.style.fontFeatureSettings}"`);
+            console.log(`Canvas context font: "${this.ctx.font}"`);
+
+            // Render text
+            this.ctx.fillText(text, x, y);
+
+            // Restore canvas styles
+            canvas.style.fontFeatureSettings = originalFontFeatureSettings;
+
+            console.log('OpenType text rendering completed (canvas CSS method)');
 
         } catch (error) {
-            console.warn('Failed to apply variable font settings to canvas:', error);
+            console.warn('Failed to render text with OpenType features:', error);
+            // Fallback to regular text rendering
+            this.ctx.fillText(text, x, y);
+        }
+    }    // Apply font features (variable axes and OpenType features) to canvas context
+    applyFontFeaturesToCanvas(fontFamily, fontSize, variableAxes = {}, openTypeFeatures = {}) {
+        try {
+            const hasVariableAxes = variableAxes && Object.keys(variableAxes).length > 0;
+            const hasOpenTypeFeatures = openTypeFeatures && Object.keys(openTypeFeatures).length > 0;
+
+            console.log('Applying font features:', {
+                fontFamily,
+                fontSize,
+                variableAxes,
+                openTypeFeatures,
+                hasVariableAxes,
+                hasOpenTypeFeatures
+            });
+
+            // For variable axes, we can use the canvas element CSS approach
+            if (hasVariableAxes) {
+                this.applyVariableAxesToCanvas(fontFamily, fontSize, variableAxes);
+            }
+
+            // For OpenType features, we need to use DOM-based rendering
+            if (hasOpenTypeFeatures) {
+                this.applyOpenTypeFeaturesToCanvas(fontFamily, fontSize, openTypeFeatures);
+            }
+
+            // If only variable axes, set basic font
+            if (hasVariableAxes && !hasOpenTypeFeatures) {
+                this.ctx.font = `${fontSize}px "${fontFamily}"`;
+            }
+
+        } catch (error) {
+            console.warn('Failed to apply font features to canvas:', error);
             // Fallback to basic font
             this.ctx.font = `${fontSize}px "${fontFamily}"`;
         }
+    }
+
+    // Apply variable axes using canvas element CSS (this works reliably)
+    applyVariableAxesToCanvas(fontFamily, fontSize, variableAxes) {
+        const canvas = this.ctx.canvas;
+        const originalFontFamily = canvas.style.fontFamily;
+        const originalFontVariationSettings = canvas.style.fontVariationSettings;
+
+        // Create font-variation-settings string
+        let fontVariationSettings = '';
+        Object.entries(variableAxes).forEach(([tag, value]) => {
+            fontVariationSettings += `"${tag}" ${value}, `;
+        });
+        fontVariationSettings = fontVariationSettings.replace(/, $/, '');
+
+        console.log(`Applying variable axes: ${fontVariationSettings}`);
+
+        // Apply to canvas element
+        canvas.style.fontFamily = `"${fontFamily}"`;
+        canvas.style.fontVariationSettings = fontVariationSettings;
+        canvas.style.fontSize = `${fontSize}px`;
+
+        // Store for cleanup
+        this._originalCanvasStyles = {
+            fontFamily: originalFontFamily,
+            fontVariationSettings: originalFontVariationSettings
+        };
+    }
+
+    // Apply OpenType features using DOM-based rendering (more reliable for features)
+    applyOpenTypeFeaturesToCanvas(fontFamily, fontSize, openTypeFeatures) {
+        // Create font-feature-settings string
+        let fontFeatureSettings = '';
+        Object.entries(openTypeFeatures).forEach(([tag, enabled]) => {
+            if (enabled) {
+                fontFeatureSettings += `"${tag}" 1, `;
+            }
+        });
+        fontFeatureSettings = fontFeatureSettings.replace(/, $/, '');
+
+        console.log(`Applying OpenType features: ${fontFeatureSettings}`);
+
+        // Store feature settings for use during text rendering
+        this._pendingOpenTypeFeatures = {
+            fontFamily,
+            fontSize,
+            fontFeatureSettings
+        };
+
+        // Set basic font for now - actual rendering will use DOM approach
+        this.ctx.font = `${fontSize}px "${fontFamily}"`;
     }
 
     // Check if a font is actually loaded and ready to use

@@ -471,54 +471,32 @@ class ExportManager {
     cleanupCanvasStyles(context) {
         const canvas = context.canvas;
 
-        // Clean up variable font styles
+        // Clean up font feature styles (both variable axes and OpenType features)
         if (this._originalExportCanvasStyles) {
             canvas.style.fontFamily = this._originalExportCanvasStyles.fontFamily || '';
             canvas.style.fontVariationSettings = this._originalExportCanvasStyles.fontVariationSettings || '';
+            canvas.style.fontFeatureSettings = this._originalExportCanvasStyles.fontFeatureSettings || '';
             canvas.style.fontSize = '';
             delete this._originalExportCanvasStyles;
-        }
-
-        // Clean up OpenType feature styles
-        if (this._originalCanvasFeatureSettings !== undefined) {
-            canvas.style.fontFeatureSettings = this._originalCanvasFeatureSettings || '';
-            delete this._originalCanvasFeatureSettings;
         }
     }
 
     applyFontFeatures(textObject, props, context) {
         try {
-            console.log('Export: applyFontFeatures called with variable axes:', props.variableAxes);
+            console.log('Export: applyFontFeatures called with features:', {
+                variableAxes: props.variableAxes,
+                openTypeFeatures: props.openTypeFeatures
+            });
 
-            // Apply variable axes using the same reliable method as the main app
-            if (props.variableAxes && Object.keys(props.variableAxes).length > 0) {
-                console.log('Export: Applying variable axes:', Object.keys(props.variableAxes));
-                this.applyVariableFontToCanvas(textObject.fontFamily, props.fontSize, props.variableAxes, context);
+            // Apply both variable axes and OpenType features using unified approach
+            const hasVariableAxes = props.variableAxes && Object.keys(props.variableAxes).length > 0;
+            const hasOpenTypeFeatures = props.openTypeFeatures && Object.keys(props.openTypeFeatures).length > 0;
+
+            if (hasVariableAxes || hasOpenTypeFeatures) {
+                this.applyFontFeaturesToCanvas(textObject.fontFamily, props.fontSize, props.variableAxes, props.openTypeFeatures, context);
             } else {
-                console.log('Export: No variable axes found, setting basic font');
-                // Set basic font if no variable axes
+                console.log('Export: No font features found, setting basic font');
                 context.font = `${props.fontSize}px "${textObject.fontFamily}"`;
-            }
-
-            // Apply OpenType features if present
-            if (props.openTypeFeatures && Object.keys(props.openTypeFeatures).length > 0) {
-                // For OpenType features, we still need the DOM approach as Canvas doesn't support font-feature-settings directly
-                const canvas = context.canvas;
-                const features = Object.entries(props.openTypeFeatures)
-                    .filter(([tag, enabled]) => enabled)
-                    .map(([tag]) => `"${tag}" 1`)
-                    .join(', ');
-
-                if (features) {
-                    const originalFontFeatureSettings = canvas.style.fontFeatureSettings;
-                    canvas.style.fontFeatureSettings = features;
-
-                    // Re-apply font with features
-                    context.font = `${props.fontSize}px "${textObject.fontFamily}"`;
-
-                    // Store for cleanup
-                    this._originalCanvasFeatureSettings = originalFontFeatureSettings;
-                }
             }
         } catch (error) {
             console.warn('Failed to apply font features in export:', error);
@@ -527,27 +505,47 @@ class ExportManager {
         }
     }
 
-    // Apply variable font settings to canvas context (enhanced approach for export)
-    applyVariableFontToCanvas(fontFamily, fontSize, variableAxes, context) {
+    // Apply font features (variable axes and OpenType features) to canvas context for export
+    applyFontFeaturesToCanvas(fontFamily, fontSize, variableAxes = {}, openTypeFeatures = {}, context) {
         try {
-            // Create font-variation-settings string
-            let fontVariationSettings = '';
-            Object.entries(variableAxes).forEach(([tag, value]) => {
-                fontVariationSettings += `"${tag}" ${value}, `;
-            });
-            fontVariationSettings = fontVariationSettings.replace(/, $/, '');
-
-            console.log('Export: Applying font variation settings:', fontVariationSettings);
-
-            // Try multiple approaches for better compatibility
-
-            // Approach 1: CSS on canvas element (original approach)
             const canvas = context.canvas;
             const originalFontFamily = canvas.style.fontFamily;
             const originalFontVariationSettings = canvas.style.fontVariationSettings;
+            const originalFontFeatureSettings = canvas.style.fontFeatureSettings;
 
+            // Create font-variation-settings string
+            let fontVariationSettings = '';
+            if (variableAxes && Object.keys(variableAxes).length > 0) {
+                Object.entries(variableAxes).forEach(([tag, value]) => {
+                    fontVariationSettings += `"${tag}" ${value}, `;
+                });
+                fontVariationSettings = fontVariationSettings.replace(/, $/, '');
+            }
+
+            // Create font-feature-settings string
+            let fontFeatureSettings = '';
+            if (openTypeFeatures && Object.keys(openTypeFeatures).length > 0) {
+                Object.entries(openTypeFeatures).forEach(([tag, enabled]) => {
+                    if (enabled) {
+                        fontFeatureSettings += `"${tag}" 1, `;
+                    }
+                });
+                fontFeatureSettings = fontFeatureSettings.replace(/, $/, '');
+            }
+
+            console.log('Export: Applying font features:', {
+                fontVariationSettings,
+                fontFeatureSettings
+            });
+
+            // Apply font settings to the canvas element
             canvas.style.fontFamily = `"${fontFamily}"`;
-            canvas.style.fontVariationSettings = fontVariationSettings;
+            if (fontVariationSettings) {
+                canvas.style.fontVariationSettings = fontVariationSettings;
+            }
+            if (fontFeatureSettings) {
+                canvas.style.fontFeatureSettings = fontFeatureSettings;
+            }
             canvas.style.fontSize = `${fontSize}px`;
 
             // Approach 2: Try using FontFace API for more reliable font loading
@@ -594,11 +592,12 @@ class ExportManager {
             // Store original styles for cleanup
             this._originalExportCanvasStyles = {
                 fontFamily: originalFontFamily,
-                fontVariationSettings: originalFontVariationSettings
+                fontVariationSettings: originalFontVariationSettings,
+                fontFeatureSettings: originalFontFeatureSettings
             };
 
         } catch (error) {
-            console.warn('Export: Failed to apply variable font settings to canvas:', error);
+            console.warn('Export: Failed to apply font features to canvas:', error);
             // Fallback to basic font
             context.font = `${fontSize}px "${fontFamily}"`;
         }

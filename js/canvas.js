@@ -522,6 +522,13 @@ class CanvasManager {
         // Get properties for current frame
         const props = this.app.getObjectPropertiesAtFrame(obj, this.app.currentFrame);
 
+        console.log('Canvas: Drawing text object with OpenType features:', {
+            text: obj.text,
+            fontFamily: obj.fontFamily,
+            openTypeFeatures: props.openTypeFeatures,
+            hasFeatures: props.openTypeFeatures && Object.keys(props.openTypeFeatures).length > 0
+        });
+
         // Apply rotation if present
         if (props.rotation && props.rotation !== 0) {
             this.context.font = `${props.fontSize}px "${obj.fontFamily}"`;
@@ -534,67 +541,103 @@ class CanvasManager {
             this.context.translate(-centerX, -centerY);
         }
 
-        // Apply font and color
-        this.context.font = `${props.fontSize}px "${obj.fontFamily}"`;
+        // Check if font is available
+        const fontAvailable = this.app.fonts.has(obj.fontFamily) && this.app.isFontLoaded(obj.fontFamily);
+
+        if (fontAvailable) {
+            // Apply font features (variable axes and OpenType features)
+            const hasVariableAxes = props.variableAxes && Object.keys(props.variableAxes).length > 0;
+            const hasOpenTypeFeatures = props.openTypeFeatures && Object.keys(props.openTypeFeatures).length > 0;
+
+            if (hasVariableAxes || hasOpenTypeFeatures) {
+                this.applyFontFeaturesToCanvas(obj.fontFamily, props.fontSize, props.variableAxes, props.openTypeFeatures);
+            } else {
+                this.context.font = `${props.fontSize}px "${obj.fontFamily}"`;
+            }
+        } else {
+            // Use fallback font when the desired font is not available
+            this.context.font = `${props.fontSize}px Arial, sans-serif`;
+        }
+
         this.context.fillStyle = props.color;
         this.context.textBaseline = 'top';
         this.context.textAlign = obj.textAlign || 'left';
 
-        // Apply advanced typography if available
-        this.applyAdvancedTypography(obj, props);
-
         // Draw the text
         this.context.fillText(obj.text, props.x, props.y);
+
+        // Clean up canvas styles if font features were applied
+        if (this._originalCanvasStyles) {
+            const canvas = this.context.canvas;
+            canvas.style.fontFamily = this._originalCanvasStyles.fontFamily || '';
+            canvas.style.fontVariationSettings = this._originalCanvasStyles.fontVariationSettings || '';
+            canvas.style.fontFeatureSettings = this._originalCanvasStyles.fontFeatureSettings || '';
+            canvas.style.fontSize = '';
+            delete this._originalCanvasStyles;
+        }
 
         this.context.restore();
     }
 
-    applyAdvancedTypography(obj, props) {
-        // This would ideally use a more sophisticated text rendering system
-        // For now, we'll apply basic variable font and OpenType features via CSS
+    // Apply font features (variable axes and OpenType features) to canvas context
+    applyFontFeaturesToCanvas(fontFamily, fontSize, variableAxes = {}, openTypeFeatures = {}) {
+        try {
+            const canvas = this.context.canvas;
+            const originalFontFamily = canvas.style.fontFamily;
+            const originalFontVariationSettings = canvas.style.fontVariationSettings;
+            const originalFontFeatureSettings = canvas.style.fontFeatureSettings;
 
-        if (this.app.fontManager && this.app.fonts.has(obj.fontFamily)) {
-            // Create temporary element to compute advanced typography
-            const tempElement = document.createElement('div');
-            tempElement.style.cssText = `
-                position: absolute;
-                left: -9999px;
-                top: -9999px;
-                font-size: ${props.fontSize}px;
-                font-family: "${obj.fontFamily}";
-                white-space: nowrap;
-                visibility: hidden;
-            `;
-
-            // Apply variable axes
-            if (props.variableAxes && Object.keys(props.variableAxes).length > 0) {
-                const variations = Object.entries(props.variableAxes)
-                    .map(([tag, value]) => `"${tag}" ${value}`)
-                    .join(', ');
-                tempElement.style.fontVariationSettings = variations;
+            // Create font-variation-settings string
+            let fontVariationSettings = '';
+            if (variableAxes && Object.keys(variableAxes).length > 0) {
+                Object.entries(variableAxes).forEach(([tag, value]) => {
+                    fontVariationSettings += `"${tag}" ${value}, `;
+                });
+                fontVariationSettings = fontVariationSettings.replace(/, $/, '');
             }
 
-            // Apply OpenType features
-            if (props.openTypeFeatures && Object.keys(props.openTypeFeatures).length > 0) {
-                const features = Object.entries(props.openTypeFeatures)
-                    .filter(([tag, enabled]) => enabled)
-                    .map(([tag]) => `"${tag}" 1`)
-                    .join(', ');
-                if (features) {
-                    tempElement.style.fontFeatureSettings = features;
-                }
+            // Create font-feature-settings string
+            let fontFeatureSettings = '';
+            if (openTypeFeatures && Object.keys(openTypeFeatures).length > 0) {
+                Object.entries(openTypeFeatures).forEach(([tag, enabled]) => {
+                    if (enabled) {
+                        fontFeatureSettings += `"${tag}" 1, `;
+                    }
+                });
+                fontFeatureSettings = fontFeatureSettings.replace(/, $/, '');
             }
 
-            tempElement.textContent = obj.text;
-            document.body.appendChild(tempElement);
+            console.log('Canvas: Applying font features:', {
+                fontVariationSettings,
+                fontFeatureSettings
+            });
 
-            // Apply computed styles to canvas context
-            const computedStyle = window.getComputedStyle(tempElement);
-            if (computedStyle.font) {
-                this.context.font = computedStyle.font;
+            // Apply font settings to the canvas element temporarily
+            canvas.style.fontFamily = `"${fontFamily}"`;
+            if (fontVariationSettings) {
+                canvas.style.fontVariationSettings = fontVariationSettings;
+                console.log(`Canvas: Applied fontVariationSettings: ${fontVariationSettings}`);
             }
+            if (fontFeatureSettings) {
+                canvas.style.fontFeatureSettings = fontFeatureSettings;
+                console.log(`Canvas: Applied fontFeatureSettings: ${fontFeatureSettings}`);
+            }
+            canvas.style.fontSize = `${fontSize}px`;
 
-            document.body.removeChild(tempElement);
+            // Apply the font to the context
+            this.context.font = `${fontSize}px "${fontFamily}"`;
+
+            // Store original styles for cleanup
+            this._originalCanvasStyles = {
+                fontFamily: originalFontFamily,
+                fontVariationSettings: originalFontVariationSettings,
+                fontFeatureSettings: originalFontFeatureSettings
+            };
+
+        } catch (error) {
+            console.warn('Canvas: Failed to apply font features:', error);
+            // Fallback to basic font
+            this.context.font = `${fontSize}px "${fontFamily}"`;
         }
     }
 
