@@ -1096,6 +1096,28 @@ class FontAnimationApp {
         this.ctx.strokeRect(bounds.left, bounds.top,
             bounds.right - bounds.left, bounds.bottom - bounds.top);
 
+        // Draw position origin mark
+        this.ctx.setLineDash([]);
+        this.ctx.strokeStyle = '#ff4444';
+        this.ctx.fillStyle = '#ff4444';
+        this.ctx.lineWidth = 2;
+
+        // Draw crosshair at origin position
+        const crossSize = 8;
+        this.ctx.beginPath();
+        // Horizontal line
+        this.ctx.moveTo(props.x - crossSize, props.y);
+        this.ctx.lineTo(props.x + crossSize, props.y);
+        // Vertical line
+        this.ctx.moveTo(props.x, props.y - crossSize);
+        this.ctx.lineTo(props.x, props.y + crossSize);
+        this.ctx.stroke();
+
+        // Draw small circle at center
+        this.ctx.beginPath();
+        this.ctx.arc(props.x, props.y, 3, 0, 2 * Math.PI);
+        this.ctx.fill();
+
         this.ctx.restore();
     }
 

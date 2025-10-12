@@ -613,6 +613,27 @@ class CanvasManager {
         this.context.strokeRect(props.x - 5, props.y - 5, width + 10, height + 10);
         this.context.setLineDash([]);
 
+        // Draw position origin mark
+        this.context.strokeStyle = '#ff4444';
+        this.context.fillStyle = '#ff4444';
+        this.context.lineWidth = 2;
+
+        // Draw crosshair at origin position
+        const crossSize = 8;
+        this.context.beginPath();
+        // Horizontal line
+        this.context.moveTo(props.x - crossSize, props.y);
+        this.context.lineTo(props.x + crossSize, props.y);
+        // Vertical line
+        this.context.moveTo(props.x, props.y - crossSize);
+        this.context.lineTo(props.x, props.y + crossSize);
+        this.context.stroke();
+
+        // Draw small circle at center
+        this.context.beginPath();
+        this.context.arc(props.x, props.y, 3, 0, 2 * Math.PI);
+        this.context.fill();
+
         // Draw resize handles
         const handleSize = 6;
         const handles = [
