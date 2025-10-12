@@ -157,23 +157,14 @@ class TimelineManager {
         mainHeader.title = textObject.text;
         layerGroup.appendChild(mainHeader);
 
-        // Property sub-layers
-        const properties = ['x', 'y', 'fontSize', 'color'];
-        properties.forEach(property => {
-            const subLayer = document.createElement('div');
-            subLayer.className = 'timeline-layer-name sub-layer';
-            subLayer.dataset.property = property;
-            subLayer.textContent = this.getPropertyDisplayName(property);
-            layerGroup.appendChild(subLayer);
-        });
-
-        // Variable font axes sub-layers
+        // Only show property sub-layers that have keyframes
         Object.keys(textObject.keyframes).forEach(property => {
-            if (!properties.includes(property)) {
+            const keyframes = textObject.keyframes[property];
+            if (keyframes && keyframes.length > 0) {
                 const subLayer = document.createElement('div');
                 subLayer.className = 'timeline-layer-name sub-layer';
                 subLayer.dataset.property = property;
-                subLayer.textContent = property;
+                subLayer.textContent = this.getPropertyDisplayName(property);
                 layerGroup.appendChild(subLayer);
             }
         });
@@ -191,16 +182,10 @@ class TimelineManager {
         mainLayer.className = 'timeline-layer main-layer';
         layerGroup.appendChild(mainLayer);
 
-        // Property sub-layers
-        const properties = ['x', 'y', 'fontSize', 'color'];
-        properties.forEach(property => {
-            const subLayer = this.createPropertyLayer(textObject, property);
-            layerGroup.appendChild(subLayer);
-        });
-
-        // Variable font axes sub-layers
+        // Only show property sub-layers that have keyframes
         Object.keys(textObject.keyframes).forEach(property => {
-            if (!properties.includes(property)) {
+            const keyframes = textObject.keyframes[property];
+            if (keyframes && keyframes.length > 0) {
                 const subLayer = this.createPropertyLayer(textObject, property);
                 layerGroup.appendChild(subLayer);
             }
