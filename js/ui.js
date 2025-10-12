@@ -22,18 +22,41 @@ class UIManager {
         const currentFontSize = app.getPropertyValue(textObject, 'fontSize');
         const currentColor = app.getPropertyValue(textObject, 'color');
 
+        console.log('Updating UI properties for frame', app.currentFrame, {
+            x: currentX,
+            y: currentY,
+            fontSize: currentFontSize,
+            color: currentColor
+        });
+
         // Update font size
-        document.getElementById('fontSize').value = currentFontSize;
+        const fontSizeInput = document.getElementById('fontSize');
+        if (fontSizeInput) {
+            fontSizeInput.value = currentFontSize;
+        }
 
         // Update color
-        document.getElementById('fontColor').value = currentColor;
+        const colorInput = document.getElementById('fontColor');
+        if (colorInput) {
+            colorInput.value = currentColor;
+        }
 
         // Update text content
-        document.getElementById('textContent').value = textObject.text;
+        const textContentInput = document.getElementById('textContent');
+        if (textContentInput) {
+            textContentInput.value = textObject.text;
+        }
 
         // Update position
-        document.getElementById('textX').value = currentX.toFixed(1);
-        document.getElementById('textY').value = currentY.toFixed(1);
+        const textXInput = document.getElementById('textX');
+        if (textXInput) {
+            textXInput.value = currentX.toFixed(1);
+        }
+        
+        const textYInput = document.getElementById('textY');
+        if (textYInput) {
+            textYInput.value = currentY.toFixed(1);
+        }
 
         // Update variable axes
         UIManager.updateVariableAxes(textObject, app);

@@ -966,6 +966,14 @@ class FontAnimationApp {
         this.ctx.save();
 
         const props = this.getObjectPropertiesAtFrame(obj, this.currentFrame);
+        
+        console.log('Drawing text object at frame', this.currentFrame, 'with props:', {
+            x: props.x,
+            y: props.y,
+            fontSize: props.fontSize,
+            color: props.color,
+            variableAxes: props.variableAxes
+        });
 
         // Check if font is available in both our font map and document.fonts
         const fontAvailable = this.fonts.has(obj.fontFamily) && this.isFontLoaded(obj.fontFamily);
