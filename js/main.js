@@ -966,7 +966,7 @@ class FontAnimationApp {
         this.ctx.save();
 
         const props = this.getObjectPropertiesAtFrame(obj, this.currentFrame);
-        
+
         console.log('Drawing text object at frame', this.currentFrame, 'with props:', {
             x: props.x,
             y: props.y,

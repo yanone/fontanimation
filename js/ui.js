@@ -52,7 +52,7 @@ class UIManager {
         if (textXInput) {
             textXInput.value = currentX.toFixed(1);
         }
-        
+
         const textYInput = document.getElementById('textY');
         if (textYInput) {
             textYInput.value = currentY.toFixed(1);
