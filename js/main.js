@@ -1251,7 +1251,7 @@ class FontAnimationApp {
 
         // Update the right panel to reflect the cleared selection
         if (window.UIManager) {
-            window.UIManager.updateRightPanel();
+            window.UIManager.updateRightPanel(this);
         }
     }
 
