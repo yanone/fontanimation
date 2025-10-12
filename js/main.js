@@ -728,7 +728,7 @@ class FontAnimationApp {
             const defaults = {
                 x: 0, y: 0, fontSize: 48, color: '#000000'
             };
-            
+
             // For variable axes, try to get the default from font info
             if (property.startsWith('variableaxis:')) {
                 const axisTag = property.replace('variableaxis:', '');
@@ -741,7 +741,7 @@ class FontAnimationApp {
                 }
                 return 0;
             }
-            
+
             return defaults[property] || 0;
         }
 
@@ -1432,7 +1432,7 @@ class FontAnimationApp {
         }
 
         this.textObjects = project.textObjects || [];
-        
+
         // Migrate old variable axis format to new prefixed format
         this.textObjects.forEach(textObject => {
             const newKeyframes = {};
@@ -1450,7 +1450,7 @@ class FontAnimationApp {
             });
             textObject.keyframes = newKeyframes;
         });
-        
+
         if (project.settings) {
             this.canvasWidth = project.settings.canvasWidth;
             this.canvasHeight = project.settings.canvasHeight;
