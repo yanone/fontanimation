@@ -196,8 +196,15 @@ class UIManager {
 
     static updateAxisValue(propertyName, value, textObject, app) {
         // Set keyframe for this variable axis at current frame
-        app.setKeyframe(textObject, propertyName, app.currentFrame, value);
-        app.redraw();
+        const wasNewKeyframe = app.setKeyframe(textObject, propertyName, app.currentFrame, value);
+
+        // Only update UI elements when a new keyframe is created, not when updating existing ones
+        if (wasNewKeyframe) {
+            app.timeline.update();  // Update timeline to show new keyframes
+            app.updateRightPanel(); // Update keyframe button states
+        }
+
+        app.redraw(); // Always redraw canvas to show the visual changes
     }
 
     static updateOpenTypeFeatures(textObject, app) {

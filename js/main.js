@@ -806,10 +806,12 @@ class FontAnimationApp {
         if (existingIndex >= 0) {
             // Update existing keyframe
             keyframes[existingIndex].value = value;
+            return false; // Existing keyframe updated
         } else {
             // Add new keyframe and sort by frame
             keyframes.push({ frame, value });
             keyframes.sort((a, b) => a.frame - b.frame);
+            return true; // New keyframe created
         }
     }
 
@@ -927,11 +929,14 @@ class FontAnimationApp {
         console.log(`Updating ${property} to ${value} for object at frame ${this.currentFrame}`);
 
         // Set or update keyframe for this property at current frame
-        this.setKeyframe(obj, property, this.currentFrame, value);
+        const wasNewKeyframe = this.setKeyframe(obj, property, this.currentFrame, value);
 
-        // Update timeline UI when keyframes are modified
-        if (this.timeline) {
-            this.timeline.update();
+        // Update timeline and UI only when new keyframes are created
+        if (wasNewKeyframe) {
+            if (this.timeline) {
+                this.timeline.update();
+            }
+            this.updateRightPanel(); // Update keyframe button states
         }
 
         console.log('Object keyframes:', obj.keyframes);
