@@ -43,6 +43,9 @@ class AnimationManager {
         if (window.UIManager) {
             window.UIManager.updatePlayButton(false);
         }
+
+        // Update right panel to show correct values for current frame after stopping
+        this.app.updateRightPanel();
     }
 
     animate() {
