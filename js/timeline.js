@@ -16,12 +16,12 @@ class TimelineManager {
         // Synchronize vertical scrolling between layer names and layer content
         const layerNames = document.getElementById('timelineLayerNames');
         const layerContent = document.getElementById('timelineLayers');
-        
+
         if (layerNames && layerContent) {
             layerNames.addEventListener('scroll', () => {
                 layerContent.scrollTop = layerNames.scrollTop;
             });
-            
+
             layerContent.addEventListener('scroll', () => {
                 layerNames.scrollTop = layerContent.scrollTop;
             });
@@ -134,7 +134,7 @@ class TimelineManager {
         this.app.textObjects.forEach((textObject, index) => {
             const layerName = this.createLayerName(textObject, index);
             const layerContent = this.createLayerContent(textObject, index);
-            
+
             timelineLayerNames.appendChild(layerName);
             timelineLayers.appendChild(layerContent);
         });

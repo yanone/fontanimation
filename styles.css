@@ -593,7 +593,8 @@ body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    min-width: 0; /* Allow flex item to shrink below content width */
+    min-width: 0;
+    /* Allow flex item to shrink below content width */
 }
 
 #timelineContainer {
@@ -601,7 +602,8 @@ body {
     overflow-x: auto;
     overflow-y: hidden;
     position: relative;
-    width: 100%; /* Constrain to parent width */
+    width: 100%;
+    /* Constrain to parent width */
 }
 
 #timelineContent {
