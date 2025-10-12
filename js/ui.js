@@ -47,6 +47,12 @@ class UIManager {
             textContentInput.value = textObject.text;
         }
 
+        // Update text alignment
+        const textAlignSelect = document.getElementById('textAlign');
+        if (textAlignSelect) {
+            textAlignSelect.value = textObject.textAlign || 'left';
+        }
+
         // Update position
         const textXInput = document.getElementById('textX');
         if (textXInput) {

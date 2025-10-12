@@ -398,6 +398,14 @@ class FontAnimationApp {
             }
         });
 
+        document.getElementById('textAlign').addEventListener('change', (e) => {
+            if (this.selectedObject) {
+                this.selectedObject.textAlign = e.target.value;
+                this.redraw();
+                this.saveState();
+            }
+        });
+
         document.getElementById('textContent').addEventListener('input', (e) => {
             if (this.selectedObject) {
                 this.selectedObject.text = e.target.value;
@@ -858,6 +866,7 @@ class FontAnimationApp {
             id: Date.now(),
             text: text,
             fontFamily: defaultFont,
+            textAlign: 'left',
             openTypeFeatures: {},
             keyframes: {
                 x: [{ frame: this.currentFrame, value: x }],
@@ -887,7 +896,7 @@ class FontAnimationApp {
             tempCtx.font = `${props.fontSize}px "${obj.fontFamily}"`;
             const metrics = tempCtx.measureText(obj.text);
 
-            const bounds = this.getTextBounds(props, metrics);
+            const bounds = this.getTextBounds(props, metrics, obj.textAlign);
 
             if (x >= bounds.left && x <= bounds.right &&
                 y >= bounds.top && y <= bounds.bottom) {
@@ -901,12 +910,30 @@ class FontAnimationApp {
         return this.selectedObject;
     }
 
-    getTextBounds(props, metrics) {
+    getTextBounds(props, metrics, textAlign = 'left') {
         const padding = 5;
+        let left, right;
+
+        switch (textAlign) {
+            case 'center':
+                left = props.x - metrics.width / 2 - padding;
+                right = props.x + metrics.width / 2 + padding;
+                break;
+            case 'right':
+                left = props.x - metrics.width - padding;
+                right = props.x + padding;
+                break;
+            case 'left':
+            default:
+                left = props.x - padding;
+                right = props.x + metrics.width + padding;
+                break;
+        }
+
         return {
-            left: props.x - padding,
+            left: left,
             top: props.y - padding,
-            right: props.x + metrics.width + padding,
+            right: right,
             bottom: props.y + props.fontSize + padding
         };
     }
@@ -1002,6 +1029,7 @@ class FontAnimationApp {
         }
         this.ctx.fillStyle = props.color;
         this.ctx.textBaseline = 'top';
+        this.ctx.textAlign = obj.textAlign || 'left';
 
         this.ctx.fillText(obj.text, props.x, props.y);
 
@@ -1092,7 +1120,7 @@ class FontAnimationApp {
         this.ctx.lineWidth = 2;
         this.ctx.setLineDash([8, 4]);
 
-        const bounds = this.getTextBounds(props, metrics);
+        const bounds = this.getTextBounds(props, metrics, obj.textAlign);
         this.ctx.strokeRect(bounds.left, bounds.top,
             bounds.right - bounds.left, bounds.bottom - bounds.top);
 

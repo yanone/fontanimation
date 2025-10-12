@@ -456,6 +456,7 @@ class ExportManager {
 
         context.fillStyle = props.color;
         context.textBaseline = 'top';
+        context.textAlign = textObject.textAlign || 'left';
 
         // Render text with antialiasing
         context.textRenderingOptimization = 'optimizeQuality';

@@ -163,6 +163,7 @@ class AnimationManager {
         context.font = `${props.fontSize}px "${textObject.fontFamily}"`;
         context.fillStyle = props.color;
         context.textBaseline = 'top';
+        context.textAlign = textObject.textAlign || 'left';
 
         // Apply font features using DOM element for better rendering
         if (this.app.fontManager && this.app.fonts.has(textObject.fontFamily)) {

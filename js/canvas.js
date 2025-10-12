@@ -538,6 +538,7 @@ class CanvasManager {
         this.context.font = `${props.fontSize}px "${obj.fontFamily}"`;
         this.context.fillStyle = props.color;
         this.context.textBaseline = 'top';
+        this.context.textAlign = obj.textAlign || 'left';
 
         // Apply advanced typography if available
         this.applyAdvancedTypography(obj, props);

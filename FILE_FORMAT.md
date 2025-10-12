@@ -71,6 +71,7 @@ Each text object represents an animated text element on the canvas.
 | `id` | number | ✅ | Unique identifier (timestamp) | `Date.now()` | Positive integer |
 | `text` | string | ✅ | Text content to display | `"Sample Text"` | Any string, max ~500 chars |
 | `fontFamily` | string | ✅ | Font family name | `"Arial"` | Valid font name |
+| `textAlign` | string | ✅ | Text alignment | `"left"` | `"left"`, `"center"`, `"right"` |
 | `openTypeFeatures` | object | ✅ | OpenType feature settings | `{}` | See OpenType Features |
 
 #### Dynamic Properties (stored in keyframes)
