@@ -374,6 +374,7 @@ class FontAnimationApp {
         document.getElementById('fontSelect').addEventListener('change', (e) => {
             if (this.selectedObject) {
                 this.selectedObject.fontFamily = e.target.value;
+                this.updateRightPanel(); // Redraw sidebar to reflect new font properties
                 this.redraw();
                 this.saveState();
             }
