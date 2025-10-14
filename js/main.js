@@ -494,10 +494,12 @@ class FontAnimationApp {
 
         // Helper function to calculate frame from mouse position
         const getFrameFromEvent = (e) => {
-            const rect = timeRuler.getBoundingClientRect();
-            const timelineContainer = document.getElementById('timelineContainer');
-            const containerScrollLeft = timelineContainer ? timelineContainer.scrollLeft : 0;
-            const x = e.clientX - rect.left + containerScrollLeft;
+            const timelineHeader = document.getElementById('timelineHeader');
+            const headerRect = timelineHeader.getBoundingClientRect();
+            const headerScrollLeft = timelineHeader ? timelineHeader.scrollLeft : 0;
+            
+            // Calculate position relative to the timeline header container, then add scroll offset
+            const x = (e.clientX - headerRect.left) + headerScrollLeft;
 
             // Convert pixel position to frame
             const pixelsPerFrame = this.timeline.calculateTimelineWidth() / this.totalFrames;
