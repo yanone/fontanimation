@@ -46,6 +46,15 @@ class ExportManager {
         }
 
         try {
+            // Validate that we have something to export
+            if (!this.app.textObjects || this.app.textObjects.length === 0) {
+                throw new Error('No text objects to export. Please add some text first.');
+            }
+
+            if (!this.app.totalFrames || this.app.totalFrames <= 0) {
+                throw new Error('Invalid animation duration. Please check your timeline settings.');
+            }
+
             // Show format selection dialog
             const selectedFormat = await this.showFormatSelectionDialog();
             if (!selectedFormat) {
@@ -53,12 +62,26 @@ class ExportManager {
             }
 
             this.isExporting = true;
-            const loadingOverlay = window.UIManager?.showLoadingOverlay('Preparing export...');
+            let loadingOverlay;
+            
+            if (window.UIManager) {
+                loadingOverlay = window.UIManager.showLoadingOverlay('Preparing export...');
+                window.UIManager.createNotification('Starting export...', 'info');
+            }
 
             // Choose export method based on capabilities
             if (this.supportsVideoRecording()) {
+                console.log('Using video recording export method');
                 await this.exportWithVideoRecording(selectedFormat);
+                
+                if (window.UIManager) {
+                    window.UIManager.createNotification('Video export completed successfully!', 'success');
+                }
             } else {
+                console.log('Using frame sequence export method (fallback)');
+                if (window.UIManager) {
+                    window.UIManager.createNotification('Video recording not supported. Exporting as image sequence...', 'info');
+                }
                 await this.exportWithFrameSequence();
             }
 
@@ -68,9 +91,34 @@ class ExportManager {
 
         } catch (error) {
             console.error('Export failed:', error);
+            
+            let errorMessage = error.message || 'Unknown export error';
+            
+            // Provide more helpful error messages
+            if (errorMessage.includes('MediaRecorder')) {
+                errorMessage += ' Try refreshing the page or using a different browser.';
+            } else if (errorMessage.includes('stream')) {
+                errorMessage += ' There may be an issue with canvas recording in your browser.';
+            } else if (errorMessage.includes('timeout')) {
+                errorMessage += ' The export is taking too long. Try reducing the animation duration or quality.';
+            }
+            
             if (window.UIManager) {
-                window.UIManager.createNotification('Export failed: ' + error.message, 'error');
+                window.UIManager.createNotification('Export failed: ' + errorMessage, 'error');
                 window.UIManager.hideLoadingOverlay();
+                
+                // Offer to try frame sequence export as fallback
+                if (this.supportsVideoRecording() && !error.message?.includes('frame sequence')) {
+                    setTimeout(() => {
+                        if (confirm('Video export failed. Would you like to try exporting as image frames instead?')) {
+                            this.isExporting = false;
+                            this.exportWithFrameSequence().catch(seqError => {
+                                console.error('Frame sequence export also failed:', seqError);
+                                window.UIManager.createNotification('Frame sequence export also failed: ' + seqError.message, 'error');
+                            });
+                        }
+                    }, 1000);
+                }
             }
         } finally {
             this.isExporting = false;
@@ -224,8 +272,6 @@ class ExportManager {
 
         const context = canvas.getContext('2d');
 
-        // No scaling - use absolute pixel dimensions for consistent video output
-
         // Enable high-quality text rendering
         context.textRenderingOptimization = 'optimizeQuality';
         context.imageSmoothingEnabled = true;
@@ -242,6 +288,27 @@ class ExportManager {
             throw new Error(`Selected format ${selectedFormat} is not supported`);
         }
 
+        try {
+            const result = await this.attemptVideoRecording(canvas, context, selectedFormat);
+            
+            // Clean up the temporary canvas on success
+            if (canvas.parentNode) {
+                document.body.removeChild(canvas);
+            }
+            
+            return result;
+            
+        } catch (error) {
+            // Clean up the temporary canvas on failure
+            if (canvas.parentNode) {
+                document.body.removeChild(canvas);
+            }
+            
+            throw error;
+        }
+    }
+
+    async attemptVideoRecording(canvas, context, selectedFormat) {
         // Create video stream with desired frame rate
         const stream = canvas.captureStream(this.app.frameRate);
 
@@ -285,23 +352,11 @@ class ExportManager {
 
                 const extension = selectedFormat.includes('mp4') ? 'mp4' : 'webm';
                 this.downloadBlob(blob, `animation.${extension}`);
-
-                // Clean up the temporary canvas
-                if (canvas.parentNode) {
-                    document.body.removeChild(canvas);
-                }
-
                 resolve();
             };
 
             mediaRecorder.onerror = (error) => {
                 console.error('MediaRecorder error:', error);
-
-                // Clean up the temporary canvas on error
-                if (canvas.parentNode) {
-                    document.body.removeChild(canvas);
-                }
-
                 reject(new Error('MediaRecorder error: ' + (error.message || 'Unknown error')));
             };
 
@@ -309,16 +364,17 @@ class ExportManager {
                 console.log('MediaRecorder started with format:', selectedFormat);
             };
 
-            // Wait a bit before starting recording to ensure stream is ready
+            // Enhanced startup sequence for more reliable recording
             setTimeout(() => {
                 try {
-                    // Request data every 100ms for better MP4 compatibility
-                    mediaRecorder.start(100);
+                    // Start with smaller chunks for MP4 compatibility
+                    const chunkSize = selectedFormat.includes('mp4') ? 100 : 250;
+                    mediaRecorder.start(chunkSize);
 
-                    // Start rendering animation after a brief delay
+                    // Wait a bit before starting animation to ensure recording is ready
                     setTimeout(() => {
                         this.renderAnimationToCanvas(canvas, context, () => {
-                            // Wait longer before stopping, especially for MP4
+                            // Wait longer before stopping for MP4 to ensure proper finalization
                             const stopDelay = selectedFormat.includes('mp4') ? 1000 : 500;
                             setTimeout(() => {
                                 if (mediaRecorder.state === 'recording') {
@@ -326,13 +382,15 @@ class ExportManager {
                                 }
                             }, stopDelay);
                         });
-                    }, 100);
+                    }, 200);
                 } catch (error) {
                     reject(new Error('Failed to start recording: ' + error.message));
                 }
             }, 100);
         });
     }
+
+
 
     async exportWithFrameSequence() {
         if (window.UIManager) {
