@@ -322,20 +322,31 @@ class TransitionEditor {
         }
 
         if (this.currentKeyframe) {
-            // Apply the curve to the keyframe
-            this.currentKeyframe.curve = {
-                x1: this.controlPoints.cp1.x,
-                y1: this.controlPoints.cp1.y,
-                x2: this.controlPoints.cp2.x,
-                y2: this.controlPoints.cp2.y
-            };
+            // Check if the curve is linear (0,0,1,1) - if so, remove it
+            const isLinear = this.controlPoints.cp1.x === 0 && 
+                            this.controlPoints.cp1.y === 0 && 
+                            this.controlPoints.cp2.x === 1 && 
+                            this.controlPoints.cp2.y === 1;
 
-            // Update UI to show that this keyframe has a custom transition
-            this.updateTransitionButtonState();
+            if (isLinear) {
+                // Remove the curve property to make it linear
+                delete this.currentKeyframe.curve;
+            } else {
+                // Apply the custom curve to the keyframe
+                this.currentKeyframe.curve = {
+                    x1: this.controlPoints.cp1.x,
+                    y1: this.controlPoints.cp1.y,
+                    x2: this.controlPoints.cp2.x,
+                    y2: this.controlPoints.cp2.y
+                };
+            }
 
             // Redraw canvas and save state
             this.currentApp.redraw();
             this.currentApp.saveState();
+            
+            // Update UI to reflect the current state of transition buttons
+            this.currentApp.updateRightPanel();
         }
 
         this.closeModal();
