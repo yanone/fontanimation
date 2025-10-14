@@ -166,6 +166,11 @@ class TimelineManager {
         timelineLayerNames.innerHTML = '';
 
         this.app.textObjects.forEach((textObject, index) => {
+            // Initialize expansion state if not set (defaults to collapsed unless selected)
+            if (textObject._timelineExpanded === undefined) {
+                textObject._timelineExpanded = (textObject === this.app.selectedObject);
+            }
+
             const layerName = this.createLayerName(textObject, index);
             const layerContent = this.createLayerContent(textObject, index);
 
@@ -175,33 +180,66 @@ class TimelineManager {
 
         // Update cursor extensions for new layers
         this.updateCursorExtensions((this.app.currentFrame / this.app.totalFrames) * this.calculateTimelineWidth() - 1);
+
+        // Restore keyframe highlighting after rebuilding timeline
+        this.updateCurrentKeyframeHighlight();
     }
 
     createLayerName(textObject, index) {
         const layerGroup = document.createElement('div');
         layerGroup.className = 'timeline-layer-group';
+        if (textObject === this.app.selectedObject) {
+            layerGroup.classList.add('selected');
+        }
         layerGroup.dataset.objectId = textObject.id;
 
-        // Main text object header
+        // Main text object header with expand/collapse button
         const mainHeader = document.createElement('div');
         mainHeader.className = 'timeline-layer-name main-layer';
-        mainHeader.textContent = textObject.text.length > 15
-            ? textObject.text.substring(0, 15) + '...'
-            : textObject.text || `Layer ${index + 1}`;
-        mainHeader.title = textObject.text;
-        layerGroup.appendChild(mainHeader);
 
-        // Only show property sub-layers that have keyframes
-        Object.keys(textObject.keyframes).forEach(property => {
-            const keyframes = textObject.keyframes[property];
-            if (keyframes && keyframes.length > 0) {
-                const subLayer = document.createElement('div');
-                subLayer.className = 'timeline-layer-name sub-layer';
-                subLayer.dataset.property = property;
-                subLayer.textContent = this.getPropertyDisplayName(property);
-                layerGroup.appendChild(subLayer);
+        // Expand/collapse button
+        const expandButton = document.createElement('span');
+        expandButton.className = 'expand-button';
+        expandButton.textContent = textObject._timelineExpanded ? '▼' : '▶';
+
+        // Layer text
+        const layerText = document.createElement('span');
+        layerText.textContent = textObject.text.length > 12
+            ? textObject.text.substring(0, 12) + '...'
+            : textObject.text || `Layer ${index + 1}`;
+
+        mainHeader.appendChild(expandButton);
+        mainHeader.appendChild(layerText);
+        mainHeader.title = textObject.text;
+
+        // Add click handler for selection and expand/collapse
+        mainHeader.addEventListener('click', (e) => {
+            e.stopPropagation();
+
+            // If clicking on expand button area, toggle expansion
+            if (e.target === expandButton || e.offsetX < 20) {
+                this.toggleLayerExpansion(textObject);
+            } else {
+                // Otherwise, select the object
+                this.selectObject(textObject);
             }
         });
+
+        layerGroup.appendChild(mainHeader);
+
+        // Only show property sub-layers if expanded and have keyframes
+        if (textObject._timelineExpanded) {
+            Object.keys(textObject.keyframes).forEach(property => {
+                const keyframes = textObject.keyframes[property];
+                if (keyframes && keyframes.length > 0) {
+                    const subLayer = document.createElement('div');
+                    subLayer.className = 'timeline-layer-name sub-layer';
+                    subLayer.dataset.property = property;
+                    subLayer.textContent = this.getPropertyDisplayName(property);
+                    layerGroup.appendChild(subLayer);
+                }
+            });
+        }
 
         return layerGroup;
     }
@@ -209,21 +247,36 @@ class TimelineManager {
     createLayerContent(textObject, index) {
         const layerGroup = document.createElement('div');
         layerGroup.className = 'timeline-layer-group';
+        if (textObject === this.app.selectedObject) {
+            layerGroup.classList.add('selected');
+        }
         layerGroup.dataset.objectId = textObject.id;
 
-        // Main layer (empty spacer)
-        const mainLayer = document.createElement('div');
-        mainLayer.className = 'timeline-layer main-layer';
-        layerGroup.appendChild(mainLayer);
+        if (textObject._timelineExpanded) {
+            // Expanded view: show main layer + property sub-layers
+            const mainLayer = document.createElement('div');
+            mainLayer.className = 'timeline-layer main-layer';
+            layerGroup.appendChild(mainLayer);
 
-        // Only show property sub-layers that have keyframes
-        Object.keys(textObject.keyframes).forEach(property => {
-            const keyframes = textObject.keyframes[property];
-            if (keyframes && keyframes.length > 0) {
-                const subLayer = this.createPropertyLayer(textObject, property);
-                layerGroup.appendChild(subLayer);
-            }
-        });
+            // Show property sub-layers that have keyframes
+            Object.keys(textObject.keyframes).forEach(property => {
+                const keyframes = textObject.keyframes[property];
+                if (keyframes && keyframes.length > 0) {
+                    const subLayer = this.createPropertyLayer(textObject, property);
+                    layerGroup.appendChild(subLayer);
+                }
+            });
+        } else {
+            // Collapsed view: single layer with all keyframes combined
+            const collapsedLayer = document.createElement('div');
+            collapsedLayer.className = 'timeline-layer main-layer collapsed';
+            collapsedLayer.dataset.objectId = textObject.id;
+
+            // Collect all keyframes from all properties
+            this.addCollapsedKeyframes(collapsedLayer, textObject);
+
+            layerGroup.appendChild(collapsedLayer);
+        }
 
         return layerGroup;
     }
@@ -248,6 +301,113 @@ class TimelineManager {
         this.setupPropertyLayerEventListeners(layer, textObject, property);
 
         return layer;
+    }
+
+    toggleLayerExpansion(textObject) {
+        textObject._timelineExpanded = !textObject._timelineExpanded;
+
+        // Rebuild the timeline to reflect the new state
+        this.updateLayers();
+    }
+
+    selectObject(textObject) {
+        const previousSelection = this.app.selectedObject;
+
+        // Set new selection
+        this.app.selectedObject = textObject;
+
+        // Handle timeline expansion
+        if (previousSelection !== textObject) {
+            // Collapse previously selected object
+            if (previousSelection) {
+                previousSelection._timelineExpanded = false;
+            }
+
+            // Expand newly selected object
+            textObject._timelineExpanded = true;
+
+            // Update timeline and other UI
+            this.updateLayers();
+            this.app.updateRightPanel();
+            this.app.redraw();
+        }
+    }
+
+    addCollapsedKeyframes(layer, textObject) {
+        // Collect all unique frame positions from all properties
+        const allFramePositions = new Set();
+        const keyframesByFrame = new Map();
+
+        // Gather keyframes from all properties
+        Object.keys(textObject.keyframes).forEach(property => {
+            const keyframes = textObject.keyframes[property] || [];
+            keyframes.forEach(keyframe => {
+                allFramePositions.add(keyframe.frame);
+
+                if (!keyframesByFrame.has(keyframe.frame)) {
+                    keyframesByFrame.set(keyframe.frame, []);
+                }
+                keyframesByFrame.get(keyframe.frame).push({
+                    property,
+                    keyframe
+                });
+            });
+        });
+
+        // Create visual keyframes for each unique frame position
+        Array.from(allFramePositions).sort((a, b) => a - b).forEach(frameNumber => {
+            const keyframeData = keyframesByFrame.get(frameNumber);
+            const keyframeElement = this.createCollapsedKeyframe(frameNumber, keyframeData, textObject);
+            layer.appendChild(keyframeElement);
+        });
+
+        // Add event listeners for the collapsed layer
+        this.setupCollapsedLayerEventListeners(layer, textObject);
+    }
+
+    createCollapsedKeyframe(frameNumber, keyframeData, textObject) {
+        const keyframe = document.createElement('div');
+        keyframe.className = 'keyframe collapsed-keyframe';
+        keyframe.dataset.frame = frameNumber;
+        keyframe.dataset.objectId = textObject.id;
+
+        // Position the keyframe
+        const timelineWidth = this.calculateTimelineWidth();
+        const position = (frameNumber / this.app.totalFrames) * timelineWidth;
+        // Center the keyframe dot by subtracting half its width (7px) to match expanded layer positioning
+        keyframe.style.left = `${position - 7}px`;
+
+        // Create tooltip showing all properties at this frame
+        const properties = keyframeData.map(data => this.getPropertyDisplayName(data.property)).join(', ');
+        keyframe.title = `Frame ${frameNumber}: ${properties}`;
+
+        // Add hover effects
+        keyframe.addEventListener('mouseenter', () => {
+            keyframe.classList.add('highlighted');
+        });
+
+        keyframe.addEventListener('mouseleave', () => {
+            keyframe.classList.remove('highlighted');
+        });
+
+        return keyframe;
+    }
+
+    setupCollapsedLayerEventListeners(layer, textObject) {
+        // Add click handler to expand layer or navigate to keyframes
+        layer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('collapsed-keyframe')) {
+                // Navigate to the keyframe
+                const frameNumber = parseInt(e.target.dataset.frame);
+                this.app.setCurrentFrame(frameNumber);
+            }
+        });
+
+        // Add double-click to expand
+        layer.addEventListener('dblclick', (e) => {
+            e.stopPropagation();
+            this.toggleLayerExpansion(textObject);
+        });
     }
 
     getPropertyDisplayName(property) {

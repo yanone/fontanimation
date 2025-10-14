@@ -907,6 +907,7 @@ class FontAnimationApp {
     }
 
     selectObjectAt(x, y) {
+        const previousSelection = this.selectedObject;
         this.selectedObject = null;
 
         for (let i = this.textObjects.length - 1; i >= 0; i--) {
@@ -921,6 +922,24 @@ class FontAnimationApp {
                 y >= bounds.top && y <= bounds.bottom) {
                 this.selectedObject = obj;
                 break;
+            }
+        }
+
+        // Handle timeline expansion based on selection
+        if (previousSelection !== this.selectedObject) {
+            // Collapse previously selected object if it's different
+            if (previousSelection) {
+                previousSelection._timelineExpanded = false;
+            }
+
+            // Expand newly selected object
+            if (this.selectedObject) {
+                this.selectedObject._timelineExpanded = true;
+            }
+
+            // Update timeline to reflect changes
+            if (this.timeline) {
+                this.timeline.updateLayers();
             }
         }
 
