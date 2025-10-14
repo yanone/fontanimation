@@ -497,7 +497,7 @@ class FontAnimationApp {
             const timelineHeader = document.getElementById('timelineHeader');
             const headerRect = timelineHeader.getBoundingClientRect();
             const headerScrollLeft = timelineHeader ? timelineHeader.scrollLeft : 0;
-            
+
             // Calculate position relative to the timeline header container, then add scroll offset
             const x = (e.clientX - headerRect.left) + headerScrollLeft;
 
