@@ -63,7 +63,7 @@ class ExportManager {
 
             this.isExporting = true;
             let loadingOverlay;
-            
+
             if (window.UIManager) {
                 loadingOverlay = window.UIManager.showLoadingOverlay('Preparing export...');
                 window.UIManager.createNotification('Starting export...', 'info');
@@ -73,7 +73,7 @@ class ExportManager {
             if (this.supportsVideoRecording()) {
                 console.log('Using video recording export method');
                 await this.exportWithVideoRecording(selectedFormat);
-                
+
                 if (window.UIManager) {
                     window.UIManager.createNotification('Video export completed successfully!', 'success');
                 }
@@ -91,9 +91,9 @@ class ExportManager {
 
         } catch (error) {
             console.error('Export failed:', error);
-            
+
             let errorMessage = error.message || 'Unknown export error';
-            
+
             // Provide more helpful error messages
             if (errorMessage.includes('MediaRecorder')) {
                 errorMessage += ' Try refreshing the page or using a different browser.';
@@ -102,11 +102,11 @@ class ExportManager {
             } else if (errorMessage.includes('timeout')) {
                 errorMessage += ' The export is taking too long. Try reducing the animation duration or quality.';
             }
-            
+
             if (window.UIManager) {
                 window.UIManager.createNotification('Export failed: ' + errorMessage, 'error');
                 window.UIManager.hideLoadingOverlay();
-                
+
                 // Offer to try frame sequence export as fallback
                 if (this.supportsVideoRecording() && !error.message?.includes('frame sequence')) {
                     setTimeout(() => {
@@ -290,20 +290,20 @@ class ExportManager {
 
         try {
             const result = await this.attemptVideoRecording(canvas, context, selectedFormat);
-            
+
             // Clean up the temporary canvas on success
             if (canvas.parentNode) {
                 document.body.removeChild(canvas);
             }
-            
+
             return result;
-            
+
         } catch (error) {
             // Clean up the temporary canvas on failure
             if (canvas.parentNode) {
                 document.body.removeChild(canvas);
             }
-            
+
             throw error;
         }
     }
