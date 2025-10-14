@@ -911,12 +911,8 @@ class FontAnimationApp {
             const obj = this.textObjects[i];
             const props = this.getObjectPropertiesAtFrame(obj, this.currentFrame);
 
-            // Create temporary canvas for text measurement
-            const tempCanvas = document.createElement('canvas');
-            const tempCtx = tempCanvas.getContext('2d');
-            tempCtx.font = `${props.fontSize}px "${obj.fontFamily}"`;
-            const metrics = tempCtx.measureText(obj.text);
-
+            // Measure text with accurate font features applied
+            const metrics = this.measureTextWithFeatures(obj, props);
             const bounds = this.getTextBounds(props, metrics, obj.textAlign);
 
             if (x >= bounds.left && x <= bounds.right &&
@@ -929,6 +925,113 @@ class FontAnimationApp {
         this.updateRightPanel();
         this.redraw();
         return this.selectedObject;
+    }
+
+    measureTextWithFeatures(textObject, props) {
+        // Create temporary canvas for accurate text measurement with font features
+        const tempCanvas = document.createElement('canvas');
+        const tempCtx = tempCanvas.getContext('2d');
+
+        // Add canvas to DOM temporarily for CSS font features to work
+        tempCanvas.style.position = 'absolute';
+        tempCanvas.style.left = '-9999px';
+        tempCanvas.style.top = '-9999px';
+        tempCanvas.style.visibility = 'hidden';
+        document.body.appendChild(tempCanvas);
+
+        try {
+            // Check if font is available and apply features
+            const fontAvailable = this.fonts.has(textObject.fontFamily) && this.isFontLoaded(textObject.fontFamily);
+
+            if (fontAvailable) {
+                // Apply variable font axes and/or OpenType features if available
+                const hasVariableAxes = props.variableAxes && Object.keys(props.variableAxes).length > 0;
+                const hasOpenTypeFeatures = props.openTypeFeatures && Object.keys(props.openTypeFeatures).length > 0;
+
+                if (hasVariableAxes || hasOpenTypeFeatures) {
+                    // Apply font features to the temporary canvas
+                    this.applyFontFeaturesToTempCanvas(tempCanvas, textObject.fontFamily, props.fontSize, props.variableAxes, props.openTypeFeatures);
+                } else {
+                    // Use basic font setting
+                    tempCtx.font = `${props.fontSize}px "${textObject.fontFamily}"`;
+                }
+            } else {
+                // Use fallback font
+                tempCtx.font = `${props.fontSize}px Arial, sans-serif`;
+            }
+
+            // Measure the text with the applied features
+            const metrics = tempCtx.measureText(textObject.text);
+            return metrics;
+
+        } finally {
+            // Clean up the temporary canvas
+            if (tempCanvas.parentNode) {
+                document.body.removeChild(tempCanvas);
+            }
+        }
+    }
+
+    getAccurateTextBounds(obj, frame = null) {
+        // Get properties for the specified frame (or current frame if not specified)
+        const frameToUse = frame !== null ? frame : this.currentFrame;
+        const props = this.getObjectPropertiesAtFrame(obj, frameToUse);
+
+        // Measure text with accurate font features applied
+        const metrics = this.measureTextWithFeatures(obj, props);
+
+        // Return accurate bounds
+        return this.getTextBounds(props, metrics, obj.textAlign);
+    }
+
+    applyFontFeaturesToTempCanvas(canvas, fontFamily, fontSize, variableAxes = {}, openTypeFeatures = {}) {
+        try {
+            const context = canvas.getContext('2d');
+
+            // Store original styles for cleanup
+            const originalFontFamily = canvas.style.fontFamily;
+            const originalFontVariationSettings = canvas.style.fontVariationSettings;
+            const originalFontFeatureSettings = canvas.style.fontFeatureSettings;
+
+            // Create font-variation-settings string
+            let fontVariationSettings = '';
+            if (variableAxes && Object.keys(variableAxes).length > 0) {
+                Object.entries(variableAxes).forEach(([tag, value]) => {
+                    fontVariationSettings += `"${tag}" ${value}, `;
+                });
+                fontVariationSettings = fontVariationSettings.replace(/, $/, '');
+            }
+
+            // Create font-feature-settings string
+            let fontFeatureSettings = '';
+            if (openTypeFeatures && Object.keys(openTypeFeatures).length > 0) {
+                Object.entries(openTypeFeatures).forEach(([tag, enabled]) => {
+                    if (enabled) {
+                        fontFeatureSettings += `"${tag}" 1, `;
+                    }
+                });
+                fontFeatureSettings = fontFeatureSettings.replace(/, $/, '');
+            }
+
+            // Apply font settings to the canvas element
+            canvas.style.fontFamily = `"${fontFamily}"`;
+            if (fontVariationSettings) {
+                canvas.style.fontVariationSettings = fontVariationSettings;
+            }
+            if (fontFeatureSettings) {
+                canvas.style.fontFeatureSettings = fontFeatureSettings;
+            }
+            canvas.style.fontSize = `${fontSize}px`;
+
+            // Set the context font
+            context.font = `${fontSize}px "${fontFamily}"`;
+
+        } catch (error) {
+            console.warn('Failed to apply font features to temp canvas:', error);
+            // Fallback to basic font
+            const context = canvas.getContext('2d');
+            context.font = `${fontSize}px "${fontFamily}"`;
+        }
     }
 
     getTextBounds(props, metrics, textAlign = 'left') {
@@ -1261,22 +1364,10 @@ class FontAnimationApp {
     drawSelection(obj) {
         const props = this.getObjectPropertiesAtFrame(obj, this.currentFrame);
 
-        // Create temporary canvas for text measurement
-        const tempCanvas = document.createElement('canvas');
-        const tempCtx = tempCanvas.getContext('2d');
+        // Measure text with accurate font features applied
+        const metrics = this.measureTextWithFeatures(obj, props);
 
-        // Use proper canvas font syntax with fallbacks
-        const fontAvailable = this.fonts.has(obj.fontFamily) && this.isFontLoaded(obj.fontFamily);
-
-        let fontString;
-        if (fontAvailable) {
-            fontString = `${props.fontSize}px "${obj.fontFamily}"`;
-        } else {
-            fontString = `${props.fontSize}px Arial, sans-serif`;
-        }
-
-        tempCtx.font = fontString;
-        const metrics = tempCtx.measureText(obj.text); this.ctx.save();
+        this.ctx.save();
         this.ctx.strokeStyle = '#0078d4';
         this.ctx.lineWidth = 2;
         this.ctx.setLineDash([8, 4]);

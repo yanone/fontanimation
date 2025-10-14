@@ -644,17 +644,15 @@ class CanvasManager {
     drawSelectionIndicator(obj) {
         const props = this.app.getObjectPropertiesAtFrame(obj, this.app.currentFrame);
 
-        // Estimate text dimensions
-        this.context.font = `${props.fontSize}px "${obj.fontFamily}"`;
-        const metrics = this.context.measureText(obj.text);
-        const width = metrics.width;
-        const height = props.fontSize;
+        // Get accurate text dimensions with font features applied
+        const bounds = this.app.getAccurateTextBounds(obj, this.app.currentFrame);
 
-        // Draw selection rectangle
+        // Draw selection rectangle using accurate bounds
         this.context.strokeStyle = '#0078d4';
         this.context.lineWidth = 2;
         this.context.setLineDash([5, 5]);
-        this.context.strokeRect(props.x - 5, props.y - 5, width + 10, height + 10);
+        this.context.strokeRect(bounds.left, bounds.top,
+            bounds.right - bounds.left, bounds.bottom - bounds.top);
         this.context.setLineDash([]);
 
         // Draw position origin mark
