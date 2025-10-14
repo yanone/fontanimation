@@ -323,10 +323,10 @@ class TransitionEditor {
 
         if (this.currentKeyframe) {
             // Check if the curve is linear (0,0,1,1) - if so, remove it
-            const isLinear = this.controlPoints.cp1.x === 0 && 
-                            this.controlPoints.cp1.y === 0 && 
-                            this.controlPoints.cp2.x === 1 && 
-                            this.controlPoints.cp2.y === 1;
+            const isLinear = this.controlPoints.cp1.x === 0 &&
+                this.controlPoints.cp1.y === 0 &&
+                this.controlPoints.cp2.x === 1 &&
+                this.controlPoints.cp2.y === 1;
 
             if (isLinear) {
                 // Remove the curve property to make it linear
@@ -344,7 +344,7 @@ class TransitionEditor {
             // Redraw canvas and save state
             this.currentApp.redraw();
             this.currentApp.saveState();
-            
+
             // Update UI to reflect the current state of transition buttons
             this.currentApp.updateRightPanel();
         }
