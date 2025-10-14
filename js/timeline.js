@@ -13,17 +13,51 @@ class TimelineManager {
     }
 
     setupScrollSynchronization() {
-        // Synchronize vertical scrolling between layer names and layer content
+        // Synchronize vertical scrolling between layer names and timeline container
         const layerNames = document.getElementById('timelineLayerNames');
-        const layerContent = document.getElementById('timelineLayers');
+        const timelineContainer = document.getElementById('timelineContainer');
+        const timelineHeader = document.getElementById('timelineHeader');
 
-        if (layerNames && layerContent) {
+        if (layerNames && timelineContainer) {
+            // Prevent infinite loop during synchronization
+            let isUpdating = false;
+
+            // Vertical scroll synchronization
             layerNames.addEventListener('scroll', () => {
-                layerContent.scrollTop = layerNames.scrollTop;
+                if (!isUpdating) {
+                    isUpdating = true;
+                    timelineContainer.scrollTop = layerNames.scrollTop;
+                    requestAnimationFrame(() => { isUpdating = false; });
+                }
             });
 
-            layerContent.addEventListener('scroll', () => {
-                layerNames.scrollTop = layerContent.scrollTop;
+            timelineContainer.addEventListener('scroll', () => {
+                if (!isUpdating) {
+                    isUpdating = true;
+                    layerNames.scrollTop = timelineContainer.scrollTop;
+                    requestAnimationFrame(() => { isUpdating = false; });
+                }
+            });
+        }
+
+        // Synchronize horizontal scrolling between ruler and timeline content
+        if (timelineHeader && timelineContainer) {
+            let isHorizontalUpdating = false;
+
+            timelineHeader.addEventListener('scroll', () => {
+                if (!isHorizontalUpdating) {
+                    isHorizontalUpdating = true;
+                    timelineContainer.scrollLeft = timelineHeader.scrollLeft;
+                    requestAnimationFrame(() => { isHorizontalUpdating = false; });
+                }
+            });
+
+            timelineContainer.addEventListener('scroll', () => {
+                if (!isHorizontalUpdating) {
+                    isHorizontalUpdating = true;
+                    timelineHeader.scrollLeft = timelineContainer.scrollLeft;
+                    requestAnimationFrame(() => { isHorizontalUpdating = false; });
+                }
             });
         }
     }

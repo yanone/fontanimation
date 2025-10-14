@@ -688,10 +688,20 @@ body {
     /* Allow flex item to shrink below content width */
 }
 
+#timelineHeader {
+    height: 40px;
+    background: #2b2b2b;
+    border-bottom: 1px solid #404040;
+    position: relative;
+    flex-shrink: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
 #timelineContainer {
     flex: 1;
     overflow-x: auto;
-    overflow-y: hidden;
+    overflow-y: auto;
     position: relative;
     width: 100%;
     /* Constrain to parent width */
@@ -700,15 +710,6 @@ body {
 #timelineContent {
     display: flex;
     flex-direction: column;
-    width: auto;
-}
-
-#timelineHeader {
-    height: 40px;
-    background: #2b2b2b;
-    border-bottom: 1px solid #404040;
-    position: relative;
-    flex-shrink: 0;
     width: auto;
 }
 
@@ -774,7 +775,7 @@ body {
 
 #timelineLayers {
     flex: 1;
-    overflow-y: auto;
+    overflow-y: visible;
     overflow-x: hidden;
 }
 
