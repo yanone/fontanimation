@@ -731,6 +731,34 @@ class FontAnimationApp {
                         this.exportVideo();
                     }
                     break;
+                case 'f':
+                    if (e.metaKey || e.ctrlKey) {
+                        e.preventDefault();
+                        // Cmd+F: Upload fonts
+                        document.getElementById('fontUpload').click();
+                    }
+                    break;
+                case 'n':
+                    if (e.metaKey || e.ctrlKey) {
+                        e.preventDefault();
+                        // Cmd+N: New document
+                        this.newProject();
+                    }
+                    break;
+                case 'o':
+                    if (e.metaKey || e.ctrlKey) {
+                        e.preventDefault();
+                        // Cmd+O: Open document
+                        this.openProject();
+                    }
+                    break;
+                case 's':
+                    if (e.metaKey || e.ctrlKey) {
+                        e.preventDefault();
+                        // Cmd+S: Save document
+                        this.saveProject();
+                    }
+                    break;
             }
         });
     }

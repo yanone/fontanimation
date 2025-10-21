@@ -16,10 +16,10 @@
         <!-- Top Menu Bar -->
         <div id="menuBar">
             <div class="menu-group">
-                <button id="newBtn">New</button>
-                <button id="openBtn">Open</button>
+                <button id="newBtn" title="New Document (Cmd+N)">New</button>
+                <button id="openBtn" title="Open Document (Cmd+O)">Open</button>
                 <input type="file" id="openFileInput" accept=".json" style="display: none;">
-                <button id="saveBtn">Save</button>
+                <button id="saveBtn" title="Save Document (Cmd+S)">Save</button>
             </div>
             <div class="menu-group">
                 <label for="canvasWidth">Width:</label>
@@ -84,7 +84,7 @@
                     </button>
                 </div>
                 <div class="tool-group">
-                    <label for="fontUpload" class="upload-btn">Upload Fonts</label>
+                    <label for="fontUpload" class="upload-btn" title="Upload Fonts (Cmd+F)">Upload Fonts</label>
                     <input type="file" id="fontUpload" multiple accept=".otf,.ttf,.woff,.woff2" style="display: none;">
                     <div id="fontList"></div>
                 </div>
