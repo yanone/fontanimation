@@ -1117,6 +1117,23 @@ class FontAnimationApp {
                 return;
             }
 
+            // Handle zoom commands specially - they should work even in input fields to prevent browser zoom
+            if ((e.metaKey || e.ctrlKey) && (e.key === '=' || e.key === '+')) {
+                e.preventDefault();
+                this.zoomIn();
+                return;
+            }
+            if ((e.metaKey || e.ctrlKey) && e.key === '-') {
+                e.preventDefault();
+                this.zoomOut();
+                return;
+            }
+            if ((e.metaKey || e.ctrlKey) && e.key === '0') {
+                e.preventDefault();
+                this.resetZoom();
+                return;
+            }
+
             // Prevent other shortcuts when typing in input fields
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
                 return;
@@ -1297,28 +1314,6 @@ class FontAnimationApp {
                         e.preventDefault();
                         // Cmd+S: Save document
                         this.saveProject();
-                    }
-                    break;
-                case '=':
-                case '+':
-                    if (e.metaKey || e.ctrlKey) {
-                        e.preventDefault();
-                        // Cmd+Plus: Zoom in
-                        this.zoomIn();
-                    }
-                    break;
-                case '-':
-                    if (e.metaKey || e.ctrlKey) {
-                        e.preventDefault();
-                        // Cmd+Minus: Zoom out
-                        this.zoomOut();
-                    }
-                    break;
-                case '0':
-                    if (e.metaKey || e.ctrlKey) {
-                        e.preventDefault();
-                        // Cmd+0: Reset zoom
-                        this.resetZoom();
                     }
                     break;
             }
