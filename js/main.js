@@ -857,11 +857,12 @@ class FontAnimationApp {
         // Double-click to edit text
         this.canvas.addEventListener('dblclick', (e) => {
             if (this.selectedObject && this.currentTool === 'select') {
-                const newText = prompt('Edit text:', this.selectedObject.text);
-                if (newText !== null) {
-                    this.selectedObject.text = newText;
-                    this.redraw();
-                    this.saveState();
+                // Focus on the textarea in the right panel for multi-line editing
+                const textContentElement = document.getElementById('textContent');
+                if (textContentElement) {
+                    textContentElement.focus();
+                    // Select all text for easy editing
+                    textContentElement.select();
                 }
             }
         });
@@ -1129,14 +1130,25 @@ class FontAnimationApp {
                 return;
             }
 
-            // Handle Enter key specially - it should work even in input fields
+            // Handle Enter key specially - different behavior for INPUT vs TEXTAREA
             if (e.key.toLowerCase() === 'enter') {
-                // If user is in a text field, exit the field (like Escape key behavior)
-                if (document.activeElement &&
-                    (document.activeElement.tagName === 'INPUT' ||
-                        document.activeElement.tagName === 'TEXTAREA')) {
+                // If user is in an INPUT field, exit the field (like Escape key behavior)
+                if (document.activeElement && document.activeElement.tagName === 'INPUT') {
                     document.activeElement.blur();
                     return; // Exit early - don't prevent default or trigger play/pause
+                }
+
+                // If user is in a TEXTAREA field, allow multi-line editing
+                // Only exit on Cmd+Enter or Ctrl+Enter for explicit exit
+                if (document.activeElement && document.activeElement.tagName === 'TEXTAREA') {
+                    if (e.metaKey || e.ctrlKey) {
+                        // Cmd+Enter or Ctrl+Enter: Exit the textarea
+                        document.activeElement.blur();
+                        return;
+                    } else {
+                        // Regular Enter: Allow normal textarea behavior (new line)
+                        return; // Don't prevent default - let textarea handle Enter normally
+                    }
                 }
 
                 // Only prevent default and handle play/pause when not in text fields
