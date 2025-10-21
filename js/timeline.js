@@ -728,7 +728,7 @@ class TimelineManager {
         });
 
         console.log('Updating selection visual for', this.selectedKeyframes.length, 'keyframes');
-        
+
         // Apply visual selection to selected keyframes
         this.selectedKeyframes.forEach(selected => {
             const selector = `.keyframe[data-object-id="${selected.objectId}"][data-property="${selected.property}"][data-frame="${selected.frame}"]`;
