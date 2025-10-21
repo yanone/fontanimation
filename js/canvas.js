@@ -218,20 +218,32 @@ class CanvasManager {
 
         switch (event.key) {
             case 'ArrowLeft':
-                this.app.selectedObject.x -= step;
-                moved = true;
+                {
+                    const currentX = this.app.getPropertyValue(this.app.selectedObject, 'x');
+                    this.app.updateObjectProperty(this.app.selectedObject, 'x', currentX - step);
+                    moved = true;
+                }
                 break;
             case 'ArrowRight':
-                this.app.selectedObject.x += step;
-                moved = true;
+                {
+                    const currentX = this.app.getPropertyValue(this.app.selectedObject, 'x');
+                    this.app.updateObjectProperty(this.app.selectedObject, 'x', currentX + step);
+                    moved = true;
+                }
                 break;
             case 'ArrowUp':
-                this.app.selectedObject.y -= step;
-                moved = true;
+                {
+                    const currentY = this.app.getPropertyValue(this.app.selectedObject, 'y');
+                    this.app.updateObjectProperty(this.app.selectedObject, 'y', currentY - step);
+                    moved = true;
+                }
                 break;
             case 'ArrowDown':
-                this.app.selectedObject.y += step;
-                moved = true;
+                {
+                    const currentY = this.app.getPropertyValue(this.app.selectedObject, 'y');
+                    this.app.updateObjectProperty(this.app.selectedObject, 'y', currentY + step);
+                    moved = true;
+                }
                 break;
             case 'Delete':
             case 'Backspace':
@@ -242,6 +254,7 @@ class CanvasManager {
         if (moved) {
             event.preventDefault();
             this.render();
+            this.app.redraw();
             if (this.app.timeline) {
                 this.app.timeline.update();
             }

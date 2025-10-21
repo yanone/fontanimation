@@ -715,25 +715,73 @@ class FontAnimationApp {
                     this.addTestText();
                     break;
                 case 'arrowleft':
-                    e.preventDefault();
-                    if (e.metaKey || e.ctrlKey) {
-                        // Cmd+Left: Jump to first frame
-                        this.goToStart();
-                    } else if (e.shiftKey) {
-                        this.jumpBackward(10);
+                    if (this.selectedObject) {
+                        // Handle object movement when object is selected
+                        e.preventDefault();
+                        const step = e.shiftKey ? 10 : 1;
+                        const currentX = this.getPropertyValue(this.selectedObject, 'x');
+                        this.updateObjectProperty(this.selectedObject, 'x', currentX - step);
+                        this.redraw();
+                        this.updateRightPanel();
+                        this.saveState();
                     } else {
-                        this.stepBackward();
+                        // Handle timeline navigation when no object is selected
+                        e.preventDefault();
+                        if (e.metaKey || e.ctrlKey) {
+                            // Cmd+Left: Jump to first frame
+                            this.goToStart();
+                        } else if (e.shiftKey) {
+                            this.jumpBackward(10);
+                        } else {
+                            this.stepBackward();
+                        }
                     }
                     break;
                 case 'arrowright':
-                    e.preventDefault();
-                    if (e.metaKey || e.ctrlKey) {
-                        // Cmd+Right: Jump to last frame
-                        this.goToEnd();
-                    } else if (e.shiftKey) {
-                        this.jumpForward(10);
+                    if (this.selectedObject) {
+                        // Handle object movement when object is selected
+                        e.preventDefault();
+                        const step = e.shiftKey ? 10 : 1;
+                        const currentX = this.getPropertyValue(this.selectedObject, 'x');
+                        this.updateObjectProperty(this.selectedObject, 'x', currentX + step);
+                        this.redraw();
+                        this.updateRightPanel();
+                        this.saveState();
                     } else {
-                        this.stepForward();
+                        // Handle timeline navigation when no object is selected
+                        e.preventDefault();
+                        if (e.metaKey || e.ctrlKey) {
+                            // Cmd+Right: Jump to last frame
+                            this.goToEnd();
+                        } else if (e.shiftKey) {
+                            this.jumpForward(10);
+                        } else {
+                            this.stepForward();
+                        }
+                    }
+                    break;
+                case 'arrowup':
+                    // Handle object movement when object is selected
+                    if (this.selectedObject) {
+                        e.preventDefault();
+                        const step = e.shiftKey ? 10 : 1;
+                        const currentY = this.getPropertyValue(this.selectedObject, 'y');
+                        this.updateObjectProperty(this.selectedObject, 'y', currentY - step);
+                        this.redraw();
+                        this.updateRightPanel();
+                        this.saveState();
+                    }
+                    break;
+                case 'arrowdown':
+                    // Handle object movement when object is selected
+                    if (this.selectedObject) {
+                        e.preventDefault();
+                        const step = e.shiftKey ? 10 : 1;
+                        const currentY = this.getPropertyValue(this.selectedObject, 'y');
+                        this.updateObjectProperty(this.selectedObject, 'y', currentY + step);
+                        this.redraw();
+                        this.updateRightPanel();
+                        this.saveState();
                     }
                     break;
                 case 'e':
