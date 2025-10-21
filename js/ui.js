@@ -47,11 +47,14 @@ class UIManager {
             textContentInput.value = textObject.text;
         }
 
-        // Update text alignment
-        const textAlignSelect = document.getElementById('textAlign');
-        if (textAlignSelect) {
-            textAlignSelect.value = textObject.textAlign || 'left';
-        }
+        // Update text alignment buttons
+        const alignmentButtons = document.querySelectorAll('.alignment-btn');
+        alignmentButtons.forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.align === (textObject.textAlign || 'left')) {
+                btn.classList.add('active');
+            }
+        });
 
         // Update position
         const textXInput = document.getElementById('textX');

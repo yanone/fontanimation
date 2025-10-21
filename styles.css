@@ -565,6 +565,47 @@ body {
     border-color: #3a3a3a;
 }
 
+/* Alignment Buttons */
+.alignment-buttons {
+    display: flex;
+    gap: 2px;
+}
+
+.alignment-btn {
+    width: 32px;
+    height: 24px;
+    background: #404040;
+    border: 1px solid #606060;
+    color: #cccccc;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.alignment-btn:hover {
+    background: #505050;
+    border-color: #707070;
+    color: #ffffff;
+}
+
+.alignment-btn.active {
+    background: #0078d4;
+    border-color: #106ebe;
+    color: #ffffff;
+}
+
+.alignment-btn.active:hover {
+    background: #106ebe;
+}
+
+.alignment-btn .material-symbols-outlined {
+    font-size: 16px;
+}
+
 .range-container {
     display: flex;
     align-items: center;

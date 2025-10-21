@@ -594,12 +594,21 @@ class FontAnimationApp {
             }
         });
 
-        document.getElementById('textAlign').addEventListener('change', (e) => {
-            if (this.selectedObject) {
-                this.selectedObject.textAlign = e.target.value;
-                this.redraw();
-                this.saveState();
-            }
+        // Text alignment buttons
+        document.querySelectorAll('.alignment-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                if (this.selectedObject) {
+                    const alignment = e.currentTarget.dataset.align;
+                    this.selectedObject.textAlign = alignment;
+                    
+                    // Update button states
+                    document.querySelectorAll('.alignment-btn').forEach(b => b.classList.remove('active'));
+                    e.currentTarget.classList.add('active');
+                    
+                    this.redraw();
+                    this.saveState();
+                }
+            });
         });
 
         document.getElementById('textContent').addEventListener('input', (e) => {
