@@ -621,11 +621,12 @@ class FontAnimationApp {
 
         this.canvas.addEventListener('mousedown', (e) => {
             const rect = this.canvas.getBoundingClientRect();
-            // Calculate coordinates accounting for CSS scaling and device pixel ratio
+            // Calculate coordinates accounting for CSS scaling and zoom
+            // Note: rect dimensions already include zoom scaling, so we don't divide by zoom again
             const scaleX = this.canvasWidth / rect.width;
             const scaleY = this.canvasHeight / rect.height;
-            const x = (e.clientX - rect.left) * scaleX / this.zoom - this.panX / this.zoom;
-            const y = (e.clientY - rect.top) * scaleY / this.zoom - this.panY / this.zoom;
+            const x = (e.clientX - rect.left) * scaleX - this.panX;
+            const y = (e.clientY - rect.top) * scaleY - this.panY;
 
             if (this.currentTool === 'hand') {
                 // Initialize canvas manager if needed
@@ -663,11 +664,12 @@ class FontAnimationApp {
             if (!isDragging || !this.selectedObject) return;
 
             const rect = this.canvas.getBoundingClientRect();
-            // Calculate coordinates accounting for CSS scaling and device pixel ratio
+            // Calculate coordinates accounting for CSS scaling and zoom
+            // Note: rect dimensions already include zoom scaling, so we don't divide by zoom again
             const scaleX = this.canvasWidth / rect.width;
             const scaleY = this.canvasHeight / rect.height;
-            const x = (e.clientX - rect.left) * scaleX / this.zoom - this.panX / this.zoom;
-            const y = (e.clientY - rect.top) * scaleY / this.zoom - this.panY / this.zoom;
+            const x = (e.clientX - rect.left) * scaleX - this.panX;
+            const y = (e.clientY - rect.top) * scaleY - this.panY;
 
             let deltaX = x - dragStartX;
             let deltaY = y - dragStartY;
