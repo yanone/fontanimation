@@ -95,7 +95,7 @@ Font Animation Studio allows you to:
 | `Cmd+E` | Export video |
 | `Cmd+Z` | Undo |
 | `Cmd+Shift+Z` | Redo |
-| `Escape` | Close modals |
+| `Escape` | Unselect objects, exit text fields, close modals |
 
 ## 🎯 Best Practices for Smooth Results
 

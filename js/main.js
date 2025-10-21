@@ -1093,16 +1093,36 @@ class FontAnimationApp {
         });
 
         document.addEventListener('keydown', (e) => {
-            // Prevent shortcuts when typing in input fields
+            // Handle Escape key specially - it should work even in input fields
+            if (e.key.toLowerCase() === 'escape') {
+                e.preventDefault();
+
+                // Close any open modals first
+                this.closeAllModals();
+
+                // If user is in a text field, just exit the field (don't unselect object)
+                if (document.activeElement &&
+                    (document.activeElement.tagName === 'INPUT' ||
+                        document.activeElement.tagName === 'TEXTAREA')) {
+                    document.activeElement.blur();
+                    return; // Exit early - don't unselect object when exiting text field
+                }
+
+                // Only unselect objects if not exiting a text field
+                if (this.selectedObject) {
+                    this.selectedObject = null;
+                    this.updateRightPanel();
+                    this.redraw();
+                }
+                return;
+            }
+
+            // Prevent other shortcuts when typing in input fields
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
                 return;
             }
 
             switch (e.key.toLowerCase()) {
-                case 'escape':
-                    e.preventDefault();
-                    this.closeAllModals();
-                    break;
                 case 'h':
                     this.setTool('hand');
                     break;
