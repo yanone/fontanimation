@@ -282,8 +282,8 @@ body {
     min-width: 0;
     min-height: 0;
     display: flex;
-    align-items: safe center;
-    justify-content: safe center;
+    align-items: center;
+    justify-content: center;
 }
 
 /* Custom scrollbars for canvas container */
@@ -324,7 +324,7 @@ body {
     border-radius: 4px;
     cursor: grab;
     transition: transform 0.1s ease;
-    margin: 50px;
+    margin: 300px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 
     /* Ensure high-quality rendering on high-DPI displays */
@@ -344,10 +344,6 @@ body {
 
 #mainCanvas.hand-cursor {
     cursor: grab;
-}
-
-#mainCanvas.zoom-cursor {
-    cursor: zoom-in;
 }
 
 #mainCanvas.text-cursor {

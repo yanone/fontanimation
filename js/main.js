@@ -277,9 +277,49 @@ class FontAnimationApp {
     }
 
     updateCanvasTransform() {
-        this.canvas.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoom})`;
-        this.canvas.style.transformOrigin = 'center center';
+        // Calculate dynamic margins based on zoom level to ensure all corners are reachable
+        const baseMargin = 300;
+        const canvasWidth = this.canvasWidth;
+        const canvasHeight = this.canvasHeight;
+
+        // Calculate how much the canvas will grow when scaled
+        const scaledWidth = canvasWidth * this.zoom;
+        const scaledHeight = canvasHeight * this.zoom;
+        const extraWidth = (scaledWidth - canvasWidth) / 2;
+        const extraHeight = (scaledHeight - canvasHeight) / 2;
+
+        // Set margins that provide enough space for the scaled canvas
+        const dynamicMargin = baseMargin + Math.max(extraWidth, extraHeight, 0);
+        this.canvas.style.margin = `${dynamicMargin}px`;
+
+        // Use top-left origin and manually center the scaled canvas
+        // Calculate offset to center the scaled canvas within its container space
+        const centerOffsetX = extraWidth;
+        const centerOffsetY = extraHeight;
+
+        this.canvas.style.transform = `translate(${this.panX + centerOffsetX}px, ${this.panY + centerOffsetY}px) scale(${this.zoom})`;
+        this.canvas.style.transformOrigin = 'top left';
         this.updateZoomDisplay();
+    }
+
+    centerViewportOnCanvas() {
+        const container = document.getElementById('canvasContainer');
+        if (!container) return;
+
+        // Wait for DOM to update after margin changes
+        requestAnimationFrame(() => {
+            // Calculate the center of the scrollable area
+            const maxScrollLeft = container.scrollWidth - container.clientWidth;
+            const maxScrollTop = container.scrollHeight - container.clientHeight;
+
+            // Center the scroll position
+            if (maxScrollLeft > 0) {
+                container.scrollLeft = maxScrollLeft / 2;
+            }
+            if (maxScrollTop > 0) {
+                container.scrollTop = maxScrollTop / 2;
+            }
+        });
     }
 
     updateZoomDisplay() {
@@ -323,6 +363,7 @@ class FontAnimationApp {
         // If already at max level, do nothing
 
         this.updateCanvasTransform();
+        this.centerViewportOnCanvas();
     }
 
     zoomOut() {
@@ -342,11 +383,13 @@ class FontAnimationApp {
         // If already at min level, do nothing
 
         this.updateCanvasTransform();
+        this.centerViewportOnCanvas();
     }
 
     resetZoom() {
         this.zoom = 1.0;
         this.updateCanvasTransform();
+        this.centerViewportOnCanvas();
     }
 
     setupEventListeners() {
@@ -394,7 +437,6 @@ class FontAnimationApp {
 
         // Tools
         document.getElementById('handTool').addEventListener('click', () => this.setTool('hand'));
-        document.getElementById('zoomTool').addEventListener('click', () => this.setTool('zoom'));
         document.getElementById('textTool').addEventListener('click', () => this.setTool('text'));
         document.getElementById('selectTool').addEventListener('click', () => this.setTool('select'));
 
@@ -769,8 +811,9 @@ class FontAnimationApp {
             document.getElementById('frameRate').value = this.frameRate;
             document.getElementById('duration').value = this.duration;
         }
-        // Initialize zoom display
+        // Initialize zoom display and center viewport
         this.updateZoomDisplay();
+        this.centerViewportOnCanvas();
     }
 
     // Test method to add a text object for debugging
@@ -801,8 +844,6 @@ class FontAnimationApp {
                         } else {
                             this.undo();
                         }
-                    } else {
-                        this.setTool('zoom');
                     }
                     break;
                 case 't':
