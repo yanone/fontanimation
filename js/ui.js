@@ -155,14 +155,10 @@ class UIManager {
         numberInput.step = rangeInput.step;
         numberInput.value = rangeInput.value;
 
-        const valueDisplay = document.createElement('span');
-        valueDisplay.textContent = parseFloat(rangeInput.value).toFixed(1);
-
         // Sync inputs
         const updateValue = (value) => {
             rangeInput.value = value;
             numberInput.value = value;
-            valueDisplay.textContent = parseFloat(value).toFixed(1);
             UIManager.updateAxisValue(propertyName, parseFloat(value), textObject, app);
         };
 
@@ -207,7 +203,6 @@ class UIManager {
         rangeContainer.appendChild(transitionBtn);
         rangeContainer.appendChild(rangeInput);
         rangeContainer.appendChild(numberInput);
-        rangeContainer.appendChild(valueDisplay);
         rangeContainer.appendChild(resetBtn);
         control.appendChild(rangeContainer);
 

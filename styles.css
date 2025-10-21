@@ -520,13 +520,8 @@ body {
 
 .range-container input[type="range"] {
     flex: 1;
-}
-
-.range-container span {
-    font-size: 11px;
-    color: #cccccc;
-    min-width: 30px;
-    text-align: right;
+    min-width: 80px;
+    max-width: 150px;
 }
 
 .axis-control {
