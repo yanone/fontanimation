@@ -1629,15 +1629,23 @@ class FontAnimationApp {
 
     undo() {
         if (this.historyIndex > 0) {
+            // Store current selection to preserve it
+            const currentSelection = this.selectedObject;
             this.historyIndex--;
             this.loadState(this.history[this.historyIndex]);
+            // Restore selection after loading state
+            this.restoreSelection(currentSelection);
         }
     }
 
     redo() {
         if (this.historyIndex < this.history.length - 1) {
+            // Store current selection to preserve it
+            const currentSelection = this.selectedObject;
             this.historyIndex++;
             this.loadState(this.history[this.historyIndex]);
+            // Restore selection after loading state
+            this.restoreSelection(currentSelection);
         }
     }
 
@@ -1650,9 +1658,6 @@ class FontAnimationApp {
         this.frameRate = state.frameRate;
         this.duration = state.duration;
 
-        // Clear selection to prevent lingering selection boxes
-        this.selectedObject = null;
-
         // Update UI
         document.getElementById('canvasWidth').value = this.canvasWidth;
         document.getElementById('canvasHeight').value = this.canvasHeight;
@@ -1664,9 +1669,34 @@ class FontAnimationApp {
         this.updateTimeline();
         this.redraw();
 
-        // Update the right panel to reflect the cleared selection
+        // Update the right panel
         if (window.UIManager) {
             window.UIManager.updateRightPanel(this);
+        }
+    }
+
+    restoreSelection(previousSelection) {
+        // Try to restore the selection by finding the object with the same ID
+        if (previousSelection && previousSelection.id) {
+            const matchingObject = this.textObjects.find(obj => obj.id === previousSelection.id);
+            if (matchingObject) {
+                this.selectedObject = matchingObject;
+                // Update timeline to reflect the restored selection
+                if (this.selectedObject) {
+                    this.selectedObject._timelineExpanded = true;
+                }
+                if (this.timeline) {
+                    this.timeline.updateLayers();
+                }
+                this.updateRightPanel();
+                this.redraw();
+            } else {
+                // Object no longer exists, clear selection
+                this.selectedObject = null;
+            }
+        } else {
+            // No previous selection, clear selection
+            this.selectedObject = null;
         }
     }
 
