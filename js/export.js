@@ -225,6 +225,16 @@ class ExportManager {
                 }
             });
 
+            // Add Safari recommendation
+            const recommendationDiv = document.createElement('div');
+            recommendationDiv.className = 'browser-recommendation';
+            recommendationDiv.innerHTML = `
+                <div style="margin-top: 15px; padding: 10px; background-color: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 4px; font-size: 14px; color: var(--text-secondary);">
+                    <strong>💡 Tip:</strong> For best export results, use Safari browser when possible. Safari provides more reliable video encoding, especially for high-resolution animations.
+                </div>
+            `;
+            formatOptions.appendChild(recommendationDiv);
+
             // Show modal
             modal.style.display = 'flex';
 
@@ -302,7 +312,9 @@ class ExportManager {
         }
 
         try {
-            const result = await this.attemptVideoRecording(canvas, context, selectedFormat);
+            // Use robust frame-by-frame export with direct MediaRecorder control
+            console.log('Starting robust frame-by-frame video export');
+            const result = await this.exportFrameByFrame(canvas, context, selectedFormat);
 
             // Clean up the temporary canvas on success
             if (canvas.parentNode) {
@@ -312,32 +324,6 @@ class ExportManager {
             return result;
 
         } catch (error) {
-            // For large canvas MP4 failures, try WebM fallback
-            const canvasArea = canvas.width * canvas.height;
-            if (selectedFormat.includes('mp4') && canvasArea > 1920 * 1080) {
-                const webmFormat = 'video/webm;codecs=vp9';
-                if (this.supportedFormats[webmFormat]) {
-                    console.log('MP4 failed for large canvas, attempting WebM fallback...');
-                    try {
-                        const result = await this.attemptVideoRecording(canvas, context, webmFormat);
-
-                        // Clean up the temporary canvas on success
-                        if (canvas.parentNode) {
-                            document.body.removeChild(canvas);
-                        }
-
-                        // Notify user about format change
-                        if (window.UIManager) {
-                            window.UIManager.createNotification('MP4 failed for large canvas. Exported as WebM instead.', 'warning');
-                        }
-
-                        return result;
-                    } catch (webmError) {
-                        console.error('WebM fallback also failed:', webmError);
-                    }
-                }
-            }
-
             // Clean up the temporary canvas on failure
             if (canvas.parentNode) {
                 document.body.removeChild(canvas);
@@ -347,105 +333,7 @@ class ExportManager {
         }
     }
 
-    async attemptVideoRecording(canvas, context, selectedFormat) {
-        // Create video stream with desired frame rate
-        const stream = canvas.captureStream(this.app.frameRate);
 
-        // Configure MediaRecorder with size-appropriate bitrate
-        const canvasArea = canvas.width * canvas.height;
-        const baseArea = 1920 * 1080; // 1080p baseline
-        const areaRatio = Math.min(canvasArea / baseArea, 4); // Cap at 4x for very large canvases
-
-        // Scale bitrate with canvas size, but use conservative rates for stability
-        const baseBitrate = selectedFormat.includes('mp4') ? 15000000 : 12000000; // 15Mbps MP4, 12Mbps WebM
-        const scaledBitrate = Math.floor(baseBitrate * Math.sqrt(areaRatio)); // Square root scaling is more conservative
-
-        const mediaRecorderOptions = {
-            mimeType: selectedFormat,
-            videoBitsPerSecond: scaledBitrate
-        };
-
-        console.log(`Canvas size: ${canvas.width}×${canvas.height}, Bitrate: ${(scaledBitrate / 1000000).toFixed(1)}Mbps`);
-
-        // For MP4, use additional compatibility settings for large canvases
-        if (selectedFormat.includes('mp4') && canvasArea > 1920 * 1080) {
-            // Use more conservative settings for large MP4 exports
-            mediaRecorderOptions.videoBitsPerSecond = Math.min(scaledBitrate, 30000000); // Cap at 30Mbps
-        }
-
-        const mediaRecorder = new MediaRecorder(stream, mediaRecorderOptions);
-        const chunks = [];
-
-        mediaRecorder.ondataavailable = (event) => {
-            if (event.data && event.data.size > 0) {
-                chunks.push(event.data);
-                console.log(`Data chunk received: ${event.data.size} bytes`);
-            }
-        };
-
-        return new Promise((resolve, reject) => {
-            mediaRecorder.onstop = () => {
-                console.log(`Total chunks collected: ${chunks.length}`);
-                if (chunks.length === 0) {
-                    reject(new Error('No video data was recorded. Please try again.'));
-                    return;
-                }
-
-                const blob = new Blob(chunks, { type: selectedFormat });
-                console.log(`Final blob size: ${blob.size} bytes`);
-
-                if (blob.size < 1000) { // Less than 1KB is likely invalid
-                    reject(new Error('Video file appears to be invalid. Please try exporting again.'));
-                    return;
-                }
-
-                const extension = selectedFormat.includes('mp4') ? 'mp4' : 'webm';
-                this.downloadBlob(blob, `animation.${extension}`);
-                resolve();
-            };
-
-            mediaRecorder.onerror = (error) => {
-                console.error('MediaRecorder error:', error);
-                let errorMessage = 'MediaRecorder error: ' + (error.message || 'Unknown error');
-
-                // Provide specific guidance for large canvas MP4 issues
-                const canvasArea = canvas.width * canvas.height;
-                if (selectedFormat.includes('mp4') && canvasArea > 1920 * 1080) {
-                    errorMessage += '. Large canvas MP4 export failed. This may be due to browser limitations with high-resolution MP4 encoding.';
-                }
-
-                reject(new Error(errorMessage));
-            };
-
-            mediaRecorder.onstart = () => {
-                console.log('MediaRecorder started with format:', selectedFormat);
-            };
-
-            // Enhanced startup sequence for more reliable recording
-            setTimeout(() => {
-                try {
-                    // Start with smaller chunks for MP4 compatibility
-                    const chunkSize = selectedFormat.includes('mp4') ? 100 : 250;
-                    mediaRecorder.start(chunkSize);
-
-                    // Wait a bit before starting animation to ensure recording is ready
-                    setTimeout(() => {
-                        this.renderAnimationToCanvas(canvas, context, () => {
-                            // Wait longer before stopping for MP4 to ensure proper finalization
-                            const stopDelay = selectedFormat.includes('mp4') ? 1000 : 500;
-                            setTimeout(() => {
-                                if (mediaRecorder.state === 'recording') {
-                                    mediaRecorder.stop();
-                                }
-                            }, stopDelay);
-                        });
-                    }, 200);
-                } catch (error) {
-                    reject(new Error('Failed to start recording: ' + error.message));
-                }
-            }, 100);
-        });
-    }
 
 
 
@@ -723,6 +611,15 @@ class ExportManager {
         let frame = 0;
         let startTime = performance.now();
 
+        // Chrome-specific optimizations for large canvases
+        const canvasArea = canvas.width * canvas.height;
+        const is4K = canvasArea >= 3840 * 2160;
+        const isLarge = canvasArea >= 2560 * 1440;
+
+        if (this.isChrome && is4K) {
+            console.log('Chrome detected with 4K canvas - using browser-synced rendering to prevent frame drops');
+        }
+
         const renderNextFrame = (currentTime) => {
             if (frame >= this.app.totalFrames) {
                 const actualDuration = (performance.now() - startTime) / 1000;
@@ -749,12 +646,23 @@ class ExportManager {
                 window.UIManager.showExportProgress(progress);
             }
 
-            // Calculate when the next frame should be rendered
+            // Schedule next frame
             if (frame < this.app.totalFrames) {
                 const nextFrameTime = startTime + (frame * frameInterval);
                 const delay = Math.max(0, nextFrameTime - performance.now());
 
-                setTimeout(renderNextFrame, delay);
+                // Use requestAnimationFrame for Chrome with large canvases for better sync
+                if (this.isChrome && (is4K || isLarge)) {
+                    // For Chrome with large canvases, use requestAnimationFrame but still respect timing
+                    if (delay > 0) {
+                        setTimeout(() => requestAnimationFrame(renderNextFrame), delay);
+                    } else {
+                        requestAnimationFrame(renderNextFrame);
+                    }
+                } else {
+                    // Standard timeout-based rendering for other cases
+                    setTimeout(renderNextFrame, delay);
+                }
             } else {
                 onComplete();
             }
@@ -908,6 +816,101 @@ class ExportManager {
         };
 
         return settings[quality] || settings.high;
+    }
+
+    // Robust frame-by-frame video export with direct MediaRecorder control
+    async exportFrameByFrame(canvas, context, selectedFormat) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                console.log('Starting robust frame-by-frame video export...');
+
+                // Create MediaRecorder with the original canvas
+                const stream = canvas.captureStream(0); // 0 = manual frame capture
+
+                // Calculate appropriate bitrate
+                const canvasArea = canvas.width * canvas.height;
+                const baseArea = 1920 * 1080;
+                const areaRatio = Math.min(canvasArea / baseArea, 4);
+                const baseBitrate = selectedFormat.includes('mp4') ? 12000000 : 10000000;
+                const bitrate = Math.floor(baseBitrate * Math.sqrt(areaRatio));
+
+                const mediaRecorderOptions = {
+                    mimeType: selectedFormat,
+                    videoBitsPerSecond: Math.min(bitrate, 20000000) // Conservative cap for stability
+                };
+
+                console.log(`MediaRecorder settings: ${canvas.width}x${canvas.height}, ${(bitrate / 1000000).toFixed(1)}Mbps, ${this.app.frameRate}fps`);
+
+                const mediaRecorder = new MediaRecorder(stream, mediaRecorderOptions);
+                const recordedChunks = [];
+
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        recordedChunks.push(event.data);
+                    }
+                };
+
+                mediaRecorder.onstop = () => {
+                    console.log(`Recording stopped. Total chunks: ${recordedChunks.length}`);
+                    const blob = new Blob(recordedChunks, { type: selectedFormat });
+
+                    const extension = selectedFormat.includes('mp4') ? 'mp4' : 'webm';
+                    this.downloadBlob(blob, `animation.${extension}`);
+                    resolve();
+                };
+
+                mediaRecorder.onerror = (error) => {
+                    console.error('MediaRecorder error:', error);
+                    reject(error);
+                };
+
+                // Start recording with small chunks
+                mediaRecorder.start(100);
+                console.log('MediaRecorder started, beginning frame rendering...');
+
+                // Render frames with precise timing
+                const totalFrames = this.app.totalFrames;
+                const frameDuration = 1000 / this.app.frameRate; // Duration per frame in ms
+
+                for (let frameIndex = 0; frameIndex < totalFrames; frameIndex++) {
+                    // Clear and render frame
+                    context.clearRect(0, 0, canvas.width, canvas.height);
+                    context.fillStyle = this.app.canvasBackground;
+                    context.fillRect(0, 0, canvas.width, canvas.height);
+                    this.renderFrame(frameIndex, canvas, context);
+
+                    // Capture this frame in the stream (this is the key!)
+                    const track = stream.getVideoTracks()[0];
+                    if (track && track.requestFrame) {
+                        track.requestFrame();
+                    }
+
+                    // Update progress
+                    const progress = (frameIndex + 1) / totalFrames;
+                    if (window.UIManager) {
+                        window.UIManager.showExportProgress(progress);
+                    }
+
+                    console.log(`Rendered frame ${frameIndex + 1}/${totalFrames}`);
+
+                    // Wait for the exact frame duration to maintain proper timing
+                    await new Promise(resolve => setTimeout(resolve, frameDuration));
+                }
+
+                console.log(`All ${totalFrames} frames rendered. Finalizing video...`);
+
+                // Wait a bit then stop recording
+                setTimeout(() => {
+                    if (mediaRecorder.state === 'recording') {
+                        mediaRecorder.stop();
+                    }
+                }, 500);
+
+            } catch (error) {
+                console.error('Frame-by-frame export failed:', error);
+                reject(error);
+            }
+        });
     }
 
     // Check export capabilities
