@@ -170,14 +170,15 @@ class UIManager {
             app.saveState();
         });
 
-        numberInput.addEventListener('input', (e) => {
+        // Update value only when user finishes typing (not on every keystroke)
+        const handleNumberInputChange = (e) => {
             const value = Math.max(axisInfo.min, Math.min(axisInfo.max, parseFloat(e.target.value) || axisInfo.default));
             updateValue(value);
-        });
-
-        numberInput.addEventListener('change', () => {
             app.saveState();
-        });
+        };
+
+        numberInput.addEventListener('change', handleNumberInputChange);
+        numberInput.addEventListener('blur', handleNumberInputChange);
 
         // Reset button
         const resetBtn = document.createElement('button');
