@@ -144,9 +144,9 @@ class CanvasManager {
 
         if (this.isDragging) {
             if (this.app.selectedTool === 'select' && this.app.selectedObject) {
-                this.handleObjectDrag(pos);
+                this.handleObjectDrag(pos, event);
             } else if (this.app.selectedTool === 'move' && this.app.selectedObject) {
-                this.handleObjectMove(pos);
+                this.handleObjectMove(pos, event);
             } else if (this.app.selectedTool === 'rotate' && this.app.selectedObject) {
                 this.handleObjectRotate(pos);
             } else if (this.app.selectedTool === 'scale' && this.app.selectedObject) {
@@ -286,11 +286,23 @@ class CanvasManager {
         }
     }
 
-    handleObjectDrag(pos) {
+    handleObjectDrag(pos, event) {
         if (!this.app.selectedObject || !this.dragStartPos) return;
 
-        const deltaX = pos.x - this.dragStartPos.x;
-        const deltaY = pos.y - this.dragStartPos.y;
+        let deltaX = pos.x - this.dragStartPos.x;
+        let deltaY = pos.y - this.dragStartPos.y;
+
+        // Constrain movement to 90° angles when shift key is held
+        if (event && event.shiftKey) {
+            const angle = Math.atan2(deltaY, deltaX);
+            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+            // Snap to nearest 90° angle (0°, 90°, 180°, 270°)
+            const snapAngle = Math.round(angle / (Math.PI / 2)) * (Math.PI / 2);
+
+            deltaX = distance * Math.cos(snapAngle);
+            deltaY = distance * Math.sin(snapAngle);
+        }
 
         const newX = this.objectStartPos.x + deltaX;
         const newY = this.objectStartPos.y + deltaY;
@@ -307,8 +319,8 @@ class CanvasManager {
         }
     }
 
-    handleObjectMove(pos) {
-        this.handleObjectDrag(pos);
+    handleObjectMove(pos, event) {
+        this.handleObjectDrag(pos, event);
     }
 
     handleObjectRotate(pos) {

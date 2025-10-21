@@ -587,8 +587,20 @@ class FontAnimationApp {
             const x = (e.clientX - rect.left) * scaleX / this.zoom - this.panX / this.zoom;
             const y = (e.clientY - rect.top) * scaleY / this.zoom - this.panY / this.zoom;
 
-            const deltaX = x - dragStartX;
-            const deltaY = y - dragStartY;
+            let deltaX = x - dragStartX;
+            let deltaY = y - dragStartY;
+
+            // Constrain movement to 90° angles when shift key is held
+            if (e.shiftKey) {
+                const angle = Math.atan2(deltaY, deltaX);
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+                // Snap to nearest 90° angle (0°, 90°, 180°, 270°)
+                const snapAngle = Math.round(angle / (Math.PI / 2)) * (Math.PI / 2);
+
+                deltaX = distance * Math.cos(snapAngle);
+                deltaY = distance * Math.sin(snapAngle);
+            }
 
             const newX = dragStartObjX + deltaX;
             const newY = dragStartObjY + deltaY;
