@@ -237,7 +237,7 @@ class UIManager {
     static updateAxisValueVisual(propertyName, value, textObject, app) {
         // Update the visual representation without creating keyframes
         // This is used during slider dragging to provide smooth feedback
-        
+
         // Store the temporary value directly on the text object for visual updates
         if (!textObject._tempValues) {
             textObject._tempValues = {};
