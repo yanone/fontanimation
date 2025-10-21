@@ -824,11 +824,11 @@ class CanvasManager {
 
     handlePanStart(event) {
         // Store initial scroll position and mouse position for panning
-        const canvasContainer = document.getElementById('canvasContainer');
+        const canvasScrollArea = document.getElementById('canvasScrollArea');
         this.panStartX = event.clientX;
         this.panStartY = event.clientY;
-        this.panStartScrollX = canvasContainer.scrollLeft;
-        this.panStartScrollY = canvasContainer.scrollTop;
+        this.panStartScrollX = canvasScrollArea.scrollLeft;
+        this.panStartScrollY = canvasScrollArea.scrollTop;
 
         // Add grabbing cursor
         this.canvas.classList.add('grabbing');
@@ -841,13 +841,13 @@ class CanvasManager {
     handlePanDrag(event) {
         if (this.panStartX === undefined || this.panStartY === undefined) return;
 
-        const canvasContainer = document.getElementById('canvasContainer');
+        const canvasScrollArea = document.getElementById('canvasScrollArea');
         const deltaX = this.panStartX - event.clientX;
         const deltaY = this.panStartY - event.clientY;
 
         // Update scroll position - this moves the scrollbars
-        canvasContainer.scrollLeft = this.panStartScrollX + deltaX;
-        canvasContainer.scrollTop = this.panStartScrollY + deltaY;
+        canvasScrollArea.scrollLeft = this.panStartScrollX + deltaX;
+        canvasScrollArea.scrollTop = this.panStartScrollY + deltaY;
 
         // Prevent default to stop any other behavior
         event.preventDefault();

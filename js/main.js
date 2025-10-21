@@ -277,48 +277,62 @@ class FontAnimationApp {
     }
 
     updateCanvasTransform() {
-        // Calculate dynamic margins based on zoom level to ensure all corners are reachable
-        const baseMargin = 300;
-        const canvasWidth = this.canvasWidth;
-        const canvasHeight = this.canvasHeight;
+        const canvasWrapper = document.getElementById('canvasWrapper');
+        const canvasOverlay = document.getElementById('canvasOverlay');
 
-        // Calculate how much the canvas will grow when scaled
-        const scaledWidth = canvasWidth * this.zoom;
-        const scaledHeight = canvasHeight * this.zoom;
-        const extraWidth = (scaledWidth - canvasWidth) / 2;
-        const extraHeight = (scaledHeight - canvasHeight) / 2;
+        if (!canvasWrapper) return;
 
-        // Set margins that provide enough space for the scaled canvas
-        const dynamicMargin = baseMargin + Math.max(extraWidth, extraHeight, 0);
-        this.canvas.style.margin = `${dynamicMargin}px`;
+        // Calculate the space needed for the scaled canvas
+        const baseMargin = 300; // Minimum margin around canvas
+        const scaledWidth = this.canvasWidth * this.zoom;
+        const scaledHeight = this.canvasHeight * this.zoom;
 
-        // Use top-left origin and manually center the scaled canvas
-        // Calculate offset to center the scaled canvas within its container space
-        const centerOffsetX = extraWidth;
-        const centerOffsetY = extraHeight;
+        // Set wrapper size to accommodate scaled canvas with margins
+        const wrapperWidth = scaledWidth + (baseMargin * 2);
+        const wrapperHeight = scaledHeight + (baseMargin * 2);
 
-        this.canvas.style.transform = `translate(${this.panX + centerOffsetX}px, ${this.panY + centerOffsetY}px) scale(${this.zoom})`;
-        this.canvas.style.transformOrigin = 'top left';
+        canvasWrapper.style.width = `${wrapperWidth}px`;
+        canvasWrapper.style.height = `${wrapperHeight}px`;
+
+        // Apply transform to canvas and overlay
+        const transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoom})`;
+        this.canvas.style.transform = transform;
+
+        if (canvasOverlay) {
+            canvasOverlay.style.transform = transform;
+            canvasOverlay.style.width = `${this.canvasWidth}px`;
+            canvasOverlay.style.height = `${this.canvasHeight}px`;
+        }
+
         this.updateZoomDisplay();
     }
 
     centerViewportOnCanvas() {
-        const container = document.getElementById('canvasContainer');
-        if (!container) return;
+        const scrollArea = document.getElementById('canvasScrollArea');
+        if (!scrollArea) return;
 
-        // Wait for DOM to update after margin changes
+        // Wait for DOM to update after transform changes
         requestAnimationFrame(() => {
-            // Calculate the center of the scrollable area
-            const maxScrollLeft = container.scrollWidth - container.clientWidth;
-            const maxScrollTop = container.scrollHeight - container.clientHeight;
+            // Reset pan to center position
+            this.panX = 0;
+            this.panY = 0;
 
-            // Center the scroll position
-            if (maxScrollLeft > 0) {
-                container.scrollLeft = maxScrollLeft / 2;
-            }
-            if (maxScrollTop > 0) {
-                container.scrollTop = maxScrollTop / 2;
-            }
+            // Update canvas transform
+            this.updateCanvasTransform();
+
+            // Wait another frame for layout to complete
+            requestAnimationFrame(() => {
+                // Center the scroll position
+                const maxScrollLeft = scrollArea.scrollWidth - scrollArea.clientWidth;
+                const maxScrollTop = scrollArea.scrollHeight - scrollArea.clientHeight;
+
+                if (maxScrollLeft > 0) {
+                    scrollArea.scrollLeft = maxScrollLeft / 2;
+                }
+                if (maxScrollTop > 0) {
+                    scrollArea.scrollTop = maxScrollTop / 2;
+                }
+            });
         });
     }
 
@@ -663,12 +677,9 @@ class FontAnimationApp {
 
         this.canvas.addEventListener('mousedown', (e) => {
             const rect = this.canvas.getBoundingClientRect();
-            // Calculate coordinates accounting for CSS scaling and zoom
-            // Note: rect dimensions already include zoom scaling, so we don't divide by zoom again
-            const scaleX = this.canvasWidth / rect.width;
-            const scaleY = this.canvasHeight / rect.height;
-            const x = (e.clientX - rect.left) * scaleX - this.panX;
-            const y = (e.clientY - rect.top) * scaleY - this.panY;
+            // Transform mouse coordinates to canvas space
+            const x = ((e.clientX - rect.left) / this.zoom) - this.panX;
+            const y = ((e.clientY - rect.top) / this.zoom) - this.panY;
 
             if (this.currentTool === 'hand') {
                 // Initialize canvas manager if needed
@@ -706,12 +717,9 @@ class FontAnimationApp {
             if (!isDragging || !this.selectedObject) return;
 
             const rect = this.canvas.getBoundingClientRect();
-            // Calculate coordinates accounting for CSS scaling and zoom
-            // Note: rect dimensions already include zoom scaling, so we don't divide by zoom again
-            const scaleX = this.canvasWidth / rect.width;
-            const scaleY = this.canvasHeight / rect.height;
-            const x = (e.clientX - rect.left) * scaleX - this.panX;
-            const y = (e.clientY - rect.top) * scaleY - this.panY;
+            // Transform mouse coordinates to canvas space
+            const x = ((e.clientX - rect.left) / this.zoom) - this.panX;
+            const y = ((e.clientY - rect.top) / this.zoom) - this.panY;
 
             let deltaX = x - dragStartX;
             let deltaY = y - dragStartY;
@@ -1391,11 +1399,8 @@ class FontAnimationApp {
             this.zoomOut();
         }
 
-        // If zoom actually changed, adjust pan to zoom towards the cursor position
+        // If zoom changed, update the transform
         if (this.zoom !== oldZoom) {
-            const zoomRatio = this.zoom / oldZoom;
-            this.panX = (this.panX - x) * zoomRatio + x;
-            this.panY = (this.panY - y) * zoomRatio + y;
             this.updateCanvasTransform();
         }
     }

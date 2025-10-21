@@ -273,46 +273,61 @@ body {
     background: #b71c1c;
 }
 
-/* Canvas Container */
+/* Canvas Container - Main flex container */
 #canvasContainer {
     flex: 1;
     position: relative;
     background: #3c3c3c;
-    overflow: auto;
+    overflow: hidden;
     min-width: 0;
     min-height: 0;
+}
+
+/* Canvas Scroll Area - Handles scrolling */
+#canvasScrollArea {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    position: relative;
+}
+
+/* Canvas Wrapper - Centers and contains the canvas */
+#canvasWrapper {
+    position: relative;
+    min-width: 100%;
+    min-height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-/* Custom scrollbars for canvas container */
-#canvasContainer::-webkit-scrollbar {
+/* Custom scrollbars */
+#canvasScrollArea::-webkit-scrollbar {
     width: 12px;
     height: 12px;
 }
 
-#canvasContainer::-webkit-scrollbar-track {
+#canvasScrollArea::-webkit-scrollbar-track {
     background: #2a2a2a;
     border-radius: 6px;
 }
 
-#canvasContainer::-webkit-scrollbar-thumb {
+#canvasScrollArea::-webkit-scrollbar-thumb {
     background: #555;
     border-radius: 6px;
     border: 2px solid #2a2a2a;
 }
 
-#canvasContainer::-webkit-scrollbar-thumb:hover {
+#canvasScrollArea::-webkit-scrollbar-thumb:hover {
     background: #666;
 }
 
-#canvasContainer::-webkit-scrollbar-corner {
+#canvasScrollArea::-webkit-scrollbar-corner {
     background: #2a2a2a;
 }
 
 /* Firefox scrollbar styling */
-#canvasContainer {
+#canvasScrollArea {
     scrollbar-width: thin;
     scrollbar-color: #555 #2a2a2a;
     scroll-behavior: smooth;
@@ -323,19 +338,15 @@ body {
     background: #ffffff;
     border-radius: 4px;
     cursor: grab;
-    transition: transform 0.1s ease;
-    margin: 300px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    transform-origin: center center;
 
     /* Ensure high-quality rendering on high-DPI displays */
     image-rendering: -webkit-optimize-contrast;
-    /* Webkit - smooth but crisp */
     image-rendering: optimize-quality;
-    /* Standard - prioritize quality */
 
     /* Enable hardware acceleration for better performance */
     will-change: transform;
-    transform: translateZ(0);
 }
 
 #mainCanvas.grabbing {
@@ -362,10 +373,11 @@ body {
     position: absolute;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
+    width: 100%;
+    height: 100%;
     pointer-events: none;
     z-index: 10;
+    transform-origin: center center;
 }
 
 .selection-box {
