@@ -192,18 +192,18 @@ class UIManager {
             border-radius: 3px;
             cursor: pointer;
             font-size: 12px;
-            margin-left: 4px;
+            margin-right: 4px;
         `;
         resetBtn.addEventListener('click', () => {
             updateValue(axisInfo.default);
             app.saveState();
         });
 
-        rangeContainer.appendChild(keyframeBtn);
-        rangeContainer.appendChild(transitionBtn);
         rangeContainer.appendChild(rangeInput);
         rangeContainer.appendChild(numberInput);
         rangeContainer.appendChild(resetBtn);
+        rangeContainer.appendChild(keyframeBtn);
+        rangeContainer.appendChild(transitionBtn);
         control.appendChild(rangeContainer);
 
         return control;
