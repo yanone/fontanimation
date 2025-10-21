@@ -379,15 +379,148 @@ class UIManager {
         }
     }
 
-    static showExportProgress(progress) {
+    static showExportProgress(progress, exportManager = null) {
         const exportBtn = document.getElementById('exportBtn');
-        const originalText = exportBtn.querySelector('span').textContent;
 
         if (progress < 1) {
-            exportBtn.querySelector('span').textContent = `${Math.round(progress * 100)}%`;
+            // Create or update progress bar
+            let progressOverlay = document.getElementById('exportProgressOverlay');
+
+            if (!progressOverlay) {
+                // Create progress overlay
+                progressOverlay = document.createElement('div');
+                progressOverlay.id = 'exportProgressOverlay';
+                progressOverlay.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0, 0, 0, 0.8);
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 10000;
+                    color: white;
+                    font-family: 'Inter', sans-serif;
+                `;
+
+                // Create progress container
+                const progressContainer = document.createElement('div');
+                progressContainer.style.cssText = `
+                    background: var(--bg-secondary);
+                    padding: 30px;
+                    border-radius: 12px;
+                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+                    text-align: center;
+                    min-width: 300px;
+                `;
+
+                // Create title
+                const title = document.createElement('h3');
+                title.textContent = 'Exporting Video';
+                title.style.cssText = `
+                    margin: 0 0 20px 0;
+                    color: var(--text-primary);
+                    font-size: 18px;
+                    font-weight: 500;
+                `;
+
+                // Create progress bar background
+                const progressBarBg = document.createElement('div');
+                progressBarBg.id = 'exportProgressBarBg';
+                progressBarBg.style.cssText = `
+                    width: 100%;
+                    height: 8px;
+                    background: var(--bg-tertiary);
+                    border-radius: 4px;
+                    overflow: hidden;
+                    margin: 10px 0;
+                `;
+
+                // Create progress bar fill
+                const progressBarFill = document.createElement('div');
+                progressBarFill.id = 'exportProgressBarFill';
+                progressBarFill.style.cssText = `
+                    height: 100%;
+                    background: linear-gradient(90deg, #4CAF50, #45a049);
+                    border-radius: 4px;
+                    transition: width 0.3s ease;
+                    width: 0%;
+                `;
+
+                // Create progress text
+                const progressText = document.createElement('div');
+                progressText.id = 'exportProgressText';
+                progressText.style.cssText = `
+                    margin: 15px 0 0 0;
+                    color: var(--text-secondary);
+                    font-size: 14px;
+                `;
+
+                // Create cancel button
+                const cancelBtn = document.createElement('button');
+                cancelBtn.textContent = 'Cancel';
+                cancelBtn.style.cssText = `
+                    margin-top: 20px;
+                    padding: 10px 20px;
+                    background: #d73a49;
+                    border: 1px solid #d73a49;
+                    color: #ffffff;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-size: 14px;
+                    font-weight: 500;
+                    transition: background-color 0.2s ease, border-color 0.2s ease;
+                    min-width: 80px;
+                `;
+                cancelBtn.addEventListener('mouseenter', () => {
+                    cancelBtn.style.background = '#cb2431';
+                    cancelBtn.style.borderColor = '#cb2431';
+                });
+                cancelBtn.addEventListener('mouseleave', () => {
+                    cancelBtn.style.background = '#d73a49';
+                    cancelBtn.style.borderColor = '#d73a49';
+                });
+                cancelBtn.addEventListener('click', () => {
+                    if (exportManager) {
+                        exportManager.cancelExport();
+                    } else {
+                        console.log('Export cancellation requested but no export manager available');
+                    }
+                });
+
+                progressBarBg.appendChild(progressBarFill);
+                progressContainer.appendChild(title);
+                progressContainer.appendChild(progressBarBg);
+                progressContainer.appendChild(progressText);
+                progressContainer.appendChild(cancelBtn);
+                progressOverlay.appendChild(progressContainer);
+                document.body.appendChild(progressOverlay);
+            }
+
+            // Update progress
+            const progressBarFill = document.getElementById('exportProgressBarFill');
+            const progressText = document.getElementById('exportProgressText');
+
+            const percentage = Math.round(progress * 100);
+            progressBarFill.style.width = `${percentage}%`;
+            progressText.textContent = `${percentage}% complete`;
+
+            // Update export button
+            exportBtn.querySelector('span').textContent = `${percentage}%`;
             exportBtn.disabled = true;
             exportBtn.style.opacity = '0.6';
         } else {
+            // Hide progress overlay
+            const progressOverlay = document.getElementById('exportProgressOverlay');
+            if (progressOverlay) {
+                progressOverlay.remove();
+            }
+
+            // Reset export button
+            const originalText = 'Export Video';
             exportBtn.querySelector('span').textContent = originalText;
             exportBtn.disabled = false;
             exportBtn.style.opacity = '1';

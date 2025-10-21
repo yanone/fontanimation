@@ -1097,6 +1097,13 @@ class FontAnimationApp {
             if (e.key.toLowerCase() === 'escape') {
                 e.preventDefault();
 
+                // Priority: If export is in progress, cancel the export instead of default behavior
+                const exportManager = window.getExportManager ? window.getExportManager() : null;
+                if (exportManager && exportManager.isExporting) {
+                    exportManager.cancelExport();
+                    return;
+                }
+
                 // Close any open modals first
                 this.closeAllModals();
 
@@ -2478,7 +2485,8 @@ class FontAnimationApp {
         const exportBtn = document.getElementById('exportBtn');
         const exportIcon = exportBtn.querySelector('span');
 
-        if (!exportBtn || !window.ExportManager) {
+        const exportManager = window.getExportManager ? window.getExportManager() : null;
+        if (!exportBtn || !exportManager) {
             return;
         }
 
@@ -2490,7 +2498,7 @@ class FontAnimationApp {
             exportBtn.title = 'Exporting...';
 
             // Perform export
-            await window.ExportManager.exportVideo(this);
+            await exportManager.exportVideo(this);
 
         } catch (error) {
             console.error('Export error:', error);

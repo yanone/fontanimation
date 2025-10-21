@@ -157,6 +157,13 @@ class ToolsManager {
 
             const toolId = shortcuts[event.code] || shortcuts[event.key];
             if (toolId) {
+                // Don't handle escape during export - let main.js handle it
+                if ((event.key === 'Escape' || event.code === 'Escape') &&
+                    window.getExportManager && window.getExportManager() &&
+                    window.getExportManager().isExporting) {
+                    return; // Let main.js handle export cancellation
+                }
+
                 event.preventDefault();
                 this.selectTool(toolId);
             }

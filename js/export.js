@@ -3,16 +3,37 @@ class ExportManager {
     constructor(app) {
         this.app = app;
         this.isExporting = false;
+        this.exportCancelled = false;
         this.supportedFormats = this.detectSupportedFormats();
         this.lastSelectedFormat = null; // Remember last selected format for the session
     }
 
-    static async exportVideo(app) {
-        if (!app.exportManager) {
-            app.exportManager = new ExportManager(app);
+    cancelExport() {
+        this.exportCancelled = true;
+        console.log('Export cancellation requested');
+
+        if (window.UIManager) {
+            window.UIManager.createNotification('Export cancelled', 'warning');
+            // Hide progress overlay
+            const progressOverlay = document.getElementById('exportProgressOverlay');
+            if (progressOverlay) {
+                progressOverlay.remove();
+            }
+            // Reset export button
+            const exportBtn = document.getElementById('exportBtn');
+            if (exportBtn) {
+                exportBtn.querySelector('span').textContent = 'Export Video';
+                exportBtn.disabled = false;
+                exportBtn.style.opacity = '1';
+            }
         }
 
-        await app.exportManager.export();
+        this.isExporting = false;
+    }
+
+    async exportVideo(app) {
+        // The app parameter is not needed since we already have this.app
+        await this.export();
     }
 
     detectSupportedFormats() {
@@ -46,6 +67,9 @@ class ExportManager {
         }
 
         try {
+            // Reset cancellation flag
+            this.exportCancelled = false;
+
             // Validate that we have something to export
             if (!this.app.textObjects || this.app.textObjects.length === 0) {
                 throw new Error('No text objects to export. Please add some text first.');
@@ -62,10 +86,7 @@ class ExportManager {
             }
 
             this.isExporting = true;
-            let loadingOverlay;
-
             if (window.UIManager) {
-                loadingOverlay = window.UIManager.showLoadingOverlay('Preparing export...');
                 window.UIManager.createNotification('Starting export...', 'info');
             }
 
@@ -85,11 +106,13 @@ class ExportManager {
                 await this.exportWithFrameSequence();
             }
 
-            if (loadingOverlay) {
-                window.UIManager.hideLoadingOverlay();
+        } catch (error) {
+            // Don't show error messages if export was cancelled
+            if (this.exportCancelled) {
+                console.log('Export was cancelled, not showing error message');
+                return;
             }
 
-        } catch (error) {
             console.error('Export failed:', error);
 
             let errorMessage = error.message || 'Unknown export error';
@@ -105,7 +128,6 @@ class ExportManager {
 
             if (window.UIManager) {
                 window.UIManager.createNotification('Export failed: ' + errorMessage, 'error');
-                window.UIManager.hideLoadingOverlay();
 
                 // Offer to try frame sequence export as fallback
                 if (this.supportsVideoRecording() && !error.message?.includes('frame sequence')) {
@@ -852,8 +874,15 @@ class ExportManager {
 
                 mediaRecorder.onstop = () => {
                     console.log(`Recording stopped. Total chunks: ${recordedChunks.length}`);
-                    const blob = new Blob(recordedChunks, { type: selectedFormat });
 
+                    // Don't download if export was cancelled
+                    if (this.exportCancelled) {
+                        console.log('Export was cancelled, not downloading video');
+                        resolve(); // Resolve quietly without error
+                        return;
+                    }
+
+                    const blob = new Blob(recordedChunks, { type: selectedFormat });
                     const extension = selectedFormat.includes('mp4') ? 'mp4' : 'webm';
                     this.downloadBlob(blob, `animation.${extension}`);
                     resolve();
@@ -873,6 +902,16 @@ class ExportManager {
                 const frameDuration = 1000 / this.app.frameRate; // Duration per frame in ms
 
                 for (let frameIndex = 0; frameIndex < totalFrames; frameIndex++) {
+                    // Check for cancellation
+                    if (this.exportCancelled) {
+                        console.log('Export cancelled, stopping MediaRecorder...');
+                        if (mediaRecorder.state === 'recording') {
+                            mediaRecorder.stop();
+                        }
+                        // Don't reject, just return - onstop will handle the quiet resolution
+                        return;
+                    }
+
                     // Clear and render frame
                     context.clearRect(0, 0, canvas.width, canvas.height);
                     context.fillStyle = this.app.canvasBackground;
@@ -888,7 +927,7 @@ class ExportManager {
                     // Update progress
                     const progress = (frameIndex + 1) / totalFrames;
                     if (window.UIManager) {
-                        window.UIManager.showExportProgress(progress);
+                        window.UIManager.showExportProgress(progress, this);
                     }
 
                     console.log(`Rendered frame ${frameIndex + 1}/${totalFrames}`);
@@ -924,5 +963,16 @@ class ExportManager {
     }
 }
 
-// Make ExportManager available globally
-window.ExportManager = ExportManager;
+// Make ExportManager available globally with lazy initialization
+window.ExportManager = null;
+
+// Initialize ExportManager when needed
+function getExportManager() {
+    if (!window.ExportManager && window.app) {
+        window.ExportManager = new ExportManager(window.app);
+    }
+    return window.ExportManager;
+}
+
+// Make the getter available globally  
+window.getExportManager = getExportManager;
