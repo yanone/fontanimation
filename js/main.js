@@ -1129,6 +1129,22 @@ class FontAnimationApp {
                 return;
             }
 
+            // Handle Enter key specially - it should work even in input fields
+            if (e.key.toLowerCase() === 'enter') {
+                // If user is in a text field, exit the field (like Escape key behavior)
+                if (document.activeElement &&
+                    (document.activeElement.tagName === 'INPUT' ||
+                        document.activeElement.tagName === 'TEXTAREA')) {
+                    document.activeElement.blur();
+                    return; // Exit early - don't prevent default or trigger play/pause
+                }
+
+                // Only prevent default and handle play/pause when not in text fields
+                e.preventDefault();
+                this.togglePlayback();
+                return;
+            }
+
             // Handle zoom commands specially - they should work even in input fields to prevent browser zoom
             if ((e.metaKey || e.ctrlKey) && (e.key === '=' || e.key === '+')) {
                 e.preventDefault();
@@ -1179,11 +1195,7 @@ class FontAnimationApp {
                         this.setTool('hand');
                     }
                     break;
-                case 'enter':
-                    e.preventDefault();
-                    // Enter key for play/pause
-                    this.togglePlayback();
-                    break;
+
                 case 'delete':
                 case 'backspace':
                     if (this.selectedObject) {
