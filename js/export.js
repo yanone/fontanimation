@@ -252,7 +252,7 @@ class ExportManager {
             recommendationDiv.className = 'browser-recommendation';
             recommendationDiv.innerHTML = `
                 <div style="margin-top: 15px; padding: 10px; background-color: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 4px; font-size: 14px; color: var(--text-secondary);">
-                    <strong>💡 Tip:</strong> For best export results, use Safari browser when possible. Safari provides more reliable video encoding, especially for high-resolution animations.
+                    <strong>💡 Tip:</strong> For high-resolution animations (4K), use Safari browser when possible. Safari provides more reliable video encoding, especially for high-resolution content.
                 </div>
             `;
             formatOptions.appendChild(recommendationDiv);
