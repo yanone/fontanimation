@@ -294,12 +294,44 @@ class FontAnimationApp {
         const viewportWidth = scrollArea ? scrollArea.clientWidth : 1000;
         const viewportHeight = scrollArea ? scrollArea.clientHeight : 600;
 
-        // Ensure wrapper is large enough for scaled canvas plus margins, but also fills viewport
-        const minWrapperWidth = Math.max(viewportWidth, scaledWidth + (baseMargin * 2));
-        const minWrapperHeight = Math.max(viewportHeight, scaledHeight + (baseMargin * 2));
+        // Calculate wrapper size based on whether scrollbars are needed
+        // Only add margins and make wrapper larger if the scaled canvas exceeds viewport
+        let wrapperWidth, wrapperHeight;
 
-        canvasWrapper.style.width = `${minWrapperWidth}px`;
-        canvasWrapper.style.height = `${minWrapperHeight}px`;
+        if (scaledWidth + (baseMargin * 2) > viewportWidth) {
+            // Canvas is larger than viewport - need horizontal scrolling
+            wrapperWidth = scaledWidth + (baseMargin * 2);
+        } else {
+            // Canvas fits in viewport - no horizontal scrolling needed
+            wrapperWidth = viewportWidth;
+        }
+
+        if (scaledHeight + (baseMargin * 2) > viewportHeight) {
+            // Canvas is larger than viewport - need vertical scrolling
+            wrapperHeight = scaledHeight + (baseMargin * 2);
+        } else {
+            // Canvas fits in viewport - no vertical scrolling needed
+            wrapperHeight = viewportHeight;
+        }
+
+        canvasWrapper.style.width = `${wrapperWidth}px`;
+        canvasWrapper.style.height = `${wrapperHeight}px`;
+
+        // Control scrollbar visibility explicitly
+        const needsHorizontalScroll = scaledWidth + (baseMargin * 2) > viewportWidth;
+        const needsVerticalScroll = scaledHeight + (baseMargin * 2) > viewportHeight;
+
+        if (needsHorizontalScroll && needsVerticalScroll) {
+            scrollArea.style.overflow = 'auto';
+        } else if (needsHorizontalScroll) {
+            scrollArea.style.overflowX = 'auto';
+            scrollArea.style.overflowY = 'hidden';
+        } else if (needsVerticalScroll) {
+            scrollArea.style.overflowX = 'hidden';
+            scrollArea.style.overflowY = 'auto';
+        } else {
+            scrollArea.style.overflow = 'hidden';
+        }
 
         // Apply zoom transform to canvas (panning is handled by scrollbars)
         // The flex centering in CSS will handle the base centering
@@ -1199,7 +1231,7 @@ class FontAnimationApp {
         if (!this.spacePanning && tool !== this.currentTool) {
             this.previousTool = this.currentTool;
         }
-        
+
         this.currentTool = tool;
 
         // Update UI (but not when space panning to avoid visual flicker)
