@@ -287,21 +287,32 @@ class FontAnimationApp {
         const scaledWidth = this.canvasWidth * this.zoom;
         const scaledHeight = this.canvasHeight * this.zoom;
 
-        // Set wrapper size to accommodate scaled canvas with margins
-        const wrapperWidth = scaledWidth + (baseMargin * 2);
-        const wrapperHeight = scaledHeight + (baseMargin * 2);
+        // Calculate minimum wrapper size needed to accommodate scaled canvas
+        const scrollArea = document.getElementById('canvasScrollArea');
+        const viewportWidth = scrollArea ? scrollArea.clientWidth : 1000;
+        const viewportHeight = scrollArea ? scrollArea.clientHeight : 600;
+        
+        // Ensure wrapper is large enough for scaled canvas plus margins, but also fills viewport
+        const minWrapperWidth = Math.max(viewportWidth, scaledWidth + (baseMargin * 2));
+        const minWrapperHeight = Math.max(viewportHeight, scaledHeight + (baseMargin * 2));
 
-        canvasWrapper.style.width = `${wrapperWidth}px`;
-        canvasWrapper.style.height = `${wrapperHeight}px`;
+        canvasWrapper.style.width = `${minWrapperWidth}px`;
+        canvasWrapper.style.height = `${minWrapperHeight}px`;
 
-        // Apply transform to canvas and overlay
-        const transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoom})`;
-        this.canvas.style.transform = transform;
+        // Apply transform and pan offset directly to canvas
+        // The flex centering in CSS will handle the base centering
+        this.canvas.style.position = 'relative';
+        this.canvas.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoom})`;
+        this.canvas.style.transformOrigin = 'center center';
 
         if (canvasOverlay) {
-            canvasOverlay.style.transform = transform;
+            canvasOverlay.style.position = 'absolute';
+            canvasOverlay.style.left = '50%';
+            canvasOverlay.style.top = '50%';
             canvasOverlay.style.width = `${this.canvasWidth}px`;
             canvasOverlay.style.height = `${this.canvasHeight}px`;
+            canvasOverlay.style.transform = `translate(-50%, -50%) translate(${this.panX}px, ${this.panY}px) scale(${this.zoom})`;
+            canvasOverlay.style.transformOrigin = 'center center';
         }
 
         this.updateZoomDisplay();

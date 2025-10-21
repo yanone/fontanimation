@@ -291,11 +291,9 @@ body {
     position: relative;
 }
 
-/* Canvas Wrapper - Centers and contains the canvas */
+/* Canvas Wrapper - Contains the canvas with absolute positioning */
 #canvasWrapper {
     position: relative;
-    min-width: 100%;
-    min-height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
