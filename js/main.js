@@ -743,6 +743,7 @@ class FontAnimationApp {
         let dragStartY = 0;
         let dragStartObjX = 0;
         let dragStartObjY = 0;
+        let hasDuplicated = false; // Track if object was duplicated during this drag
 
         this.canvas.addEventListener('mousedown', (e) => {
             // Transform mouse coordinates to canvas space accounting for zoom and pan
@@ -764,6 +765,7 @@ class FontAnimationApp {
                 const clickedObject = this.selectObjectAt(x, y);
                 if (clickedObject) {
                     isDragging = true;
+                    hasDuplicated = false; // Reset duplication flag
                     dragStartX = x;
                     dragStartY = y;
                     dragStartObjX = this.getPropertyValue(clickedObject, 'x');
@@ -781,6 +783,16 @@ class FontAnimationApp {
             }
 
             if (!isDragging || !this.selectedObject) return;
+
+            // Handle Alt key duplication (only once per drag operation)
+            if (e.altKey && !hasDuplicated) {
+                const duplicated = this.duplicateObject(this.selectedObject);
+                this.selectedObject = duplicated; // Switch to working with the duplicate
+                hasDuplicated = true;
+
+                // Update the cursor to indicate duplication
+                this.canvas.style.cursor = 'copy';
+            }
 
             // Transform mouse coordinates to canvas space accounting for zoom and pan
             const coords = this.screenToCanvasCoordinates(e.clientX, e.clientY);
@@ -820,6 +832,7 @@ class FontAnimationApp {
 
             if (isDragging) {
                 isDragging = false;
+                hasDuplicated = false; // Reset duplication flag
                 this.canvas.style.cursor = '';
                 this.updateRightPanel();
                 this.saveState();
@@ -834,6 +847,7 @@ class FontAnimationApp {
 
             if (isDragging) {
                 isDragging = false;
+                hasDuplicated = false; // Reset duplication flag
                 this.canvas.style.cursor = '';
                 this.updateRightPanel();
                 this.saveState();
@@ -865,6 +879,42 @@ class FontAnimationApp {
                 }
             }
         });
+    }
+
+    // Duplicate an object with all its properties and keyframes
+    duplicateObject(sourceObject) {
+        // Create a deep copy of the object
+        const duplicate = {
+            id: Date.now(), // Give it a new unique ID
+            text: sourceObject.text,
+            font: sourceObject.font,
+            textAlign: sourceObject.textAlign,
+            keyframes: {}
+        };
+
+        // Deep copy all keyframes for each property
+        Object.keys(sourceObject.keyframes).forEach(property => {
+            duplicate.keyframes[property] = sourceObject.keyframes[property].map(keyframe => ({
+                frame: keyframe.frame,
+                value: keyframe.value,
+                curve: keyframe.curve ? {
+                    cp1x: keyframe.curve.cp1x,
+                    cp1y: keyframe.curve.cp1y,
+                    cp2x: keyframe.curve.cp2x,
+                    cp2y: keyframe.curve.cp2y
+                } : undefined
+            }));
+        });
+
+        // Add the duplicate to the objects array
+        this.textObjects.push(duplicate);
+
+        // Update UI to reflect the new object
+        if (this.timeline) {
+            this.timeline.updateLayers();
+        }
+
+        return duplicate;
     }
 
     // Hand tool panning methods
@@ -1094,6 +1144,35 @@ class FontAnimationApp {
                 case 'x':
                     // Test shortcut to add text
                     this.addTestText();
+                    break;
+                case 'd':
+                    if ((e.metaKey || e.ctrlKey) && this.selectedObject) {
+                        e.preventDefault();
+                        // Cmd+D: Duplicate selected object
+                        const duplicated = this.duplicateObject(this.selectedObject);
+
+                        // Add small offset for visual feedback
+                        const offset = 20; // 20 pixels offset
+                        const currentX = this.getPropertyValue(duplicated, 'x');
+                        const currentY = this.getPropertyValue(duplicated, 'y');
+
+                        // Update position for all keyframes to maintain offset
+                        if (duplicated.keyframes.x) {
+                            duplicated.keyframes.x.forEach(keyframe => {
+                                keyframe.value += offset;
+                            });
+                        }
+                        if (duplicated.keyframes.y) {
+                            duplicated.keyframes.y.forEach(keyframe => {
+                                keyframe.value += offset;
+                            });
+                        }
+
+                        this.selectedObject = duplicated;
+                        this.updateRightPanel();
+                        this.redraw();
+                        this.saveState();
+                    }
                     break;
                 case 'arrowleft':
                     if (this.selectedObject) {
