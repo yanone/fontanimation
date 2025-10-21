@@ -600,11 +600,11 @@ class FontAnimationApp {
                 if (this.selectedObject) {
                     const alignment = e.currentTarget.dataset.align;
                     this.selectedObject.textAlign = alignment;
-                    
+
                     // Update button states
                     document.querySelectorAll('.alignment-btn').forEach(b => b.classList.remove('active'));
                     e.currentTarget.classList.add('active');
-                    
+
                     this.redraw();
                     this.saveState();
                 }
@@ -1257,7 +1257,11 @@ class FontAnimationApp {
                     }
                     break;
                 case 'arrowleft':
-                    if (this.selectedObject) {
+                    // Handle Cmd+Left for timeline navigation (always takes priority)
+                    if (e.metaKey || e.ctrlKey) {
+                        e.preventDefault();
+                        this.goToStart();
+                    } else if (this.selectedObject) {
                         // Handle object movement when object is selected
                         e.preventDefault();
                         const step = e.shiftKey ? 10 : 1;
@@ -1269,10 +1273,7 @@ class FontAnimationApp {
                     } else {
                         // Handle timeline navigation when no object is selected
                         e.preventDefault();
-                        if (e.metaKey || e.ctrlKey) {
-                            // Cmd+Left: Jump to first frame
-                            this.goToStart();
-                        } else if (e.shiftKey) {
+                        if (e.shiftKey) {
                             this.jumpBackward(10);
                         } else {
                             this.stepBackward();
@@ -1280,7 +1281,11 @@ class FontAnimationApp {
                     }
                     break;
                 case 'arrowright':
-                    if (this.selectedObject) {
+                    // Handle Cmd+Right for timeline navigation (always takes priority)
+                    if (e.metaKey || e.ctrlKey) {
+                        e.preventDefault();
+                        this.goToEnd();
+                    } else if (this.selectedObject) {
                         // Handle object movement when object is selected
                         e.preventDefault();
                         const step = e.shiftKey ? 10 : 1;
@@ -1292,10 +1297,7 @@ class FontAnimationApp {
                     } else {
                         // Handle timeline navigation when no object is selected
                         e.preventDefault();
-                        if (e.metaKey || e.ctrlKey) {
-                            // Cmd+Right: Jump to last frame
-                            this.goToEnd();
-                        } else if (e.shiftKey) {
+                        if (e.shiftKey) {
                             this.jumpForward(10);
                         } else {
                             this.stepForward();
