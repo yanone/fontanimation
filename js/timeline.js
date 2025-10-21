@@ -434,6 +434,12 @@ class TimelineManager {
         keyframeElement.dataset.property = property;
         keyframeElement.dataset.objectId = textObject.id;
 
+        // Check if this keyframe should be selected
+        const isSelected = this.isKeyframeSelected(textObject.id, property, keyframe.frame);
+        if (isSelected) {
+            keyframeElement.classList.add('selected');
+        }
+
         const timelineWidth = this.calculateTimelineWidth();
         const position = (keyframe.frame / this.app.totalFrames) * timelineWidth;
         // Center the keyframe dot by subtracting half its width (7px)
@@ -486,33 +492,98 @@ class TimelineManager {
     }
 
     handlePropertyKeyframeMouseDown(e, textObject, property) {
+        e.preventDefault();
+        e.stopPropagation();
+
         const keyframe = e.target;
         const frame = parseInt(keyframe.dataset.frame);
+        const isCurrentlySelected = this.isKeyframeSelected(textObject.id, property, frame);
 
-        // Select keyframe
-        if (!e.shiftKey && !e.ctrlKey && !e.metaKey) {
-            this.clearKeyframeSelection();
+        // Handle selection
+        if (e.shiftKey) {
+            // Shift-click: Add/remove from selection
+            if (isCurrentlySelected) {
+                this.unselectPropertyKeyframe(textObject.id, property, frame);
+            } else {
+                this.selectPropertyKeyframe(textObject.id, property, frame, true);
+            }
+        } else if (e.ctrlKey || e.metaKey) {
+            // Ctrl/Cmd-click: Toggle selection
+            if (isCurrentlySelected) {
+                this.unselectPropertyKeyframe(textObject.id, property, frame);
+            } else {
+                this.selectPropertyKeyframe(textObject.id, property, frame, true);
+            }
+        } else {
+            // Regular click - only clear other selections if this keyframe is not already selected
+            // This preserves multi-selection when starting to drag
+            if (!isCurrentlySelected) {
+                this.clearKeyframeSelection();
+                this.selectPropertyKeyframe(textObject.id, property, frame);
+            }
+            // If already selected, keep all current selections for potential multi-keyframe drag
         }
-        this.selectPropertyKeyframe(textObject.id, property, frame);
 
         // Start dragging
         let isDragging = false;
         const startX = e.clientX;
         const startFrame = frame;
+        let finalDelta = 0;
 
-        const onMouseMove = (e) => {
-            if (!isDragging && Math.abs(e.clientX - startX) > 5) {
+        // Store direct references to keyframe objects and their original frames
+        const keyframeRefs = [];
+        for (const kf of this.selectedKeyframes) {
+            const textObject = this.app.textObjects.find(obj => obj.id === kf.objectId);
+            if (textObject && textObject.keyframes[kf.property]) {
+                const keyframes = textObject.keyframes[kf.property];
+                const targetKeyframe = keyframes.find(keyframeObj => keyframeObj.frame === kf.frame);
+                if (targetKeyframe) {
+                    keyframeRefs.push({
+                        keyframeObject: targetKeyframe,
+                        originalFrame: targetKeyframe.frame,
+                        selectedKf: kf
+                    });
+                }
+            }
+        }
+
+        const onMouseMove = (moveEvent) => {
+            if (!isDragging && Math.abs(moveEvent.clientX - startX) > 5) {
                 isDragging = true;
             }
 
             if (isDragging) {
-                const rect = keyframe.parentElement.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const timelineWidth = this.calculateTimelineWidth();
-                const newFrame = Math.max(0, Math.min(this.app.totalFrames - 1,
-                    Math.round((x / timelineWidth) * this.app.totalFrames)));
+                // Get the timeline container to calculate mouse position relative to it
+                const timelineContainer = document.getElementById('timelineContainer');
+                const rect = timelineContainer.getBoundingClientRect();
 
-                this.movePropertyKeyframe(textObject, property, startFrame, newFrame);
+                // Calculate mouse position relative to timeline container (accounting for scroll)
+                // Add 7px to account for keyframe centering offset used in positioning
+                const mouseX = moveEvent.clientX - rect.left + timelineContainer.scrollLeft + 7;
+                const timelineWidth = this.calculateTimelineWidth();
+
+                // Convert mouse position to frame number using the same formula as keyframe positioning
+                const mouseFrame = Math.max(0, Math.min(Math.round((mouseX / timelineWidth) * this.app.totalFrames), this.app.totalFrames - 1));
+
+                // Calculate the offset from the original clicked keyframe
+                const deltaFrames = mouseFrame - startFrame;
+                finalDelta = deltaFrames;
+
+                // Update all selected keyframes to their new positions using direct references
+                console.log('Before update - selected keyframes:', this.selectedKeyframes.length);
+                for (const ref of keyframeRefs) {
+                    const newFrame = Math.max(0, Math.min(ref.originalFrame + deltaFrames, this.app.totalFrames - 1));
+                    ref.keyframeObject.frame = newFrame;
+                    // Update the selection tracking to match the new frame position
+                    ref.selectedKf.frame = newFrame;
+                    ref.selectedKf.id = `${ref.selectedKf.objectId}-${ref.selectedKf.property}-${newFrame}`;
+                }
+                console.log('After update - selected keyframes:', this.selectedKeyframes.length);
+
+                this.updateLayers();
+                this.updateKeyframeSelectionVisual();
+                this.app.redraw();
+                this.app.updateRightPanel();
             }
         };
 
@@ -521,7 +592,17 @@ class TimelineManager {
             document.removeEventListener('mouseup', onMouseUp);
 
             if (isDragging) {
+                // Update selectedKeyframes to reflect final positions
+                for (const ref of keyframeRefs) {
+                    ref.selectedKf.frame = ref.keyframeObject.frame;
+                    ref.selectedKf.id = `${ref.selectedKf.objectId}-${ref.selectedKf.property}-${ref.selectedKf.frame}`;
+                }
+
                 this.app.saveState();
+                // Update the timeline to reflect changes
+                this.updateLayers();
+                // Ensure selection is maintained after re-render
+                this.updateKeyframeSelectionVisual();
             }
         };
 
@@ -543,16 +624,124 @@ class TimelineManager {
         }
     }
 
-    selectPropertyKeyframe(objectId, property, frame) {
-        // Implementation for keyframe selection
-        // This will be used for visual feedback and deletion
+    moveSelectedKeyframes(deltaX) {
+        if (this.selectedKeyframes.length === 0) return;
+
+        // Calculate new frames for all selected keyframes
+        const updates = [];
+        for (const keyframe of this.selectedKeyframes) {
+            const newFrame = Math.max(0, Math.min(keyframe.frame + deltaX, this.app.totalFrames - 1));
+
+            // Check for conflicts with existing keyframes (excluding the ones being moved)
+            let conflict = false;
+            for (const existingKeyframe of keyframe.property.keyframes) {
+                if (!this.selectedKeyframes.includes(existingKeyframe) &&
+                    existingKeyframe.frame === newFrame) {
+                    conflict = true;
+                    break;
+                }
+            }
+
+            if (!conflict) {
+                updates.push({ keyframe, newFrame });
+            }
+        }
+
+        // Apply all non-conflicting updates
+        for (const update of updates) {
+            update.keyframe.frame = update.newFrame;
+        }
+
+        // Redraw timeline and update property panel
+        this.updateLayers();
+        this.app.redraw();
+        this.app.updateRightPanel();
     }
 
-    clearKeyframeSelection() {
-        // Clear all selected keyframes
+    deleteSelectedKeyframes() {
+        if (this.selectedKeyframes.length === 0) return;
+
+        // Remove selected keyframes from their properties
+        for (const keyframe of this.selectedKeyframes) {
+            const textObject = this.app.textObjects.find(obj => obj.id === keyframe.objectId);
+            if (textObject && textObject.keyframes[keyframe.property]) {
+                const keyframes = textObject.keyframes[keyframe.property];
+                const index = keyframes.findIndex(kf => kf.frame === keyframe.frame);
+                if (index !== -1) {
+                    keyframes.splice(index, 1);
+                }
+            }
+        }
+
+        // Clear selection
+        this.selectedKeyframes = [];
+
+        // Redraw timeline and update property panel
+        this.updateLayers();
+        this.app.redraw();
+        this.app.updateRightPanel();
+    }
+
+    findKeyframe(objectId, property, frame) {
+        const textObject = this.app.textObjects.find(obj => obj.id === objectId);
+        if (textObject && textObject.keyframes[property]) {
+            return textObject.keyframes[property].find(kf => kf.frame === frame);
+        }
+        return null;
+    }
+
+    selectPropertyKeyframe(objectId, property, frame, addToSelection = false) {
+        const keyframeId = `${objectId}-${property}-${frame}`;
+
+        if (!addToSelection) {
+            this.selectedKeyframes = [];
+        }
+
+        // Add to selection if not already selected
+        if (!this.selectedKeyframes.find(kf => kf.id === keyframeId)) {
+            this.selectedKeyframes.push({
+                id: keyframeId,
+                objectId: objectId,
+                property: property,
+                frame: frame
+            });
+        }
+
+        this.updateKeyframeSelectionVisual();
+    }
+
+    unselectPropertyKeyframe(objectId, property, frame) {
+        const keyframeId = `${objectId}-${property}-${frame}`;
+        this.selectedKeyframes = this.selectedKeyframes.filter(kf => kf.id !== keyframeId);
+        this.updateKeyframeSelectionVisual();
+    }
+
+    isKeyframeSelected(objectId, property, frame) {
+        const keyframeId = `${objectId}-${property}-${frame}`;
+        return this.selectedKeyframes.some(kf => kf.id === keyframeId);
+    }
+
+    updateKeyframeSelectionVisual() {
+        // Clear all visual selection
         document.querySelectorAll('.keyframe.selected').forEach(kf => {
             kf.classList.remove('selected');
         });
+
+        console.log('Updating selection visual for', this.selectedKeyframes.length, 'keyframes');
+        
+        // Apply visual selection to selected keyframes
+        this.selectedKeyframes.forEach(selected => {
+            const selector = `.keyframe[data-object-id="${selected.objectId}"][data-property="${selected.property}"][data-frame="${selected.frame}"]`;
+            console.log('Looking for keyframes with selector:', selector);
+            const keyframeElements = document.querySelectorAll(selector);
+            console.log('Found', keyframeElements.length, 'elements');
+            keyframeElements.forEach(el => el.classList.add('selected'));
+        });
+    }
+
+    clearKeyframeSelection() {
+        this.selectedKeyframes = [];
+        this.updateKeyframeSelectionVisual();
     }
 
 
