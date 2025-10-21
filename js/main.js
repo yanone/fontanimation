@@ -1746,6 +1746,8 @@ class FontAnimationApp {
             const matchingObject = this.textObjects.find(obj => obj.id === previousSelection.id);
             if (matchingObject) {
                 this.selectedObject = matchingObject;
+                // Clear all timeline expansion states first
+                this.textObjects.forEach(obj => obj._timelineExpanded = false);
                 // Update timeline to reflect the restored selection
                 if (this.selectedObject) {
                     this.selectedObject._timelineExpanded = true;
@@ -1758,10 +1760,24 @@ class FontAnimationApp {
             } else {
                 // Object no longer exists, clear selection
                 this.selectedObject = null;
+                // Clear all timeline expansion states
+                this.textObjects.forEach(obj => obj._timelineExpanded = false);
+                if (this.timeline) {
+                    this.timeline.updateLayers();
+                }
+                this.updateRightPanel();
+                this.redraw();
             }
         } else {
             // No previous selection, clear selection
             this.selectedObject = null;
+            // Clear all timeline expansion states
+            this.textObjects.forEach(obj => obj._timelineExpanded = false);
+            if (this.timeline) {
+                this.timeline.updateLayers();
+            }
+            this.updateRightPanel();
+            this.redraw();
         }
     }
 
