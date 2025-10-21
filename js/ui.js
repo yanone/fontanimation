@@ -156,24 +156,35 @@ class UIManager {
         numberInput.value = rangeInput.value;
 
         // Sync inputs
-        const updateValue = (value) => {
+        const updateValueVisual = (value) => {
             rangeInput.value = value;
             numberInput.value = value;
+            UIManager.updateAxisValueVisual(propertyName, parseFloat(value), textObject, app);
+        };
+
+        const updateValueFinal = (value) => {
+            rangeInput.value = value;
+            numberInput.value = value;
+            // Clear temporary values and create keyframe
+            if (textObject._tempValues) {
+                delete textObject._tempValues[propertyName];
+            }
             UIManager.updateAxisValue(propertyName, parseFloat(value), textObject, app);
         };
 
         rangeInput.addEventListener('input', (e) => {
-            updateValue(e.target.value);
+            updateValueVisual(e.target.value);
         });
 
-        rangeInput.addEventListener('change', () => {
+        rangeInput.addEventListener('change', (e) => {
+            updateValueFinal(e.target.value);
             app.saveState();
         });
 
         // Update value only when user finishes typing (not on every keystroke)
         const handleNumberInputChange = (e) => {
             const value = Math.max(axisInfo.min, Math.min(axisInfo.max, parseFloat(e.target.value) || axisInfo.default));
-            updateValue(value);
+            updateValueFinal(value);
             app.saveState();
         };
 
@@ -196,7 +207,7 @@ class UIManager {
             margin-right: 4px;
         `;
         resetBtn.addEventListener('click', () => {
-            updateValue(axisInfo.default);
+            updateValueFinal(axisInfo.default);
             app.saveState();
         });
 
@@ -221,6 +232,19 @@ class UIManager {
         }
 
         app.redraw(); // Always redraw canvas to show the visual changes
+    }
+
+    static updateAxisValueVisual(propertyName, value, textObject, app) {
+        // Update the visual representation without creating keyframes
+        // This is used during slider dragging to provide smooth feedback
+        
+        // Store the temporary value directly on the text object for visual updates
+        if (!textObject._tempValues) {
+            textObject._tempValues = {};
+        }
+        textObject._tempValues[propertyName] = value;
+
+        app.redraw(); // Redraw canvas to show the visual changes
     }
 
     static updateOpenTypeFeatures(textObject, app) {

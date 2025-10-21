@@ -777,6 +777,11 @@ class FontAnimationApp {
 
     // Helper function to get current property value for a text object
     getPropertyValue(textObject, property, frame = this.currentFrame) {
+        // Check for temporary values first (used during slider dragging)
+        if (textObject._tempValues && textObject._tempValues.hasOwnProperty(property)) {
+            return textObject._tempValues[property];
+        }
+
         const keyframes = textObject.keyframes[property];
         if (!keyframes || keyframes.length === 0) {
             // Return default values for properties without keyframes
