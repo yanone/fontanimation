@@ -279,6 +279,74 @@ class FontAnimationApp {
     updateCanvasTransform() {
         this.canvas.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoom})`;
         this.canvas.style.transformOrigin = 'center center';
+        this.updateZoomDisplay();
+    }
+
+    updateZoomDisplay() {
+        const zoomPercentage = Math.round(this.zoom * 100);
+        const zoomDisplay = document.getElementById('currentZoomDisplay');
+        if (zoomDisplay) {
+            zoomDisplay.textContent = `${zoomPercentage}%`;
+        }
+    }
+
+    getZoomLevels() {
+        return [0.1, 0.25, 0.33, 0.5, 0.67, 0.75, 1.0, 1.25, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0];
+    }
+
+    findNearestZoomLevel(currentZoom) {
+        const levels = this.getZoomLevels();
+        let closest = levels[0];
+        let minDiff = Math.abs(currentZoom - closest);
+
+        for (const level of levels) {
+            const diff = Math.abs(currentZoom - level);
+            if (diff < minDiff) {
+                minDiff = diff;
+                closest = level;
+            }
+        }
+        return closest;
+    }
+
+    zoomIn() {
+        const levels = this.getZoomLevels();
+        const currentIndex = levels.findIndex(level => level >= this.zoom);
+
+        if (currentIndex === -1) {
+            // Current zoom is higher than all predefined levels, use the highest
+            this.zoom = levels[levels.length - 1];
+        } else if (currentIndex < levels.length - 1) {
+            // Move to next level
+            this.zoom = levels[currentIndex + 1];
+        }
+        // If already at max level, do nothing
+
+        this.updateCanvasTransform();
+    }
+
+    zoomOut() {
+        const levels = this.getZoomLevels();
+        const currentIndex = levels.findIndex(level => level >= this.zoom);
+
+        if (currentIndex === -1) {
+            // Current zoom is higher than all levels, find the closest smaller one
+            this.zoom = levels[levels.length - 1];
+        } else if (currentIndex > 0) {
+            // Move to previous level
+            this.zoom = levels[currentIndex - 1];
+        } else if (currentIndex === 0 && this.zoom > levels[0]) {
+            // Current zoom is between first level and next, go to first level
+            this.zoom = levels[0];
+        }
+        // If already at min level, do nothing
+
+        this.updateCanvasTransform();
+    }
+
+    resetZoom() {
+        this.zoom = 1.0;
+        this.updateCanvasTransform();
     }
 
     setupEventListeners() {
@@ -665,6 +733,20 @@ class FontAnimationApp {
                 }
             }
         });
+
+        // Wheel zoom support
+        this.canvas.addEventListener('wheel', (e) => {
+            if (e.metaKey || e.ctrlKey) {
+                e.preventDefault();
+                if (e.deltaY < 0) {
+                    // Scroll up = zoom in
+                    this.zoomIn();
+                } else {
+                    // Scroll down = zoom out
+                    this.zoomOut();
+                }
+            }
+        });
     }
 
     setupFontManager() {
@@ -685,6 +767,8 @@ class FontAnimationApp {
             document.getElementById('frameRate').value = this.frameRate;
             document.getElementById('duration').value = this.duration;
         }
+        // Initialize zoom display
+        this.updateZoomDisplay();
     }
 
     // Test method to add a text object for debugging
@@ -842,6 +926,28 @@ class FontAnimationApp {
                         e.preventDefault();
                         // Cmd+S: Save document
                         this.saveProject();
+                    }
+                    break;
+                case '=':
+                case '+':
+                    if (e.metaKey || e.ctrlKey) {
+                        e.preventDefault();
+                        // Cmd+Plus: Zoom in
+                        this.zoomIn();
+                    }
+                    break;
+                case '-':
+                    if (e.metaKey || e.ctrlKey) {
+                        e.preventDefault();
+                        // Cmd+Minus: Zoom out
+                        this.zoomOut();
+                    }
+                    break;
+                case '0':
+                    if (e.metaKey || e.ctrlKey) {
+                        e.preventDefault();
+                        // Cmd+0: Reset zoom
+                        this.resetZoom();
                     }
                     break;
             }
@@ -1234,14 +1340,21 @@ class FontAnimationApp {
 
     zoomAt(x, y, factor) {
         const oldZoom = this.zoom;
-        this.zoom = Math.max(0.1, Math.min(5, this.zoom * factor));
 
-        // Adjust pan to zoom towards the cursor position
-        const zoomRatio = this.zoom / oldZoom;
-        this.panX = (this.panX - x) * zoomRatio + x;
-        this.panY = (this.panY - y) * zoomRatio + y;
+        // Use step-based zooming even for cursor zoom
+        if (factor > 1) {
+            this.zoomIn();
+        } else {
+            this.zoomOut();
+        }
 
-        this.updateCanvasTransform();
+        // If zoom actually changed, adjust pan to zoom towards the cursor position
+        if (this.zoom !== oldZoom) {
+            const zoomRatio = this.zoom / oldZoom;
+            this.panX = (this.panX - x) * zoomRatio + x;
+            this.panY = (this.panY - y) * zoomRatio + y;
+            this.updateCanvasTransform();
+        }
     }
 
     redraw() {

@@ -80,7 +80,8 @@ body {
 
 /* Frame and Time Display */
 .frame-label,
-.time-label {
+.time-label,
+.zoom-label {
     font-size: 12px;
     color: #cccccc;
     white-space: nowrap;
@@ -89,7 +90,8 @@ body {
 
 #currentFrameDisplay,
 #totalFramesDisplay,
-#currentTimeDisplay {
+#currentTimeDisplay,
+#currentZoomDisplay {
     font-size: 12px;
     color: #ffffff;
     background: #505050;
