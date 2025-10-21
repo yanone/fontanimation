@@ -97,6 +97,28 @@ Font Animation Studio allows you to:
 | `Cmd+Shift+Z` | Redo |
 | `Escape` | Close modals |
 
+## 🎯 Best Practices for Smooth Results
+
+### Resolution and Downsampling
+For the smoothest possible animations, create your canvas at **2x or 4x your intended final size** (limited to 4K resolution), then downsample in your video editor.
+
+**Why this works:**
+- Font outlines are rasterized to the nearest pixel during rendering
+- This can cause subtle jumping or stepping artifacts during animation
+- Higher resolution rendering provides more precision for smoother curves
+- Downsampling in post-production smooths out pixel-level variations
+
+**Example workflow:**
+- For 1080p final output → Use 2160p (2x) or 4320p (4x) canvas size
+- For 720p final output → Use 1440p (2x) or 2880p (4x) canvas size
+- Export at the higher resolution, then scale down in your video editor
+
+This technique is especially important for:
+- Small text sizes
+- Thin font weights
+- Complex variable font animations
+- Animations with rapid changes in font parameters
+
 ## Browser Requirements
 
 - Modern web browser with support for:
