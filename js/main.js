@@ -291,7 +291,7 @@ class FontAnimationApp {
         const scrollArea = document.getElementById('canvasScrollArea');
         const viewportWidth = scrollArea ? scrollArea.clientWidth : 1000;
         const viewportHeight = scrollArea ? scrollArea.clientHeight : 600;
-        
+
         // Ensure wrapper is large enough for scaled canvas plus margins, but also fills viewport
         const minWrapperWidth = Math.max(viewportWidth, scaledWidth + (baseMargin * 2));
         const minWrapperHeight = Math.max(viewportHeight, scaledHeight + (baseMargin * 2));
@@ -420,13 +420,37 @@ class FontAnimationApp {
     setupEventListeners() {
         // Menu bar controls
         document.getElementById('canvasWidth').addEventListener('change', (e) => {
-            this.canvasWidth = parseInt(e.target.value);
+            const maxWidth = 3840; // 4K width limit
+            let newWidth = parseInt(e.target.value);
+            
+            // Constrain to maximum 4K width
+            if (newWidth > maxWidth) {
+                newWidth = maxWidth;
+                e.target.value = newWidth;
+                if (window.UIManager) {
+                    window.UIManager.createNotification(`Canvas width limited to 4K maximum (${maxWidth}px)`, 'warning');
+                }
+            }
+            
+            this.canvasWidth = newWidth;
             this.updateCanvasSize();
             this.saveState();
         });
 
         document.getElementById('canvasHeight').addEventListener('change', (e) => {
-            this.canvasHeight = parseInt(e.target.value);
+            const maxHeight = 2160; // 4K height limit
+            let newHeight = parseInt(e.target.value);
+            
+            // Constrain to maximum 4K height
+            if (newHeight > maxHeight) {
+                newHeight = maxHeight;
+                e.target.value = newHeight;
+                if (window.UIManager) {
+                    window.UIManager.createNotification(`Canvas height limited to 4K maximum (${maxHeight}px)`, 'warning');
+                }
+            }
+            
+            this.canvasHeight = newHeight;
             this.updateCanvasSize();
             this.saveState();
         });
