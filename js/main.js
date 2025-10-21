@@ -283,7 +283,7 @@ class FontAnimationApp {
         if (!canvasWrapper) return;
 
         // Calculate the space needed for the scaled canvas
-        const baseMargin = 300; // Minimum margin around canvas
+        const baseMargin = 50; // Minimum margin around canvas
         const scaledWidth = this.canvasWidth * this.zoom;
         const scaledHeight = this.canvasHeight * this.zoom;
 
@@ -882,13 +882,13 @@ class FontAnimationApp {
 
     handleHandToolEnd() {
         const canvasScrollArea = document.getElementById('canvasScrollArea');
-        
+
         // Cancel any pending animation frame
         if (this.panAnimationFrame) {
             cancelAnimationFrame(this.panAnimationFrame);
             this.panAnimationFrame = null;
         }
-        
+
         // Clean up pan state
         this.panStartMouseX = undefined;
         this.panStartMouseY = undefined;
@@ -906,47 +906,47 @@ class FontAnimationApp {
     screenToCanvasCoordinates(screenX, screenY) {
         const canvasScrollArea = document.getElementById('canvasScrollArea');
         const canvasWrapper = document.getElementById('canvasWrapper');
-        
+
         if (!canvasScrollArea || !canvasWrapper) {
             console.error('Canvas containers not found');
             return { x: 0, y: 0 };
         }
-        
+
         // Get scroll area bounding rectangle
         const scrollAreaRect = canvasScrollArea.getBoundingClientRect();
-        
+
         // Convert screen coordinates to scroll area coordinates
         const scrollAreaX = screenX - scrollAreaRect.left;
         const scrollAreaY = screenY - scrollAreaRect.top;
-        
+
         // Account for scroll position within the scroll area
         const scrollX = canvasScrollArea.scrollLeft;
         const scrollY = canvasScrollArea.scrollTop;
-        
+
         // Get coordinates within the wrapper (accounting for scroll)
         const wrapperX = scrollAreaX + scrollX;
         const wrapperY = scrollAreaY + scrollY;
-        
+
         // The canvas is flex-centered within the wrapper
         // Calculate where the canvas center is within the wrapper
         const wrapperWidth = canvasWrapper.offsetWidth;
         const wrapperHeight = canvasWrapper.offsetHeight;
         const canvasCenterInWrapperX = wrapperWidth / 2;
         const canvasCenterInWrapperY = wrapperHeight / 2;
-        
+
         // Get coordinates relative to the canvas center (transform origin)
         const relativeX = wrapperX - canvasCenterInWrapperX;
         const relativeY = wrapperY - canvasCenterInWrapperY;
-        
+
         // Since panX and panY should be 0 (we use scroll for panning), only reverse zoom
         // Canvas has CSS transform: scale(zoom) with center origin
         const unscaledX = relativeX / this.zoom;
         const unscaledY = relativeY / this.zoom;
-        
+
         // Convert from transform origin (center) to canvas coordinates (top-left origin)
         const canvasX = unscaledX + this.canvasWidth / 2;
         const canvasY = unscaledY + this.canvasHeight / 2;
-        
+
         return { x: canvasX, y: canvasY };
     }
 
