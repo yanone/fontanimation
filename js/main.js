@@ -1261,6 +1261,10 @@ class FontAnimationApp {
                     if (e.metaKey || e.ctrlKey) {
                         e.preventDefault();
                         this.goToStart();
+                    } else if (e.altKey && this.selectedObject) {
+                        // Alt+Left: Navigate to closest keyframe to the left
+                        e.preventDefault();
+                        this.navigateToClosestKeyframe('left');
                     } else if (this.selectedObject) {
                         // Handle object movement when object is selected
                         e.preventDefault();
@@ -1285,6 +1289,10 @@ class FontAnimationApp {
                     if (e.metaKey || e.ctrlKey) {
                         e.preventDefault();
                         this.goToEnd();
+                    } else if (e.altKey && this.selectedObject) {
+                        // Alt+Right: Navigate to closest keyframe to the right
+                        e.preventDefault();
+                        this.navigateToClosestKeyframe('right');
                     } else if (this.selectedObject) {
                         // Handle object movement when object is selected
                         e.preventDefault();
@@ -2501,6 +2509,51 @@ class FontAnimationApp {
                 this.animationManager = new window.AnimationManager(this);
             }
             this.animationManager.goToEnd();
+        }
+    }
+
+    navigateToClosestKeyframe(direction) {
+        if (!this.selectedObject) return;
+
+        const currentFrame = this.currentFrame;
+        const allKeyframes = [];
+
+        // Collect all keyframes from all properties of the selected object
+        for (const property in this.selectedObject.keyframes) {
+            const keyframes = this.selectedObject.keyframes[property];
+            keyframes.forEach(keyframe => {
+                allKeyframes.push(keyframe.frame);
+            });
+        }
+
+        // Remove duplicates and sort
+        const uniqueFrames = [...new Set(allKeyframes)].sort((a, b) => a - b);
+
+        if (uniqueFrames.length === 0) return;
+
+        let targetFrame = null;
+
+        if (direction === 'left') {
+            // Find the closest keyframe to the left (previous)
+            for (let i = uniqueFrames.length - 1; i >= 0; i--) {
+                if (uniqueFrames[i] < currentFrame) {
+                    targetFrame = uniqueFrames[i];
+                    break;
+                }
+            }
+        } else if (direction === 'right') {
+            // Find the closest keyframe to the right (next)
+            for (let i = 0; i < uniqueFrames.length; i++) {
+                if (uniqueFrames[i] > currentFrame) {
+                    targetFrame = uniqueFrames[i];
+                    break;
+                }
+            }
+        }
+
+        // Navigate to the target frame if found
+        if (targetFrame !== null) {
+            this.setCurrentFrame(targetFrame);
         }
     }
 

@@ -65,6 +65,7 @@ Font Animation Studio allows you to:
 | `←/→` | Navigate frame by frame |
 | `Shift+←/→` | Jump 10 frames |
 | `Cmd+←/→` | Jump to first/last frame |
+| `Alt+←/→` | Jump to next/previous keyframe of selected object |
 
 ### Tools
 | Shortcut | Action |
