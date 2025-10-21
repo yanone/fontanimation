@@ -26,8 +26,8 @@
                 <input type="number" id="canvasWidth" value="1000" min="100">
                 <label for="canvasHeight">Height:</label>
                 <input type="number" id="canvasHeight" value="600" min="100">
-                <label for="canvasBackground">Background:</label>
-                <input type="color" id="canvasBackground" value="#ffffff">
+                <label for="canvasBackgroundColor">Background:</label>
+                <input type="color" id="canvasBackgroundColor" value="#ffffff">
                 <label for="frameRate">FPS:</label>
                 <input type="number" id="frameRate" value="30" min="1" max="120">
                 <label for="duration">Duration (s):</label>
@@ -92,9 +92,7 @@
 
             <!-- Canvas Area -->
             <div id="canvasContainer">
-                <div id="canvasBackground">
-                    <canvas id="mainCanvas"></canvas>
-                </div>
+                <canvas id="mainCanvas"></canvas>
                 <div id="canvasOverlay"></div>
             </div>
 

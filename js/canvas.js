@@ -123,15 +123,17 @@ class CanvasManager {
     handleMouseDown(event) {
         const pos = this.getMousePosition(event);
 
-        if (this.app.selectedTool === 'select') {
+        if (this.app.currentTool === 'select') {
             this.handleSelectStart(pos, event);
-        } else if (this.app.selectedTool === 'text') {
+        } else if (this.app.currentTool === 'text') {
             this.handleTextPlacement(pos);
-        } else if (this.app.selectedTool === 'move') {
+        } else if (this.app.currentTool === 'hand') {
+            this.handlePanStart(event);
+        } else if (this.app.currentTool === 'move') {
             this.handleMoveStart(pos);
-        } else if (this.app.selectedTool === 'rotate') {
+        } else if (this.app.currentTool === 'rotate') {
             this.handleRotateStart(pos);
-        } else if (this.app.selectedTool === 'scale') {
+        } else if (this.app.currentTool === 'scale') {
             this.handleScaleStart(pos);
         }
 
@@ -143,13 +145,15 @@ class CanvasManager {
         const pos = this.getMousePosition(event);
 
         if (this.isDragging) {
-            if (this.app.selectedTool === 'select' && this.app.selectedObject) {
+            if (this.app.currentTool === 'select' && this.app.selectedObject) {
                 this.handleObjectDrag(pos, event);
-            } else if (this.app.selectedTool === 'move' && this.app.selectedObject) {
+            } else if (this.app.currentTool === 'hand') {
+                this.handlePanDrag(event);
+            } else if (this.app.currentTool === 'move' && this.app.selectedObject) {
                 this.handleObjectMove(pos, event);
-            } else if (this.app.selectedTool === 'rotate' && this.app.selectedObject) {
+            } else if (this.app.currentTool === 'rotate' && this.app.selectedObject) {
                 this.handleObjectRotate(pos);
-            } else if (this.app.selectedTool === 'scale' && this.app.selectedObject) {
+            } else if (this.app.currentTool === 'scale' && this.app.selectedObject) {
                 this.handleObjectScale(pos);
             }
         } else {
@@ -163,8 +167,10 @@ class CanvasManager {
     handleMouseUp(event) {
         this.isDragging = false;
 
-        if (this.app.selectedTool === 'select') {
+        if (this.app.currentTool === 'select') {
             this.finalizeSelection();
+        } else if (this.app.currentTool === 'hand') {
+            this.handlePanEnd();
         }
 
         // Update timeline if object was modified
@@ -178,6 +184,10 @@ class CanvasManager {
 
     handleMouseLeave(event) {
         this.isDragging = false;
+
+        if (this.app.currentTool === 'hand') {
+            this.handlePanEnd();
+        }
     }
 
     handleTouchStart(event) {
@@ -417,15 +427,17 @@ class CanvasManager {
         const hoveredObject = this.getObjectAtPosition(pos);
         let cursor = 'default';
 
-        if (this.app.selectedTool === 'text') {
+        if (this.app.currentTool === 'text') {
             cursor = 'text';
-        } else if (this.app.selectedTool === 'select') {
+        } else if (this.app.currentTool === 'select') {
             cursor = hoveredObject ? 'move' : 'default';
-        } else if (this.app.selectedTool === 'move') {
+        } else if (this.app.currentTool === 'hand') {
+            cursor = 'grab';
+        } else if (this.app.currentTool === 'move') {
             cursor = 'move';
-        } else if (this.app.selectedTool === 'rotate') {
+        } else if (this.app.currentTool === 'rotate') {
             cursor = 'crosshair';
-        } else if (this.app.selectedTool === 'scale') {
+        } else if (this.app.currentTool === 'scale') {
             cursor = 'nw-resize';
         }
 
@@ -808,6 +820,49 @@ class CanvasManager {
         }
 
         document.removeEventListener('keydown', this.handleKeyDown);
+    }
+
+    handlePanStart(event) {
+        // Store initial scroll position and mouse position for panning
+        const canvasContainer = document.getElementById('canvasContainer');
+        this.panStartX = event.clientX;
+        this.panStartY = event.clientY;
+        this.panStartScrollX = canvasContainer.scrollLeft;
+        this.panStartScrollY = canvasContainer.scrollTop;
+
+        // Add grabbing cursor
+        this.canvas.classList.add('grabbing');
+
+        // Prevent default behavior
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    handlePanDrag(event) {
+        if (this.panStartX === undefined || this.panStartY === undefined) return;
+
+        const canvasContainer = document.getElementById('canvasContainer');
+        const deltaX = this.panStartX - event.clientX;
+        const deltaY = this.panStartY - event.clientY;
+
+        // Update scroll position - this moves the scrollbars
+        canvasContainer.scrollLeft = this.panStartScrollX + deltaX;
+        canvasContainer.scrollTop = this.panStartScrollY + deltaY;
+
+        // Prevent default to stop any other behavior
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    handlePanEnd() {
+        // Clean up pan state
+        this.panStartX = undefined;
+        this.panStartY = undefined;
+        this.panStartScrollX = undefined;
+        this.panStartScrollY = undefined;
+
+        // Remove grabbing cursor
+        this.canvas.classList.remove('grabbing');
     }
 }
 

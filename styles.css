@@ -58,9 +58,9 @@ body {
 }
 
 .menu-group input[type="color"] {
-    width: 32px;
-    height: 24px;
-    padding: 1px;
+    width: 40px;
+    height: 28px;
+    padding: 2px;
 }
 
 .menu-group button {
@@ -316,22 +316,14 @@ body {
     scroll-behavior: smooth;
 }
 
-#canvasBackground {
-    background: #444444;
-    padding: 20px;
-    border-radius: 8px;
-    position: relative;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    margin: 50px;
-    flex-shrink: 0;
-}
-
 #mainCanvas {
     display: block;
     background: #ffffff;
     border-radius: 4px;
     cursor: grab;
     transition: transform 0.1s ease;
+    margin: 50px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 
     /* Ensure high-quality rendering on high-DPI displays */
     image-rendering: -webkit-optimize-contrast;

@@ -295,9 +295,10 @@ class FontAnimationApp {
             this.saveState();
         });
 
-        document.getElementById('canvasBackground').addEventListener('change', (e) => {
+        document.getElementById('canvasBackgroundColor').addEventListener('change', (e) => {
             this.canvasBackground = e.target.value;
             this.updateCanvasSize();
+            this.redraw(); // Ensure canvas is redrawn with new background
             this.saveState();
         });
 
@@ -558,7 +559,13 @@ class FontAnimationApp {
             const x = (e.clientX - rect.left) * scaleX / this.zoom - this.panX / this.zoom;
             const y = (e.clientY - rect.top) * scaleY / this.zoom - this.panY / this.zoom;
 
-            if (this.currentTool === 'text') {
+            if (this.currentTool === 'hand') {
+                // Initialize canvas manager if needed
+                if (!this.canvasManager) {
+                    this.canvasManager = new CanvasManager(this.canvas);
+                }
+                this.canvasManager.handleMouseDown(e);
+            } else if (this.currentTool === 'text') {
                 // Prompt for text input
                 let text = prompt('Enter text:', 'Sample Text');
                 // Only create text object if user didn't cancel and provided text
@@ -579,6 +586,12 @@ class FontAnimationApp {
         });
 
         this.canvas.addEventListener('mousemove', (e) => {
+            // Handle hand tool panning
+            if (this.currentTool === 'hand' && this.canvasManager) {
+                this.canvasManager.handleMouseMove(e);
+                return;
+            }
+
             if (!isDragging || !this.selectedObject) return;
 
             const rect = this.canvas.getBoundingClientRect();
@@ -612,7 +625,13 @@ class FontAnimationApp {
             this.redraw();
         });
 
-        this.canvas.addEventListener('mouseup', () => {
+        this.canvas.addEventListener('mouseup', (e) => {
+            // Handle hand tool panning
+            if (this.currentTool === 'hand' && this.canvasManager) {
+                this.canvasManager.handleMouseUp(e);
+                return;
+            }
+
             if (isDragging) {
                 isDragging = false;
                 this.canvas.style.cursor = '';
@@ -621,7 +640,12 @@ class FontAnimationApp {
             }
         });
 
-        this.canvas.addEventListener('mouseleave', () => {
+        this.canvas.addEventListener('mouseleave', (e) => {
+            // Handle hand tool panning
+            if (this.currentTool === 'hand' && this.canvasManager) {
+                this.canvasManager.handleMouseLeave(e);
+            }
+
             if (isDragging) {
                 isDragging = false;
                 this.canvas.style.cursor = '';
@@ -657,7 +681,7 @@ class FontAnimationApp {
         if (window.AppSettings) {
             document.getElementById('canvasWidth').value = this.canvasWidth;
             document.getElementById('canvasHeight').value = this.canvasHeight;
-            document.getElementById('canvasBackground').value = this.canvasBackground;
+            document.getElementById('canvasBackgroundColor').value = this.canvasBackground;
             document.getElementById('frameRate').value = this.frameRate;
             document.getElementById('duration').value = this.duration;
         }
@@ -1727,7 +1751,7 @@ class FontAnimationApp {
         // Update UI
         document.getElementById('canvasWidth').value = this.canvasWidth;
         document.getElementById('canvasHeight').value = this.canvasHeight;
-        document.getElementById('canvasBackground').value = this.canvasBackground;
+        document.getElementById('canvasBackgroundColor').value = this.canvasBackground;
         document.getElementById('frameRate').value = this.frameRate;
         document.getElementById('duration').value = this.duration;
 
@@ -2034,7 +2058,7 @@ class FontAnimationApp {
         // Update UI
         document.getElementById('canvasWidth').value = this.canvasWidth;
         document.getElementById('canvasHeight').value = this.canvasHeight;
-        document.getElementById('canvasBackground').value = this.canvasBackground;
+        document.getElementById('canvasBackgroundColor').value = this.canvasBackground;
         document.getElementById('frameRate').value = this.frameRate;
         document.getElementById('duration').value = this.duration;
 
@@ -2142,7 +2166,7 @@ class FontAnimationApp {
         // Update UI
         document.getElementById('canvasWidth').value = this.canvasWidth;
         document.getElementById('canvasHeight').value = this.canvasHeight;
-        document.getElementById('canvasBackground').value = this.canvasBackground;
+        document.getElementById('canvasBackgroundColor').value = this.canvasBackground;
         document.getElementById('frameRate').value = this.frameRate;
         document.getElementById('duration').value = this.duration;
 
