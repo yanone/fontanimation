@@ -262,11 +262,11 @@ class ExportManager {
         const canvasArea = this.app.canvasWidth * this.app.canvasHeight;
         const maxRecommendedArea = 1920 * 1080; // 1080p
         const maxSupportedArea = 3840 * 2160; // 4K
-        
+
         if (canvasArea > maxSupportedArea) {
             throw new Error(`Canvas size (${this.app.canvasWidth}×${this.app.canvasHeight}) may be too large for video export. Try reducing to 4K (3840×2160) or smaller.`);
         }
-        
+
         if (canvasArea > maxRecommendedArea && selectedFormat?.includes('mp4')) {
             console.warn('Large canvas size detected. MP4 export may be unstable. Consider using WebM format instead.');
         }
@@ -320,17 +320,17 @@ class ExportManager {
                     console.log('MP4 failed for large canvas, attempting WebM fallback...');
                     try {
                         const result = await this.attemptVideoRecording(canvas, context, webmFormat);
-                        
+
                         // Clean up the temporary canvas on success
                         if (canvas.parentNode) {
                             document.body.removeChild(canvas);
                         }
-                        
+
                         // Notify user about format change
                         if (window.UIManager) {
                             window.UIManager.createNotification('MP4 failed for large canvas. Exported as WebM instead.', 'warning');
                         }
-                        
+
                         return result;
                     } catch (webmError) {
                         console.error('WebM fallback also failed:', webmError);
@@ -355,17 +355,17 @@ class ExportManager {
         const canvasArea = canvas.width * canvas.height;
         const baseArea = 1920 * 1080; // 1080p baseline
         const areaRatio = Math.min(canvasArea / baseArea, 4); // Cap at 4x for very large canvases
-        
+
         // Scale bitrate with canvas size, but use conservative rates for stability
         const baseBitrate = selectedFormat.includes('mp4') ? 15000000 : 12000000; // 15Mbps MP4, 12Mbps WebM
         const scaledBitrate = Math.floor(baseBitrate * Math.sqrt(areaRatio)); // Square root scaling is more conservative
-        
+
         const mediaRecorderOptions = {
             mimeType: selectedFormat,
             videoBitsPerSecond: scaledBitrate
         };
 
-        console.log(`Canvas size: ${canvas.width}×${canvas.height}, Bitrate: ${(scaledBitrate/1000000).toFixed(1)}Mbps`);
+        console.log(`Canvas size: ${canvas.width}×${canvas.height}, Bitrate: ${(scaledBitrate / 1000000).toFixed(1)}Mbps`);
 
         // For MP4, use additional compatibility settings for large canvases
         if (selectedFormat.includes('mp4') && canvasArea > 1920 * 1080) {
@@ -407,13 +407,13 @@ class ExportManager {
             mediaRecorder.onerror = (error) => {
                 console.error('MediaRecorder error:', error);
                 let errorMessage = 'MediaRecorder error: ' + (error.message || 'Unknown error');
-                
+
                 // Provide specific guidance for large canvas MP4 issues
                 const canvasArea = canvas.width * canvas.height;
                 if (selectedFormat.includes('mp4') && canvasArea > 1920 * 1080) {
                     errorMessage += '. Large canvas MP4 export failed. This may be due to browser limitations with high-resolution MP4 encoding.';
                 }
-                
+
                 reject(new Error(errorMessage));
             };
 
