@@ -19,6 +19,7 @@ class AppSettings {
             // Timeline settings
             minPixelsPerSecond: 80,
             minTimelineWidth: 800,
+            timelineHeight: 220,
 
             // UI settings
             maxHistorySteps: 50,
@@ -57,6 +58,43 @@ class AppSettings {
             color: this.defaults.defaultTextColor,
             text: this.defaults.defaultText
         };
+    }
+
+    // Get a setting value, fallback to default if not found
+    static getValue(key) {
+        try {
+            const stored = localStorage.getItem(`fontanimation_${key}`);
+            return stored ? JSON.parse(stored) : this.get(key);
+        } catch {
+            return this.get(key);
+        }
+    }
+
+    // Set a setting value and persist to localStorage
+    static set(key, value) {
+        try {
+            localStorage.setItem(`fontanimation_${key}`, JSON.stringify(value));
+            return true;
+        } catch {
+            console.warn(`Failed to save setting: ${key}`);
+            return false;
+        }
+    }
+
+    // Clear all stored settings
+    static clearAll() {
+        try {
+            const keys = Object.keys(localStorage);
+            keys.forEach(key => {
+                if (key.startsWith('fontanimation_')) {
+                    localStorage.removeItem(key);
+                }
+            });
+            return true;
+        } catch {
+            console.warn('Failed to clear settings');
+            return false;
+        }
     }
 }
 

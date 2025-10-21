@@ -11,17 +11,17 @@ class FontAnimationApp {
         this.isPlaying = false;
         this.currentFrame = 0;
         this.totalFrames = 150; // 5 seconds at 30fps
-        this.frameRate = window.AppSettings?.get('frameRate') || 30;
-        this.duration = window.AppSettings?.get('duration') || 5;
-        this.canvasWidth = window.AppSettings?.get('canvasWidth') || 1000;
-        this.canvasHeight = window.AppSettings?.get('canvasHeight') || 600;
-        this.canvasBackground = window.AppSettings?.get('canvasBackground') || '#ffffff';
+        this.frameRate = window.AppSettings?.getValue('frameRate') || 30;
+        this.duration = window.AppSettings?.getValue('duration') || 5;
+        this.canvasWidth = window.AppSettings?.getValue('canvasWidth') || 1000;
+        this.canvasHeight = window.AppSettings?.getValue('canvasHeight') || 600;
+        this.canvasBackground = window.AppSettings?.getValue('canvasBackground') || '#ffffff';
         this.zoom = 1;
         this.panX = 0;
         this.panY = 0;
         this.history = [];
         this.historyIndex = -1;
-        this.maxHistory = window.AppSettings?.get('maxHistorySteps') || 50;
+        this.maxHistory = window.AppSettings?.getValue('maxHistorySteps') || 50;
         this.missingFonts = new Set(); // Track fonts that were missing when project was loaded
 
         this.init();
@@ -189,6 +189,7 @@ class FontAnimationApp {
         this.setupEventListeners();
         this.setupKeyboardShortcuts();
         this.setupTimeline();
+        this.setupTimelineDivider();
         this.setupFontManager();
         this.initializeUIFromSettings();
         this.saveState(); // Initial state
@@ -1785,6 +1786,84 @@ class FontAnimationApp {
     setupTimeline() {
         if (window.TimelineManager) {
             this.timeline = new TimelineManager(this);
+        }
+    }
+
+    setupTimelineDivider() {
+        const divider = document.getElementById('timelineDivider');
+        const timeline = document.getElementById('timeline');
+        const mainContent = document.getElementById('mainContent');
+
+        if (!divider || !timeline || !mainContent) {
+            console.warn('Timeline divider elements not found');
+            return;
+        }
+
+        let isDragging = false;
+        let startY = 0;
+        let startTimelineHeight = 0;
+
+        const startDrag = (e) => {
+            isDragging = true;
+            startY = e.clientY;
+            startTimelineHeight = parseInt(getComputedStyle(timeline).height);
+            divider.classList.add('dragging');
+            document.body.style.cursor = 'ns-resize';
+            document.body.style.userSelect = 'none';
+            e.preventDefault();
+        };
+
+        const doDrag = (e) => {
+            if (!isDragging) return;
+
+            const deltaY = startY - e.clientY; // Inverted because timeline is at bottom
+            const newHeight = Math.max(100, Math.min(600, startTimelineHeight + deltaY));
+
+            timeline.style.height = newHeight + 'px';
+            e.preventDefault();
+        };
+
+        const stopDrag = () => {
+            if (isDragging) {
+                isDragging = false;
+                divider.classList.remove('dragging');
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+
+                // Save the new timeline height to settings
+                const newHeight = parseInt(getComputedStyle(timeline).height);
+                if (window.AppSettings) {
+                    window.AppSettings.set('timelineHeight', newHeight);
+                }
+            }
+        };
+
+        // Mouse events
+        divider.addEventListener('mousedown', startDrag);
+        document.addEventListener('mousemove', doDrag);
+        document.addEventListener('mouseup', stopDrag);
+
+        // Touch events for mobile
+        divider.addEventListener('touchstart', (e) => {
+            const touch = e.touches[0];
+            startDrag({ clientY: touch.clientY, preventDefault: () => e.preventDefault() });
+        });
+
+        document.addEventListener('touchmove', (e) => {
+            if (isDragging && e.touches.length > 0) {
+                const touch = e.touches[0];
+                doDrag({ clientY: touch.clientY, preventDefault: () => e.preventDefault() });
+            }
+        });
+
+        document.addEventListener('touchend', stopDrag);
+
+        // Load saved timeline height
+        if (window.AppSettings) {
+            const savedHeight = window.AppSettings.getValue('timelineHeight');
+            if (savedHeight && savedHeight !== 220) { // Only apply if different from default
+                timeline.style.height = savedHeight + 'px';
+            }
         }
     }
 

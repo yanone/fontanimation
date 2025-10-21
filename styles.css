@@ -629,13 +629,49 @@ body {
     background: #505050;
 }
 
+/* Timeline Divider */
+.timeline-divider {
+    height: 6px;
+    background: #404040;
+    cursor: ns-resize;
+    position: relative;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-top: 1px solid #555;
+    border-bottom: 1px solid #555;
+    transition: background-color 0.2s ease;
+}
+
+.timeline-divider:hover {
+    background: #555;
+}
+
+.timeline-divider.dragging {
+    background: #666;
+}
+
+.divider-handle {
+    width: 40px;
+    height: 3px;
+    background: #888;
+    border-radius: 2px;
+    pointer-events: none;
+}
+
+.timeline-divider:hover .divider-handle {
+    background: #aaa;
+}
+
 /* Timeline */
 #timeline {
     height: 220px;
     background: #1e1e1e;
-    border-top: 1px solid #404040;
     display: flex;
     flex-direction: column;
+    min-height: 100px;
+    /* Minimum height to prevent collapsing */
 }
 
 #timelineLayout {
@@ -654,7 +690,7 @@ body {
 }
 
 #timelineHeaderLeft {
-    height: 40px;
+    height: 32px;
     background: #2b2b2b;
     border-bottom: 1px solid #404040;
     display: flex;
@@ -695,7 +731,7 @@ body {
 }
 
 #timelineHeader {
-    height: 40px;
+    height: 32px;
     background: #2b2b2b;
     border-bottom: 1px solid #404040;
     position: relative;
@@ -801,22 +837,23 @@ body {
 }
 
 .timeline-layer {
-    height: 30px;
+    height: 24px;
     position: relative;
     background: #1e1e1e;
 }
 
 .timeline-layer.main-layer {
-    height: 40px;
+    height: 32px;
     background: #252525;
 }
 
 .timeline-layer.sub-layer {
-    height: 25px;
+    height: 20px;
     border-bottom: 1px solid #333333;
 }
 
 .timeline-layer-name {
+    height: 24px;
     padding: 6px 12px;
     display: flex;
     align-items: center;
@@ -829,14 +866,14 @@ body {
 }
 
 .timeline-layer-name.main-layer {
-    height: 40px;
+    height: 32px;
     font-size: 12px;
     font-weight: 500;
     background: #333333;
 }
 
 .timeline-layer-name.sub-layer {
-    height: 25px;
+    height: 20px;
     padding-left: 20px;
     background: #2b2b2b;
     border-bottom: 1px solid #333333;
