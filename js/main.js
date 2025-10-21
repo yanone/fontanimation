@@ -299,10 +299,10 @@ class FontAnimationApp {
         canvasWrapper.style.width = `${minWrapperWidth}px`;
         canvasWrapper.style.height = `${minWrapperHeight}px`;
 
-        // Apply transform and pan offset directly to canvas
+        // Apply zoom transform to canvas (panning is handled by scrollbars)
         // The flex centering in CSS will handle the base centering
         this.canvas.style.position = 'relative';
-        this.canvas.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoom})`;
+        this.canvas.style.transform = `scale(${this.zoom})`;
         this.canvas.style.transformOrigin = 'center center';
 
         if (canvasOverlay) {
@@ -311,7 +311,7 @@ class FontAnimationApp {
             canvasOverlay.style.top = '50%';
             canvasOverlay.style.width = `${this.canvasWidth}px`;
             canvasOverlay.style.height = `${this.canvasHeight}px`;
-            canvasOverlay.style.transform = `translate(-50%, -50%) translate(${this.panX}px, ${this.panY}px) scale(${this.zoom})`;
+            canvasOverlay.style.transform = `translate(-50%, -50%) scale(${this.zoom})`;
             canvasOverlay.style.transformOrigin = 'center center';
         }
 
@@ -422,7 +422,7 @@ class FontAnimationApp {
         document.getElementById('canvasWidth').addEventListener('change', (e) => {
             const maxWidth = 3840; // 4K width limit
             let newWidth = parseInt(e.target.value);
-            
+
             // Constrain to maximum 4K width
             if (newWidth > maxWidth) {
                 newWidth = maxWidth;
@@ -431,7 +431,7 @@ class FontAnimationApp {
                     window.UIManager.createNotification(`Canvas width limited to 4K maximum (${maxWidth}px)`, 'warning');
                 }
             }
-            
+
             this.canvasWidth = newWidth;
             this.updateCanvasSize();
             this.saveState();
@@ -440,7 +440,7 @@ class FontAnimationApp {
         document.getElementById('canvasHeight').addEventListener('change', (e) => {
             const maxHeight = 2160; // 4K height limit
             let newHeight = parseInt(e.target.value);
-            
+
             // Constrain to maximum 4K height
             if (newHeight > maxHeight) {
                 newHeight = maxHeight;
@@ -449,7 +449,7 @@ class FontAnimationApp {
                     window.UIManager.createNotification(`Canvas height limited to 4K maximum (${maxHeight}px)`, 'warning');
                 }
             }
-            
+
             this.canvasHeight = newHeight;
             this.updateCanvasSize();
             this.saveState();
@@ -711,17 +711,14 @@ class FontAnimationApp {
         let dragStartObjY = 0;
 
         this.canvas.addEventListener('mousedown', (e) => {
-            const rect = this.canvas.getBoundingClientRect();
-            // Transform mouse coordinates to canvas space
-            const x = ((e.clientX - rect.left) / this.zoom) - this.panX;
-            const y = ((e.clientY - rect.top) / this.zoom) - this.panY;
+            // Transform mouse coordinates to canvas space accounting for zoom and pan
+            const coords = this.screenToCanvasCoordinates(e.clientX, e.clientY);
+            const x = coords.x;
+            const y = coords.y;
 
             if (this.currentTool === 'hand') {
-                // Initialize canvas manager if needed
-                if (!this.canvasManager) {
-                    this.canvasManager = new CanvasManager(this.canvas);
-                }
-                this.canvasManager.handleMouseDown(e);
+                // Initialize hand tool panning
+                this.handleHandToolStart(e);
             } else if (this.currentTool === 'text') {
                 // Prompt for text input
                 let text = prompt('Enter text:', 'Sample Text');
@@ -744,17 +741,17 @@ class FontAnimationApp {
 
         this.canvas.addEventListener('mousemove', (e) => {
             // Handle hand tool panning
-            if (this.currentTool === 'hand' && this.canvasManager) {
-                this.canvasManager.handleMouseMove(e);
+            if (this.currentTool === 'hand') {
+                this.handleHandToolDrag(e);
                 return;
             }
 
             if (!isDragging || !this.selectedObject) return;
 
-            const rect = this.canvas.getBoundingClientRect();
-            // Transform mouse coordinates to canvas space
-            const x = ((e.clientX - rect.left) / this.zoom) - this.panX;
-            const y = ((e.clientY - rect.top) / this.zoom) - this.panY;
+            // Transform mouse coordinates to canvas space accounting for zoom and pan
+            const coords = this.screenToCanvasCoordinates(e.clientX, e.clientY);
+            const x = coords.x;
+            const y = coords.y;
 
             let deltaX = x - dragStartX;
             let deltaY = y - dragStartY;
@@ -782,8 +779,8 @@ class FontAnimationApp {
 
         this.canvas.addEventListener('mouseup', (e) => {
             // Handle hand tool panning
-            if (this.currentTool === 'hand' && this.canvasManager) {
-                this.canvasManager.handleMouseUp(e);
+            if (this.currentTool === 'hand') {
+                this.handleHandToolEnd(e);
                 return;
             }
 
@@ -797,8 +794,8 @@ class FontAnimationApp {
 
         this.canvas.addEventListener('mouseleave', (e) => {
             // Handle hand tool panning
-            if (this.currentTool === 'hand' && this.canvasManager) {
-                this.canvasManager.handleMouseLeave(e);
+            if (this.currentTool === 'hand') {
+                this.handleHandToolEnd(e);
             }
 
             if (isDragging) {
@@ -834,6 +831,123 @@ class FontAnimationApp {
                 }
             }
         });
+    }
+
+    // Hand tool panning methods
+    handleHandToolStart(event) {
+        // Store initial mouse position and current scroll positions for panning
+        const canvasScrollArea = document.getElementById('canvasScrollArea');
+        if (!canvasScrollArea) return;
+
+        this.panStartMouseX = event.clientX;
+        this.panStartMouseY = event.clientY;
+        this.panStartScrollX = canvasScrollArea.scrollLeft;
+        this.panStartScrollY = canvasScrollArea.scrollTop;
+
+        // Add grabbing cursor and disable smooth scrolling for performance
+        this.canvas.classList.add('grabbing');
+        canvasScrollArea.classList.add('panning');
+
+        // Prevent default behavior
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    handleHandToolDrag(event) {
+        if (this.panStartMouseX === undefined || this.panStartMouseY === undefined) return;
+
+        const canvasScrollArea = document.getElementById('canvasScrollArea');
+        if (!canvasScrollArea) return;
+
+        // Cancel any pending animation frame to avoid accumulating updates
+        if (this.panAnimationFrame) {
+            cancelAnimationFrame(this.panAnimationFrame);
+        }
+
+        // Use requestAnimationFrame for smooth 60fps updates
+        this.panAnimationFrame = requestAnimationFrame(() => {
+            // Calculate mouse delta (inverted for natural panning feel)
+            const deltaX = this.panStartMouseX - event.clientX;
+            const deltaY = this.panStartMouseY - event.clientY;
+
+            // Update scroll positions - this moves the scrollbars
+            canvasScrollArea.scrollLeft = this.panStartScrollX + deltaX;
+            canvasScrollArea.scrollTop = this.panStartScrollY + deltaY;
+        });
+
+        // Prevent default to stop any other behavior
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    handleHandToolEnd() {
+        const canvasScrollArea = document.getElementById('canvasScrollArea');
+        
+        // Cancel any pending animation frame
+        if (this.panAnimationFrame) {
+            cancelAnimationFrame(this.panAnimationFrame);
+            this.panAnimationFrame = null;
+        }
+        
+        // Clean up pan state
+        this.panStartMouseX = undefined;
+        this.panStartMouseY = undefined;
+        this.panStartScrollX = undefined;
+        this.panStartScrollY = undefined;
+
+        // Remove grabbing cursor and re-enable smooth scrolling
+        this.canvas.classList.remove('grabbing');
+        if (canvasScrollArea) {
+            canvasScrollArea.classList.remove('panning');
+        }
+    }
+
+    // Transform screen coordinates to canvas coordinates accounting for zoom and scroll position
+    screenToCanvasCoordinates(screenX, screenY) {
+        const canvasScrollArea = document.getElementById('canvasScrollArea');
+        const canvasWrapper = document.getElementById('canvasWrapper');
+        
+        if (!canvasScrollArea || !canvasWrapper) {
+            console.error('Canvas containers not found');
+            return { x: 0, y: 0 };
+        }
+        
+        // Get scroll area bounding rectangle
+        const scrollAreaRect = canvasScrollArea.getBoundingClientRect();
+        
+        // Convert screen coordinates to scroll area coordinates
+        const scrollAreaX = screenX - scrollAreaRect.left;
+        const scrollAreaY = screenY - scrollAreaRect.top;
+        
+        // Account for scroll position within the scroll area
+        const scrollX = canvasScrollArea.scrollLeft;
+        const scrollY = canvasScrollArea.scrollTop;
+        
+        // Get coordinates within the wrapper (accounting for scroll)
+        const wrapperX = scrollAreaX + scrollX;
+        const wrapperY = scrollAreaY + scrollY;
+        
+        // The canvas is flex-centered within the wrapper
+        // Calculate where the canvas center is within the wrapper
+        const wrapperWidth = canvasWrapper.offsetWidth;
+        const wrapperHeight = canvasWrapper.offsetHeight;
+        const canvasCenterInWrapperX = wrapperWidth / 2;
+        const canvasCenterInWrapperY = wrapperHeight / 2;
+        
+        // Get coordinates relative to the canvas center (transform origin)
+        const relativeX = wrapperX - canvasCenterInWrapperX;
+        const relativeY = wrapperY - canvasCenterInWrapperY;
+        
+        // Since panX and panY should be 0 (we use scroll for panning), only reverse zoom
+        // Canvas has CSS transform: scale(zoom) with center origin
+        const unscaledX = relativeX / this.zoom;
+        const unscaledY = relativeY / this.zoom;
+        
+        // Convert from transform origin (center) to canvas coordinates (top-left origin)
+        const canvasX = unscaledX + this.canvasWidth / 2;
+        const canvasY = unscaledY + this.canvasHeight / 2;
+        
+        return { x: canvasX, y: canvasY };
     }
 
     setupFontManager() {

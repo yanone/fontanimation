@@ -328,7 +328,7 @@ body {
 #canvasScrollArea {
     scrollbar-width: thin;
     scrollbar-color: #555 #2a2a2a;
-    scroll-behavior: smooth;
+    /* Removed scroll-behavior: smooth to prevent lag during hand tool panning */
 }
 
 #mainCanvas {
@@ -349,6 +349,13 @@ body {
 
 #mainCanvas.grabbing {
     cursor: grabbing;
+    /* Disable transitions during panning for smooth performance */
+    transition: none !important;
+}
+
+/* Disable smooth scrolling during panning for better performance */
+#canvasScrollArea.panning {
+    scroll-behavior: auto !important;
 }
 
 #mainCanvas.hand-cursor {
