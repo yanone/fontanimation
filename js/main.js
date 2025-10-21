@@ -23,6 +23,8 @@ class FontAnimationApp {
         this.historyIndex = -1;
         this.maxHistory = window.AppSettings?.getValue('maxHistorySteps') || 50;
         this.missingFonts = new Set(); // Track fonts that were missing when project was loaded
+        this.spacePanning = false; // Track if space bar is being held for temporary panning
+        this.previousTool = 'select'; // Store previous tool for space bar panning
 
         this.init();
     }
@@ -283,7 +285,7 @@ class FontAnimationApp {
         if (!canvasWrapper) return;
 
         // Calculate the space needed for the scaled canvas
-        const baseMargin = 50; // Minimum margin around canvas
+        const baseMargin = 100; // Minimum margin around canvas
         const scaledWidth = this.canvasWidth * this.zoom;
         const scaledHeight = this.canvasHeight * this.zoom;
 
@@ -980,6 +982,34 @@ class FontAnimationApp {
     }
 
     setupKeyboardShortcuts() {
+        // Add keyup listener for space bar temporary panning
+        document.addEventListener('keyup', (e) => {
+            // Prevent shortcuts when typing in input fields
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                return;
+            }
+
+            if (e.key === ' ' && this.spacePanning) {
+                // Space released - revert to previous tool
+                this.spacePanning = false;
+                this.setTool(this.previousTool);
+                this.canvas.classList.remove('grabbing');
+                const canvasScrollArea = document.getElementById('canvasScrollArea');
+                if (canvasScrollArea) {
+                    canvasScrollArea.classList.remove('panning');
+                }
+                // End any active panning
+                if (this.panAnimationFrame) {
+                    cancelAnimationFrame(this.panAnimationFrame);
+                    this.panAnimationFrame = null;
+                }
+                this.panStartMouseX = undefined;
+                this.panStartMouseY = undefined;
+                this.panStartScrollX = undefined;
+                this.panStartScrollY = undefined;
+            }
+        });
+
         document.addEventListener('keydown', (e) => {
             // Prevent shortcuts when typing in input fields
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
@@ -1011,6 +1041,16 @@ class FontAnimationApp {
                     break;
                 case ' ':
                     e.preventDefault();
+                    // Space bar for temporary panning (if not already panning)
+                    if (!this.spacePanning && this.currentTool !== 'hand') {
+                        this.spacePanning = true;
+                        this.previousTool = this.currentTool;
+                        this.setTool('hand');
+                    }
+                    break;
+                case 'enter':
+                    e.preventDefault();
+                    // Enter key for play/pause
                     this.togglePlayback();
                     break;
                 case 'delete':
@@ -1155,11 +1195,18 @@ class FontAnimationApp {
     }
 
     setTool(tool) {
+        // Track previous tool (but not when space panning)
+        if (!this.spacePanning && tool !== this.currentTool) {
+            this.previousTool = this.currentTool;
+        }
+        
         this.currentTool = tool;
 
-        // Update UI
-        document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
-        document.getElementById(tool + 'Tool').classList.add('active');
+        // Update UI (but not when space panning to avoid visual flicker)
+        if (!this.spacePanning) {
+            document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tool + 'Tool').classList.add('active');
+        }
 
         // Update cursor classes
         this.canvas.className = this.canvas.className.replace(/\b\w+-cursor\b/g, '');
