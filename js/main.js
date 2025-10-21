@@ -1111,6 +1111,11 @@ class FontAnimationApp {
                 // Only unselect objects if not exiting a text field
                 if (this.selectedObject) {
                     this.selectedObject = null;
+                    // Collapse all timeline layers when unselecting
+                    this.textObjects.forEach(obj => obj._timelineExpanded = false);
+                    if (this.timeline) {
+                        this.timeline.updateLayers();
+                    }
                     this.updateRightPanel();
                     this.redraw();
                 }
