@@ -58,20 +58,44 @@ Font Animation Studio allows you to:
 
 ## ⌨️ Keyboard Shortcuts
 
+### Playback
 | Shortcut | Action |
 |----------|--------|
-| `Space` | Play/Pause animation |
+| `Enter` | Play/Pause animation |
 | `←/→` | Navigate frame by frame |
 | `Shift+←/→` | Jump 10 frames |
 | `Cmd+←/→` | Jump to first/last frame |
-| `Cmd+E` | Export video |
-| `Cmd+Z` | Undo |
-| `Cmd+Shift+Z` | Redo |
-| `Escape` | Close modals |
+
+### Tools
+| Shortcut | Action |
+|----------|--------|
+| `Space` | Hand tool (temporary) |
 | `H` | Hand tool |
 | `T` | Text tool |
 | `V` | Select tool |
 | `Z` | Zoom tool |
+
+### Objects
+| Shortcut | Action |
+|----------|--------|
+| `Cmd+D` | Duplicate selected object |
+| `Alt+Drag` | Duplicate while moving |
+| `Delete` | Delete selected object |
+
+### View
+| Shortcut | Action |
+|----------|--------|
+| `Cmd+Plus` | Zoom in |
+| `Cmd+Minus` | Zoom out |
+| `Cmd+0` | Reset zoom to 100% |
+
+### General
+| Shortcut | Action |
+|----------|--------|
+| `Cmd+E` | Export video |
+| `Cmd+Z` | Undo |
+| `Cmd+Shift+Z` | Redo |
+| `Escape` | Close modals |
 
 ## Browser Requirements
 
