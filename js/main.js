@@ -569,7 +569,7 @@ class FontAnimationApp {
         document.getElementById('fontSelect').addEventListener('change', (e) => {
             if (this.selectedObject) {
                 this.selectedObject.fontFamily = e.target.value;
-                
+
                 // Initialize variable axes in initialState with default values
                 if (this.fonts.has(e.target.value)) {
                     const fontInfo = this.fonts.get(e.target.value);
@@ -578,7 +578,7 @@ class FontAnimationApp {
                         if (!this.selectedObject.initialState) {
                             this.selectedObject.initialState = {};
                         }
-                        
+
                         // Initialize each variable axis with its default value
                         Object.entries(fontInfo.variableAxes).forEach(([tag, axisInfo]) => {
                             const propertyName = `variableaxis:${tag}`;
@@ -590,7 +590,7 @@ class FontAnimationApp {
                         });
                     }
                 }
-                
+
                 this.updateRightPanel(); // Redraw sidebar to reflect new font properties
                 this.redraw();
                 this.saveState();
@@ -1463,7 +1463,7 @@ class FontAnimationApp {
                 if (textObject.initialState && textObject.initialState.hasOwnProperty(property)) {
                     return textObject.initialState[property];
                 }
-                
+
                 // Try to get the default from font info
                 const axisTag = property.replace('variableaxis:', '');
                 if (this.fonts.has(textObject.fontFamily)) {
@@ -2835,7 +2835,7 @@ class FontAnimationApp {
             // Migrate to initialState system (v1.3)
             if (!textObject.initialState) {
                 textObject.initialState = {};
-                
+
                 // Get values from frame 0 keyframes or use defaults
                 const frame0Properties = ['x', 'y', 'fontSize', 'textColor'];
                 frame0Properties.forEach(prop => {
