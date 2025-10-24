@@ -1628,6 +1628,9 @@ class FontAnimationApp {
         this.updateRightPanel();
         this.redraw();
         this.saveState();
+        
+        // Switch to select tool after creating text object
+        this.setTool('select');
     }
 
     selectObjectAt(x, y) {
