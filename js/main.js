@@ -2176,7 +2176,7 @@ class FontAnimationApp {
 
         // Collect all variable axis properties from keyframes and initialState
         const variableAxisProperties = new Set();
-        
+
         // From keyframes
         Object.keys(obj.keyframes).forEach(property => {
             if (property.startsWith('variableaxis:')) {
