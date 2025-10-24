@@ -2174,27 +2174,30 @@ class FontAnimationApp {
             openTypeFeatures: obj.openTypeFeatures || {}
         };
 
-        // Add variable font axes from keyframes
+        // Collect all variable axis properties from keyframes and initialState
+        const variableAxisProperties = new Set();
+        
+        // From keyframes
         Object.keys(obj.keyframes).forEach(property => {
             if (property.startsWith('variableaxis:')) {
-                // This is a variable font axis - extract the axis tag
-                const axisTag = property.replace('variableaxis:', '');
-                props.variableAxes[axisTag] = this.getPropertyValue(obj, property, frame);
+                variableAxisProperties.add(property);
             }
         });
 
-        // Also check initialState for variable axes that don't have keyframes yet
+        // From initialState
         if (obj.initialState) {
             Object.keys(obj.initialState).forEach(property => {
                 if (property.startsWith('variableaxis:')) {
-                    const axisTag = property.replace('variableaxis:', '');
-                    // Only add if not already present from keyframes
-                    if (!props.variableAxes.hasOwnProperty(axisTag)) {
-                        props.variableAxes[axisTag] = obj.initialState[property];
-                    }
+                    variableAxisProperties.add(property);
                 }
             });
         }
+
+        // Use getPropertyValue for all variable axes to ensure _tempValues are checked
+        variableAxisProperties.forEach(property => {
+            const axisTag = property.replace('variableaxis:', '');
+            props.variableAxes[axisTag] = this.getPropertyValue(obj, property, frame);
+        });
 
         return props;
     }
