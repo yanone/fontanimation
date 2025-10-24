@@ -1628,7 +1628,7 @@ class FontAnimationApp {
         this.updateRightPanel();
         this.redraw();
         this.saveState();
-        
+
         // Switch to select tool after creating text object
         this.setTool('select');
     }
@@ -1952,22 +1952,8 @@ class FontAnimationApp {
             fontString = `${props.fontSize}px Arial, sans-serif`;
             this.ctx.font = fontString;
         }
-        // Add visual debugging: slightly modify color when OpenType features are active
-        let fillColor = props.color;
-        const hasActiveOpenTypeFeatures = props.openTypeFeatures &&
-            Object.values(props.openTypeFeatures).some(enabled => enabled);
 
-        if (hasActiveOpenTypeFeatures) {
-            // Add a slight blue tint to indicate OpenType features are active
-            // This is just for debugging - can be removed later
-            const r = parseInt(fillColor.slice(1, 3), 16);
-            const g = parseInt(fillColor.slice(3, 5), 16);
-            const b = Math.min(255, parseInt(fillColor.slice(5, 7), 16) + 50);
-            fillColor = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-            console.log(`OpenType features active - Color changed from ${props.color} to ${fillColor}`);
-        }
-
-        this.ctx.fillStyle = fillColor;
+        this.ctx.fillStyle = props.color;
         this.ctx.textBaseline = 'top';
         this.ctx.textAlign = obj.textAlign || 'left';
 

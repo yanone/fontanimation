@@ -587,7 +587,10 @@ class CanvasManager {
             const hasOpenTypeFeatures = props.openTypeFeatures && Object.keys(props.openTypeFeatures).length > 0;
 
             if (hasVariableAxes || hasOpenTypeFeatures) {
-                this.applyFontFeaturesToCanvas(obj.fontFamily, props.fontSize, props.variableAxes, props.openTypeFeatures);
+                // Use DOM-based rendering for proper font feature support
+                this.renderTextWithFeatures(obj, props);
+                this.context.restore();
+                return;
             } else {
                 this.context.font = `${props.fontSize}px "${obj.fontFamily}"`;
             }
@@ -603,79 +606,65 @@ class CanvasManager {
         // Draw the text
         this.context.fillText(obj.text, props.x, props.y);
 
-        // Clean up canvas styles if font features were applied
-        if (this._originalCanvasStyles) {
-            const canvas = this.context.canvas;
-            canvas.style.fontFamily = this._originalCanvasStyles.fontFamily || '';
-            canvas.style.fontVariationSettings = this._originalCanvasStyles.fontVariationSettings || '';
-            canvas.style.fontFeatureSettings = this._originalCanvasStyles.fontFeatureSettings || '';
-            canvas.style.fontSize = '';
-            delete this._originalCanvasStyles;
-        }
-
         this.context.restore();
     }
 
-    // Apply font features (variable axes and OpenType features) to canvas context
-    applyFontFeaturesToCanvas(fontFamily, fontSize, variableAxes = {}, openTypeFeatures = {}) {
-        try {
-            const canvas = this.context.canvas;
-            const originalFontFamily = canvas.style.fontFamily;
-            const originalFontVariationSettings = canvas.style.fontVariationSettings;
-            const originalFontFeatureSettings = canvas.style.fontFeatureSettings;
+    // Render text with OpenType features and variable axes using DOM element
+    renderTextWithFeatures(obj, props) {
+        console.log('renderTextWithFeatures - Input color:', props.color);
 
-            // Create font-variation-settings string
-            let fontVariationSettings = '';
-            if (variableAxes && Object.keys(variableAxes).length > 0) {
-                Object.entries(variableAxes).forEach(([tag, value]) => {
-                    fontVariationSettings += `"${tag}" ${value}, `;
-                });
-                fontVariationSettings = fontVariationSettings.replace(/, $/, '');
-            }
+        // Create a temporary DOM element with proper font features
+        const tempElement = document.createElement('div');
+        tempElement.style.cssText = `
+            position: absolute;
+            left: -9999px;
+            top: -9999px;
+            font-size: ${props.fontSize}px;
+            font-family: "${obj.fontFamily}";
+            color: ${props.color};
+            white-space: nowrap;
+            pointer-events: none;
+        `;
 
-            // Create font-feature-settings string
-            let fontFeatureSettings = '';
-            if (openTypeFeatures && Object.keys(openTypeFeatures).length > 0) {
-                Object.entries(openTypeFeatures).forEach(([tag, enabled]) => {
-                    if (enabled) {
-                        fontFeatureSettings += `"${tag}" 1, `;
-                    }
-                });
-                fontFeatureSettings = fontFeatureSettings.replace(/, $/, '');
-            }
-
-            console.log('Canvas: Applying font features:', {
-                fontVariationSettings,
-                fontFeatureSettings
-            });
-
-            // Apply font settings to the canvas element temporarily
-            canvas.style.fontFamily = `"${fontFamily}"`;
-            if (fontVariationSettings) {
-                canvas.style.fontVariationSettings = fontVariationSettings;
-                console.log(`Canvas: Applied fontVariationSettings: ${fontVariationSettings}`);
-            }
-            if (fontFeatureSettings) {
-                canvas.style.fontFeatureSettings = fontFeatureSettings;
-                console.log(`Canvas: Applied fontFeatureSettings: ${fontFeatureSettings}`);
-            }
-            canvas.style.fontSize = `${fontSize}px`;
-
-            // Apply the font to the context
-            this.context.font = `${fontSize}px "${fontFamily}"`;
-
-            // Store original styles for cleanup
-            this._originalCanvasStyles = {
-                fontFamily: originalFontFamily,
-                fontVariationSettings: originalFontVariationSettings,
-                fontFeatureSettings: originalFontFeatureSettings
-            };
-
-        } catch (error) {
-            console.warn('Canvas: Failed to apply font features:', error);
-            // Fallback to basic font
-            this.context.font = `${fontSize}px "${fontFamily}"`;
+        // Apply variable axes
+        if (props.variableAxes && Object.keys(props.variableAxes).length > 0) {
+            const variations = Object.entries(props.variableAxes)
+                .map(([tag, value]) => `"${tag}" ${value}`)
+                .join(', ');
+            tempElement.style.fontVariationSettings = variations;
         }
+
+        // Apply OpenType features
+        if (props.openTypeFeatures && Object.keys(props.openTypeFeatures).length > 0) {
+            const features = Object.entries(props.openTypeFeatures)
+                .filter(([tag, enabled]) => enabled)
+                .map(([tag]) => `"${tag}" 1`)
+                .join(', ');
+            if (features) {
+                tempElement.style.fontFeatureSettings = features;
+            }
+        }
+
+        tempElement.textContent = obj.text;
+        document.body.appendChild(tempElement);
+
+        // Get computed styles and apply to canvas
+        const computedStyle = window.getComputedStyle(tempElement);
+        this.context.font = computedStyle.font || this.context.font;
+
+        // Set the exact color from props, not from computed style
+        this.context.fillStyle = props.color;
+        console.log('renderTextWithFeatures - Setting fillStyle to:', props.color);
+        console.log('renderTextWithFeatures - Actual fillStyle:', this.context.fillStyle);
+
+        this.context.textBaseline = 'top';
+        this.context.textAlign = obj.textAlign || 'left';
+
+        // Draw the text
+        this.context.fillText(obj.text, props.x, props.y);
+
+        // Clean up
+        document.body.removeChild(tempElement);
     }
 
     drawSelectionIndicator(obj) {
