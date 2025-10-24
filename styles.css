@@ -643,8 +643,19 @@ body {
 
 .axis-control input[type="number"] {
     width: 70px;
-    padding: 4px 6px;
-    font-size: 11px;
+    padding: 8px 10px;
+    font-size: 12px;
+    background: #404040;
+    border: 1px solid #606060;
+    color: #ffffff;
+    border-radius: 4px;
+    transition: border-color 0.2s ease;
+}
+
+.axis-control input[type="number"]:focus {
+    outline: none;
+    border-color: #0078d4;
+    box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.2);
 }
 
 .feature-control {
