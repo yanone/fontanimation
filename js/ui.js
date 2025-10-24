@@ -225,16 +225,14 @@ class UIManager {
     }
 
     static updateAxisValue(propertyName, value, textObject, app) {
-        // Set keyframe for this variable axis at current frame
-        const wasNewKeyframe = app.setKeyframe(textObject, propertyName, app.currentFrame, value);
+        // Update the variable axis value using updateObjectProperty
+        // This will update initialState if no keyframes exist, or update/create keyframes if they do
+        app.updateObjectProperty(textObject, propertyName, value);
 
-        // Only update UI elements when a new keyframe is created, not when updating existing ones
-        if (wasNewKeyframe) {
-            app.timeline.update();  // Update timeline to show new keyframes
-            app.updateRightPanel(); // Update keyframe button states
-        }
-
-        app.redraw(); // Always redraw canvas to show the visual changes
+        // Update timeline and right panel to reflect any changes
+        app.timeline.update();
+        app.updateRightPanel();
+        app.redraw();
     }
 
     static updateAxisValueVisual(propertyName, value, textObject, app) {

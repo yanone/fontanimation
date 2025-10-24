@@ -569,6 +569,28 @@ class FontAnimationApp {
         document.getElementById('fontSelect').addEventListener('change', (e) => {
             if (this.selectedObject) {
                 this.selectedObject.fontFamily = e.target.value;
+                
+                // Initialize variable axes in initialState with default values
+                if (this.fonts.has(e.target.value)) {
+                    const fontInfo = this.fonts.get(e.target.value);
+                    if (fontInfo.variableAxes) {
+                        // Ensure initialState exists
+                        if (!this.selectedObject.initialState) {
+                            this.selectedObject.initialState = {};
+                        }
+                        
+                        // Initialize each variable axis with its default value
+                        Object.entries(fontInfo.variableAxes).forEach(([tag, axisInfo]) => {
+                            const propertyName = `variableaxis:${tag}`;
+                            // Only set if not already in initialState
+                            if (!this.selectedObject.initialState.hasOwnProperty(propertyName)) {
+                                this.selectedObject.initialState[propertyName] = axisInfo.default;
+                                console.log('Initialized variable axis in initialState:', propertyName, axisInfo.default);
+                            }
+                        });
+                    }
+                }
+                
                 this.updateRightPanel(); // Redraw sidebar to reflect new font properties
                 this.redraw();
                 this.saveState();
@@ -1431,13 +1453,18 @@ class FontAnimationApp {
 
         const keyframes = textObject.keyframes[property];
         if (!keyframes || keyframes.length === 0) {
-            // Return default values for properties without keyframes
-            const defaults = {
-                x: 0, y: 0, fontSize: 48, color: '#000000'
-            };
+            // Check initialState first
+            if (textObject.initialState && textObject.initialState.hasOwnProperty(property)) {
+                return textObject.initialState[property];
+            }
 
-            // For variable axes, try to get the default from font info
+            // For variable axes, check initialState with the full property name
             if (property.startsWith('variableaxis:')) {
+                if (textObject.initialState && textObject.initialState.hasOwnProperty(property)) {
+                    return textObject.initialState[property];
+                }
+                
+                // Try to get the default from font info
                 const axisTag = property.replace('variableaxis:', '');
                 if (this.fonts.has(textObject.fontFamily)) {
                     const fontInfo = this.fonts.get(textObject.fontFamily);
@@ -1449,6 +1476,10 @@ class FontAnimationApp {
                 return 0;
             }
 
+            // Fall back to hardcoded defaults
+            const defaults = {
+                x: 0, y: 0, fontSize: 48, color: '#000000', textColor: '#000000'
+            };
             return defaults[property] || 0;
         }
 
@@ -1571,11 +1602,25 @@ class FontAnimationApp {
             fontFamily: defaultFont,
             textAlign: 'left',
             openTypeFeatures: {},
-            keyframes: {
-                x: [{ frame: this.currentFrame, value: x }],
-                y: [{ frame: this.currentFrame, value: y }]
-            }
+            initialState: {
+                x: x,
+                y: y,
+                fontSize: 48,
+                textColor: '#000000'
+            },
+            keyframes: {}
         };
+
+        // Initialize variable axes in initialState with default values
+        if (this.fonts.has(defaultFont)) {
+            const fontInfo = this.fonts.get(defaultFont);
+            if (fontInfo.variableAxes) {
+                Object.entries(fontInfo.variableAxes).forEach(([tag, axisInfo]) => {
+                    const propertyName = `variableaxis:${tag}`;
+                    textObject.initialState[propertyName] = axisInfo.default;
+                });
+            }
+        }
 
         this.textObjects.push(textObject);
         this.selectedObject = textObject;
@@ -1780,18 +1825,31 @@ class FontAnimationApp {
     updateObjectProperty(obj, property, value) {
         console.log(`Updating ${property} to ${value} for object at frame ${this.currentFrame}`);
 
-        // Set or update keyframe for this property at current frame
-        const wasNewKeyframe = this.setKeyframe(obj, property, this.currentFrame, value);
+        // Check if this property has any keyframes
+        const hasKeyframes = obj.keyframes[property] && obj.keyframes[property].length > 0;
 
-        // Update timeline and UI only when new keyframes are created
-        if (wasNewKeyframe) {
-            if (this.timeline) {
-                this.timeline.update();
+        if (!hasKeyframes) {
+            // No keyframes exist - update initialState instead of creating keyframes
+            if (!obj.initialState) {
+                obj.initialState = {};
             }
-            this.updateRightPanel(); // Update keyframe button states
+            obj.initialState[property] = value;
+            console.log(`Updated initialState.${property} to ${value}`);
+        } else {
+            // Keyframes exist - set or update keyframe at current frame
+            const wasNewKeyframe = this.setKeyframe(obj, property, this.currentFrame, value);
+
+            // Update timeline and UI only when new keyframes are created
+            if (wasNewKeyframe) {
+                if (this.timeline) {
+                    this.timeline.update();
+                }
+                this.updateRightPanel(); // Update keyframe button states
+            }
         }
 
         console.log('Object keyframes:', obj.keyframes);
+        console.log('Object initialState:', obj.initialState);
     }
 
     zoomAt(x, y, factor) {
@@ -2116,7 +2174,7 @@ class FontAnimationApp {
             openTypeFeatures: obj.openTypeFeatures || {}
         };
 
-        // Add variable font axes
+        // Add variable font axes from keyframes
         Object.keys(obj.keyframes).forEach(property => {
             if (property.startsWith('variableaxis:')) {
                 // This is a variable font axis - extract the axis tag
@@ -2124,6 +2182,19 @@ class FontAnimationApp {
                 props.variableAxes[axisTag] = this.getPropertyValue(obj, property, frame);
             }
         });
+
+        // Also check initialState for variable axes that don't have keyframes yet
+        if (obj.initialState) {
+            Object.keys(obj.initialState).forEach(property => {
+                if (property.startsWith('variableaxis:')) {
+                    const axisTag = property.replace('variableaxis:', '');
+                    // Only add if not already present from keyframes
+                    if (!props.variableAxes.hasOwnProperty(axisTag)) {
+                        props.variableAxes[axisTag] = obj.initialState[property];
+                    }
+                }
+            });
+        }
 
         return props;
     }
@@ -2760,6 +2831,36 @@ class FontAnimationApp {
                 }
             });
             textObject.keyframes = newKeyframes;
+
+            // Migrate to initialState system (v1.3)
+            if (!textObject.initialState) {
+                textObject.initialState = {};
+                
+                // Get values from frame 0 keyframes or use defaults
+                const frame0Properties = ['x', 'y', 'fontSize', 'textColor'];
+                frame0Properties.forEach(prop => {
+                    if (textObject.keyframes[prop] && textObject.keyframes[prop][0] !== undefined) {
+                        textObject.initialState[prop] = textObject.keyframes[prop][0];
+                    } else {
+                        // Use defaults
+                        if (prop === 'x') textObject.initialState.x = textObject.x || 100;
+                        if (prop === 'y') textObject.initialState.y = textObject.y || 100;
+                        if (prop === 'fontSize') textObject.initialState.fontSize = 48;
+                        if (prop === 'textColor') textObject.initialState.textColor = '#000000';
+                    }
+                });
+
+                // Copy variable axes from frame 0 if they exist
+                Object.keys(textObject.keyframes).forEach(property => {
+                    if (property.startsWith('variableaxis:')) {
+                        if (textObject.keyframes[property][0] !== undefined) {
+                            textObject.initialState[property] = textObject.keyframes[property][0];
+                        }
+                    }
+                });
+
+                console.log('Migrated object to initialState:', textObject.id, textObject.initialState);
+            }
         });
 
         if (project.settings) {

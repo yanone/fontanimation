@@ -1,7 +1,7 @@
 # Font Animation Studio - Data File Format Documentation
 
-**Version:** 1.1  
-**Last Updated:** October 10, 2025  
+**Version:** 1.3  
+**Last Updated:** October 24, 2025  
 **File Extension:** `.json`
 
 ## Overview
@@ -12,7 +12,7 @@ Font Animation Studio saves projects as JSON files containing all project data i
 
 ```json
 {
-  "version": "1.1",
+  "version": "1.3",
   "textObjects": [...],
   "settings": {...},
   "fonts": [...]
@@ -23,7 +23,7 @@ Font Animation Studio saves projects as JSON files containing all project data i
 
 ### `version` (string, required)
 - **Description:** Format version identifier for compatibility checking
-- **Current Value:** `"1.1"`
+- **Current Value:** `"1.3"`
 - **Usage:** Used to handle format migrations and compatibility
 
 ### `textObjects` (array, required)
@@ -52,6 +52,12 @@ Each text object represents an animated text element on the canvas.
   "text": "Sample Text",
   "fontFamily": "Arial",
   "openTypeFeatures": {},
+  "initialState": {
+    "x": 100,
+    "y": 150,
+    "fontSize": 48,
+    "color": "#000000"
+  },
   "keyframes": {
     "x": [...],
     "y": [...],
@@ -73,6 +79,11 @@ Each text object represents an animated text element on the canvas.
 | `fontFamily` | string | ✅ | Font family name | `"Arial"` | Valid font name |
 | `textAlign` | string | ✅ | Text alignment | `"left"` | `"left"`, `"center"`, `"right"` |
 | `openTypeFeatures` | object | ✅ | OpenType feature settings | `{}` | See OpenType Features |
+
+#### Initial State (special keyframe before animation)
+| Property | Type | Required | Description | Default | Range/Format |
+|----------|------|----------|-------------|---------|--------------|
+| `initialState` | object | ✅ | Default property values before keyframes | `{}` | See Initial State Object |
 
 #### Dynamic Properties (stored in keyframes)
 | Property | Type | Required | Description | Default | Range/Format |
@@ -102,6 +113,37 @@ Dynamic properties are organized by property name, each containing an array of k
   ]
 }
 ```
+
+### Initial State Object
+
+The `initialState` object contains the default values for all animatable properties before any keyframes are created. This allows users to freely modify object properties without automatically creating keyframes, improving the editing experience.
+
+```json
+{
+  "initialState": {
+    "x": 100,
+    "y": 150,
+    "fontSize": 48,
+    "color": "#000000",
+    "textColor": "#000000",
+    "variableaxis:wght": 400,
+    "variableaxis:wdth": 100
+  }
+}
+```
+
+**Key Characteristics:**
+- **Pre-keyframe state**: Values used when no keyframes exist for a property
+- **Freely editable**: Can be modified unlimited times without creating keyframes
+- **Per-property**: Each animatable property can have an initial value
+- **Optional entries**: Only properties that have been set need to be included
+- **Falls back to defaults**: Missing properties use application defaults
+
+**Behavior:**
+1. When an object is created, property changes update `initialState`
+2. No keyframes are created until the user explicitly adds them
+3. Once a property has keyframes, `initialState` for that property is no longer used
+4. Users can reset to initial state by removing all keyframes for a property
 
 ### Variable Font Axes
 
@@ -221,7 +263,7 @@ Contains canvas and animation settings:
 
 ```json
 {
-  "version": "1.2",
+  "version": "1.3",
   "textObjects": [
     {
       "id": 1697123456789,
@@ -230,6 +272,14 @@ Contains canvas and animation settings:
       "openTypeFeatures": {
         "liga": true,
         "kern": true
+      },
+      "initialState": {
+        "x": 100,
+        "y": 100,
+        "fontSize": 48,
+        "color": "#ff0000",
+        "textColor": "#ff0000",
+        "variableaxis:wght": 600
       },
       "keyframes": {
         "x": [
@@ -325,6 +375,12 @@ Properties are validated on load:
 ---
 
 ## Version History
+
+### Version 1.3 (October 24, 2025)
+- Added `initialState` object to text objects
+- Improved user experience by separating initial property values from keyframes
+- Properties can now be modified freely before creating keyframes
+- Keyframes no longer created automatically on property changes
 
 ### Version 1.2 (October 12, 2025)
 - **BREAKING CHANGE:** Complete keyframe system overhaul
