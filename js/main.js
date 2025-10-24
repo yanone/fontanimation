@@ -893,14 +893,42 @@ class FontAnimationApp {
 
     // Duplicate an object with all its properties and keyframes
     duplicateObject(sourceObject) {
-        // Create a deep copy of the object
+        // Create a deep copy of the object with all properties
         const duplicate = {
             id: Date.now(), // Give it a new unique ID
             text: sourceObject.text,
-            font: sourceObject.font,
+            font: sourceObject.font, // Legacy property
+            fontFamily: sourceObject.fontFamily,
             textAlign: sourceObject.textAlign,
             keyframes: {}
         };
+
+        // Deep copy OpenType features if they exist
+        if (sourceObject.openTypeFeatures) {
+            duplicate.openTypeFeatures = { ...sourceObject.openTypeFeatures };
+        }
+
+        // Deep copy variable font axes if they exist
+        if (sourceObject.variableAxes) {
+            duplicate.variableAxes = { ...sourceObject.variableAxes };
+        }
+
+        // Copy any other properties that might exist on the source object
+        Object.keys(sourceObject).forEach(key => {
+            if (!duplicate.hasOwnProperty(key) && key !== 'id' && key !== 'keyframes') {
+                if (typeof sourceObject[key] === 'object' && sourceObject[key] !== null) {
+                    // Deep copy objects (but not arrays or null)
+                    if (Array.isArray(sourceObject[key])) {
+                        duplicate[key] = [...sourceObject[key]];
+                    } else {
+                        duplicate[key] = { ...sourceObject[key] };
+                    }
+                } else {
+                    // Copy primitive values
+                    duplicate[key] = sourceObject[key];
+                }
+            }
+        });
 
         // Deep copy all keyframes for each property
         Object.keys(sourceObject.keyframes).forEach(property => {
