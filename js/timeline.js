@@ -81,7 +81,6 @@ class TimelineManager {
 
         // Calculate timeline width using settings
         const timelineWidth = this.calculateTimelineWidth();
-        console.log(`Timeline width calculated: ${timelineWidth}px (duration: ${this.app.duration}s, total frames: ${totalFrames})`);
 
         // Set the timeline content wrapper width to establish scrollable area
         const timelineContent = document.getElementById('timelineContent');
@@ -570,7 +569,6 @@ class TimelineManager {
                 finalDelta = deltaFrames;
 
                 // Update all selected keyframes to their new positions using direct references
-                console.log('Before update - selected keyframes:', this.selectedKeyframes.length);
                 for (const ref of keyframeRefs) {
                     const newFrame = Math.max(0, Math.min(ref.originalFrame + deltaFrames, this.app.totalFrames - 1));
                     ref.keyframeObject.frame = newFrame;
@@ -578,7 +576,6 @@ class TimelineManager {
                     ref.selectedKf.frame = newFrame;
                     ref.selectedKf.id = `${ref.selectedKf.objectId}-${ref.selectedKf.property}-${newFrame}`;
                 }
-                console.log('After update - selected keyframes:', this.selectedKeyframes.length);
 
                 this.updateLayers();
                 this.updateKeyframeSelectionVisual();
@@ -727,14 +724,10 @@ class TimelineManager {
             kf.classList.remove('selected');
         });
 
-        console.log('Updating selection visual for', this.selectedKeyframes.length, 'keyframes');
-
         // Apply visual selection to selected keyframes
         this.selectedKeyframes.forEach(selected => {
             const selector = `.keyframe[data-object-id="${selected.objectId}"][data-property="${selected.property}"][data-frame="${selected.frame}"]`;
-            console.log('Looking for keyframes with selector:', selector);
             const keyframeElements = document.querySelectorAll(selector);
-            console.log('Found', keyframeElements.length, 'elements');
             keyframeElements.forEach(el => el.classList.add('selected'));
         });
     }
@@ -1192,7 +1185,6 @@ class TimelineManager {
     }
 
     updateCursor() {
-        console.log('Updating cursor position');
         const timeCursor = document.getElementById('timeCursor');
         const timelineHeader = document.getElementById('timelineHeader');
         const timeRuler = document.getElementById('timeRuler');
@@ -1228,8 +1220,6 @@ class TimelineManager {
         const timelineLayers = document.getElementById('timelineLayers');
         if (!timelineLayers) return;
 
-        console.log(`Highlighting keyframes for frame ${this.app.currentFrame}`);
-
         // Remove all current class from keyframes
         const allKeyframes = timelineLayers.querySelectorAll('.keyframe');
         allKeyframes.forEach(keyframe => {
@@ -1240,7 +1230,6 @@ class TimelineManager {
         const currentKeyframes = timelineLayers.querySelectorAll(`.keyframe[data-frame="${this.app.currentFrame}"]`);
         currentKeyframes.forEach(keyframe => {
             keyframe.classList.add('current');
-            console.log(`Applied 'current' class to keyframe at frame ${keyframe.dataset.frame}`);
         });
 
         // Force a repaint to ensure the enhanced visual effects are applied

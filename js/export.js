@@ -10,7 +10,6 @@ class ExportManager {
 
     cancelExport() {
         this.exportCancelled = true;
-        console.log('Export cancellation requested');
 
         if (window.UIManager) {
             window.UIManager.createNotification('Export cancelled', 'warning');
@@ -92,14 +91,12 @@ class ExportManager {
 
             // Choose export method based on capabilities
             if (this.supportsVideoRecording()) {
-                console.log('Using video recording export method');
                 await this.exportWithVideoRecording(selectedFormat);
 
                 if (window.UIManager) {
                     window.UIManager.createNotification('Video export completed successfully!', 'success');
                 }
             } else {
-                console.log('Using frame sequence export method (fallback)');
                 if (window.UIManager) {
                     window.UIManager.createNotification('Video recording not supported. Exporting as image sequence...', 'info');
                 }
@@ -109,7 +106,6 @@ class ExportManager {
         } catch (error) {
             // Don't show error messages if export was cancelled
             if (this.exportCancelled) {
-                console.log('Export was cancelled, not showing error message');
                 return;
             }
 
@@ -335,7 +331,6 @@ class ExportManager {
 
         try {
             // Use robust frame-by-frame export with direct MediaRecorder control
-            console.log('Starting robust frame-by-frame video export');
             const result = await this.exportFrameByFrame(canvas, context, selectedFormat);
 
             // Clean up the temporary canvas on success

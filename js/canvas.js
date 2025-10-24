@@ -559,13 +559,6 @@ class CanvasManager {
         // Get properties for current frame
         const props = this.app.getObjectPropertiesAtFrame(obj, this.app.currentFrame);
 
-        console.log('Canvas: Drawing text object with OpenType features:', {
-            text: obj.text,
-            fontFamily: obj.fontFamily,
-            openTypeFeatures: props.openTypeFeatures,
-            hasFeatures: props.openTypeFeatures && Object.keys(props.openTypeFeatures).length > 0
-        });
-
         // Apply rotation if present
         if (props.rotation && props.rotation !== 0) {
             this.context.font = `${props.fontSize}px "${obj.fontFamily}"`;
@@ -611,8 +604,6 @@ class CanvasManager {
 
     // Render text with OpenType features and variable axes using DOM element
     renderTextWithFeatures(obj, props) {
-        console.log('renderTextWithFeatures - Input color:', props.color);
-
         // Create a temporary DOM element with proper font features
         const tempElement = document.createElement('div');
         tempElement.style.cssText = `
@@ -654,9 +645,6 @@ class CanvasManager {
 
         // Set the exact color from props, not from computed style
         this.context.fillStyle = props.color;
-        console.log('renderTextWithFeatures - Setting fillStyle to:', props.color);
-        console.log('renderTextWithFeatures - Actual fillStyle:', this.context.fillStyle);
-
         this.context.textBaseline = 'top';
         this.context.textAlign = obj.textAlign || 'left';
 

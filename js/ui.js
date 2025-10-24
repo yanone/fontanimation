@@ -22,13 +22,6 @@ class UIManager {
         const currentFontSize = app.getPropertyValue(textObject, 'fontSize');
         const currentColor = app.getPropertyValue(textObject, 'color');
 
-        console.log('Updating UI properties for frame', app.currentFrame, {
-            x: currentX,
-            y: currentY,
-            fontSize: currentFontSize,
-            color: currentColor
-        });
-
         // Update font size
         const fontSizeInput = document.getElementById('fontSize');
         if (fontSizeInput) {
@@ -319,9 +312,6 @@ class UIManager {
         }
         textObject.openTypeFeatures[tag] = enabled;
 
-        console.log(`OpenType feature ${tag} ${enabled ? 'enabled' : 'disabled'} for text "${textObject.text}"`);
-        console.log('Current OpenType features after change:', textObject.openTypeFeatures);
-
         // Clear any cached canvas styles to force a clean repaint
         if (app._originalCanvasStyles) {
             delete app._originalCanvasStyles;
@@ -335,18 +325,8 @@ class UIManager {
     }
 
     static forceCanvasRepaint(app) {
-        console.log('Force canvas repaint started');
-
         // Clear any cached font styles on the canvas
         const canvas = app.ctx.canvas;
-
-        // Store current canvas state for debugging
-        console.log('Before reset - Canvas styles:', {
-            fontFamily: canvas.style.fontFamily,
-            fontVariationSettings: canvas.style.fontVariationSettings,
-            fontFeatureSettings: canvas.style.fontFeatureSettings,
-            fontSize: canvas.style.fontSize
-        });
 
         // Reset only font-related properties
         canvas.style.fontFamily = '';
@@ -361,8 +341,6 @@ class UIManager {
 
         // Restore proper canvas sizing and high-DPI scaling
         app.updateCanvasSize();
-
-        console.log('Canvas repainted after OpenType feature change');
     }
 
     static updatePlayButton(isPlaying) {
@@ -487,8 +465,6 @@ class UIManager {
                 cancelBtn.addEventListener('click', () => {
                     if (exportManager) {
                         exportManager.cancelExport();
-                    } else {
-                        console.log('Export cancellation requested but no export manager available');
                     }
                 });
 

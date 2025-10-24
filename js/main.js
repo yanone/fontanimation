@@ -585,7 +585,6 @@ class FontAnimationApp {
                             // Only set if not already in initialState
                             if (!this.selectedObject.initialState.hasOwnProperty(propertyName)) {
                                 this.selectedObject.initialState[propertyName] = axisInfo.default;
-                                console.log('Initialized variable axis in initialState:', propertyName, axisInfo.default);
                             }
                         });
                     }
@@ -1096,7 +1095,6 @@ class FontAnimationApp {
     setupFontManager() {
         if (window.FontManager) {
             this.fontManager = new window.FontManager(this);
-            console.log('Font manager initialized');
         } else {
             console.warn('FontManager not available');
         }
@@ -1119,7 +1117,6 @@ class FontAnimationApp {
     // Test method to add a text object for debugging
     addTestText() {
         this.createTextObject(100, 100, 'Test Text');
-        console.log('Test text added at 100, 100');
     }
 
     setupKeyboardShortcuts() {
@@ -1825,8 +1822,6 @@ class FontAnimationApp {
     }
 
     updateObjectProperty(obj, property, value) {
-        console.log(`Updating ${property} to ${value} for object at frame ${this.currentFrame}`);
-
         // Check if this property has any keyframes
         const hasKeyframes = obj.keyframes[property] && obj.keyframes[property].length > 0;
 
@@ -1836,7 +1831,6 @@ class FontAnimationApp {
                 obj.initialState = {};
             }
             obj.initialState[property] = value;
-            console.log(`Updated initialState.${property} to ${value}`);
         } else {
             // Keyframes exist - set or update keyframe at current frame
             const wasNewKeyframe = this.setKeyframe(obj, property, this.currentFrame, value);
@@ -1849,9 +1843,6 @@ class FontAnimationApp {
                 this.updateRightPanel(); // Update keyframe button states
             }
         }
-
-        console.log('Object keyframes:', obj.keyframes);
-        console.log('Object initialState:', obj.initialState);
     }
 
     zoomAt(x, y, factor) {
@@ -1871,10 +1862,6 @@ class FontAnimationApp {
     }
 
     redraw() {
-        // Increment redraw counter for debugging
-        this._redrawCount = (this._redrawCount || 0) + 1;
-        console.log(`Redraw #${this._redrawCount} started`);
-
         // Clear the canvas completely
         this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
 
@@ -1890,7 +1877,6 @@ class FontAnimationApp {
 
         // Draw text objects
         this.textObjects.forEach((obj, index) => {
-            console.log(`Drawing text object ${index}: "${obj.text}"`);
             this.drawTextObject(obj);
         });
 
@@ -1898,26 +1884,12 @@ class FontAnimationApp {
         if (this.selectedObject) {
             this.drawSelection(this.selectedObject);
         }
-
-        console.log(`Redraw #${this._redrawCount} completed`);
     }
 
     drawTextObject(obj) {
         this.ctx.save();
 
         const props = this.getObjectPropertiesAtFrame(obj, this.currentFrame);
-
-        console.log('Drawing text object at frame', this.currentFrame, 'with props:', {
-            x: props.x,
-            y: props.y,
-            fontSize: props.fontSize,
-            color: props.color,
-            variableAxes: props.variableAxes,
-            openTypeFeatures: props.openTypeFeatures
-        });
-
-        console.log('Text object OpenType features:', obj.openTypeFeatures);
-        console.log('Props OpenType features:', props.openTypeFeatures);
 
         // Check if font is available in both our font map and document.fonts
         const fontAvailable = this.fonts.has(obj.fontFamily) && this.isFontLoaded(obj.fontFamily);
@@ -1930,21 +1902,9 @@ class FontAnimationApp {
             const hasVariableAxes = props.variableAxes && Object.keys(props.variableAxes).length > 0;
             const hasOpenTypeFeatures = props.openTypeFeatures && Object.keys(props.openTypeFeatures).length > 0;
 
-            console.log(`Font features check for "${obj.text}":`, {
-                hasVariableAxes,
-                hasOpenTypeFeatures,
-                variableAxes: props.variableAxes,
-                openTypeFeatures: props.openTypeFeatures
-            });
-
             if (hasVariableAxes || hasOpenTypeFeatures) {
-                console.log(`Applying font features to "${obj.text}":`, {
-                    variableAxes: props.variableAxes,
-                    openTypeFeatures: props.openTypeFeatures
-                });
                 this.applyFontFeaturesToCanvas(obj.fontFamily, props.fontSize, props.variableAxes, props.openTypeFeatures);
             } else {
-                console.log(`No font features for "${obj.text}", using basic font`);
                 this.ctx.font = fontString;
             }
         } else {
@@ -1980,7 +1940,6 @@ class FontAnimationApp {
     // Render text with OpenType features using enhanced canvas approach
     renderTextWithOpenTypeFeatures(text, x, y, featureSettings) {
         try {
-            console.log('Rendering text with OpenType features:', featureSettings);
 
             // Try the canvas CSS approach with forced repaint
             const canvas = this.ctx.canvas;
@@ -1995,16 +1954,11 @@ class FontAnimationApp {
             // Re-apply font to context after style application
             this.ctx.font = `${featureSettings.fontSize}px "${featureSettings.fontFamily}"`;
 
-            console.log(`Applied canvas font-feature-settings: "${canvas.style.fontFeatureSettings}"`);
-            console.log(`Canvas context font: "${this.ctx.font}"`);
-
             // Render text
             this.ctx.fillText(text, x, y);
 
             // Restore canvas styles
             canvas.style.fontFeatureSettings = originalFontFeatureSettings;
-
-            console.log('OpenType text rendering completed (canvas CSS method)');
 
         } catch (error) {
             console.warn('Failed to render text with OpenType features:', error);
@@ -2016,15 +1970,6 @@ class FontAnimationApp {
         try {
             const hasVariableAxes = variableAxes && Object.keys(variableAxes).length > 0;
             const hasOpenTypeFeatures = openTypeFeatures && Object.keys(openTypeFeatures).length > 0;
-
-            console.log('Applying font features:', {
-                fontFamily,
-                fontSize,
-                variableAxes,
-                openTypeFeatures,
-                hasVariableAxes,
-                hasOpenTypeFeatures
-            });
 
             // For variable axes, we can use the canvas element CSS approach
             if (hasVariableAxes) {
@@ -2061,8 +2006,6 @@ class FontAnimationApp {
         });
         fontVariationSettings = fontVariationSettings.replace(/, $/, '');
 
-        console.log(`Applying variable axes: ${fontVariationSettings}`);
-
         // Apply to canvas element
         canvas.style.fontFamily = `"${fontFamily}"`;
         canvas.style.fontVariationSettings = fontVariationSettings;
@@ -2085,8 +2028,6 @@ class FontAnimationApp {
             }
         });
         fontFeatureSettings = fontFeatureSettings.replace(/, $/, '');
-
-        console.log(`Applying OpenType features: ${fontFeatureSettings}`);
 
         // Store feature settings for use during text rendering
         this._pendingOpenTypeFeatures = {
@@ -2526,7 +2467,6 @@ class FontAnimationApp {
     }
 
     setCurrentFrame(frame) {
-        console.log(`setCurrentFrame called: ${this.currentFrame} → ${frame}`);
         this.currentFrame = frame;
         if (this.timeline) {
             this.timeline.updateCursor();
@@ -2849,21 +2789,15 @@ class FontAnimationApp {
         }
 
         if (resolvedFonts.length > 0) {
-            console.log('Resolved missing fonts:', resolvedFonts);
-            console.log('Available fonts in app.fonts:', Array.from(this.fonts.keys()));
-
             // Update any text objects that were using fallback fonts
             let hasUpdates = false;
             this.textObjects.forEach(obj => {
                 if (resolvedFonts.includes(obj.fontFamily)) {
-                    console.log(`Text object "${obj.text}" can now use font: ${obj.fontFamily}`);
                     hasUpdates = true;
                 }
             });
 
             if (hasUpdates) {
-                console.log('Updating UI and redrawing canvas...');
-
                 // Update the right panel in case the selected object's font is now available
                 this.updateRightPanel();
 
