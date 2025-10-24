@@ -919,7 +919,6 @@ class FontAnimationApp {
         const duplicate = {
             id: Date.now(), // Give it a new unique ID
             text: sourceObject.text,
-            font: sourceObject.font, // Legacy property
             fontFamily: sourceObject.fontFamily,
             textAlign: sourceObject.textAlign,
             keyframes: {}
@@ -1478,7 +1477,7 @@ class FontAnimationApp {
 
             // Fall back to hardcoded defaults
             const defaults = {
-                x: 0, y: 0, fontSize: 48, color: '#000000', textColor: '#000000'
+                x: 0, y: 0, fontSize: 48, color: '#000000'
             };
             return defaults[property] || 0;
         }
@@ -1606,7 +1605,7 @@ class FontAnimationApp {
                 x: x,
                 y: y,
                 fontSize: 48,
-                textColor: '#000000'
+                color: '#000000'
             },
             keyframes: {}
         };
@@ -2758,7 +2757,7 @@ class FontAnimationApp {
 
     saveProject() {
         const project = {
-            version: window.AppSettings?.get('fileFormatVersion') || '1.1',
+            version: '1.0',
             textObjects: this.textObjects,
             settings: {
                 canvasWidth: this.canvasWidth,
@@ -2817,54 +2816,6 @@ class FontAnimationApp {
         }
 
         this.textObjects = project.textObjects || [];
-
-        // Migrate old variable axis format to new prefixed format
-        this.textObjects.forEach(textObject => {
-            const newKeyframes = {};
-            Object.keys(textObject.keyframes || {}).forEach(property => {
-                if (['x', 'y', 'fontSize', 'color'].includes(property)) {
-                    // Keep standard properties as-is
-                    newKeyframes[property] = textObject.keyframes[property];
-                } else if (!property.startsWith('variableaxis:')) {
-                    // This looks like an old variable axis - add prefix
-                    newKeyframes[`variableaxis:${property}`] = textObject.keyframes[property];
-                } else {
-                    // Already has prefix - keep as-is
-                    newKeyframes[property] = textObject.keyframes[property];
-                }
-            });
-            textObject.keyframes = newKeyframes;
-
-            // Migrate to initialState system (v1.3)
-            if (!textObject.initialState) {
-                textObject.initialState = {};
-
-                // Get values from frame 0 keyframes or use defaults
-                const frame0Properties = ['x', 'y', 'fontSize', 'textColor'];
-                frame0Properties.forEach(prop => {
-                    if (textObject.keyframes[prop] && textObject.keyframes[prop][0] !== undefined) {
-                        textObject.initialState[prop] = textObject.keyframes[prop][0];
-                    } else {
-                        // Use defaults
-                        if (prop === 'x') textObject.initialState.x = textObject.x || 100;
-                        if (prop === 'y') textObject.initialState.y = textObject.y || 100;
-                        if (prop === 'fontSize') textObject.initialState.fontSize = 48;
-                        if (prop === 'textColor') textObject.initialState.textColor = '#000000';
-                    }
-                });
-
-                // Copy variable axes from frame 0 if they exist
-                Object.keys(textObject.keyframes).forEach(property => {
-                    if (property.startsWith('variableaxis:')) {
-                        if (textObject.keyframes[property][0] !== undefined) {
-                            textObject.initialState[property] = textObject.keyframes[property][0];
-                        }
-                    }
-                });
-
-                console.log('Migrated object to initialState:', textObject.id, textObject.initialState);
-            }
-        });
 
         if (project.settings) {
             this.canvasWidth = project.settings.canvasWidth;

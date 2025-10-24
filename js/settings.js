@@ -13,7 +13,7 @@ class AppSettings {
 
             // Text settings
             defaultFontSize: 48,
-            defaultTextColor: '#000000',
+            defaultColor: '#000000',
             defaultText: 'Sample Text',
 
             // Timeline settings
@@ -22,10 +22,7 @@ class AppSettings {
             timelineHeight: 220,
 
             // UI settings
-            maxHistorySteps: 50,
-
-            // File format
-            fileFormatVersion: '1.1'
+            maxHistorySteps: 50
         };
     }
 
@@ -55,7 +52,7 @@ class AppSettings {
     static get textDefaults() {
         return {
             fontSize: this.defaults.defaultFontSize,
-            color: this.defaults.defaultTextColor,
+            color: this.defaults.defaultColor,
             text: this.defaults.defaultText
         };
     }

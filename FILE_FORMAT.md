@@ -1,6 +1,6 @@
 # Font Animation Studio - Data File Format Documentation
 
-**Version:** 1.3  
+**Version:** 1.0  
 **Last Updated:** October 24, 2025  
 **File Extension:** `.json`
 
@@ -12,7 +12,7 @@ Font Animation Studio saves projects as JSON files containing all project data i
 
 ```json
 {
-  "version": "1.3",
+  "version": "1.0",
   "textObjects": [...],
   "settings": {...},
   "fonts": [...]
@@ -22,9 +22,8 @@ Font Animation Studio saves projects as JSON files containing all project data i
 ## Root Level Properties
 
 ### `version` (string, required)
-- **Description:** Format version identifier for compatibility checking
-- **Current Value:** `"1.3"`
-- **Usage:** Used to handle format migrations and compatibility
+- **Description:** Format version identifier
+- **Current Value:** `"1.0"`
 
 ### `textObjects` (array, required)
 - **Description:** Array of all text objects in the project
@@ -125,7 +124,6 @@ The `initialState` object contains the default values for all animatable propert
     "y": 150,
     "fontSize": 48,
     "color": "#000000",
-    "textColor": "#000000",
     "variableaxis:wght": 400,
     "variableaxis:wdth": 100
   }
@@ -263,7 +261,7 @@ Contains canvas and animation settings:
 
 ```json
 {
-  "version": "1.3",
+  "version": "1.0",
   "textObjects": [
     {
       "id": 1697123456789,
@@ -278,7 +276,6 @@ Contains canvas and animation settings:
         "y": 100,
         "fontSize": 48,
         "color": "#ff0000",
-        "textColor": "#ff0000",
         "variableaxis:wght": 600
       },
       "keyframes": {
@@ -339,11 +336,6 @@ When a project is loaded with fonts that aren't available in the system:
 3. Missing fonts fall back to system defaults (usually Arial)
 4. Font references remain in the data for when fonts become available
 
-### Version Compatibility
-- Files without a `version` field are treated as version 1.0
-- Future versions will include migration logic
-- Backwards compatibility is maintained when possible
-
 ### Error Handling
 - Invalid JSON shows error notification
 - Missing required fields use default values
@@ -357,8 +349,9 @@ When a project is loaded with fonts that aren't available in the system:
 ### Property Updates
 When properties are changed via UI:
 1. Direct object properties are updated
-2. Current frame keyframe is updated/created
-3. Changes are reflected immediately in rendering
+2. If no keyframes exist for the property, `initialState` is updated
+3. If keyframes exist, current frame keyframe is updated/created
+4. Changes are reflected immediately in rendering
 
 ### Animation Interpolation
 - Linear interpolation is used when no curve is specified
@@ -371,48 +364,3 @@ Properties are validated on load:
 - Colors default to black if invalid
 - Missing required fields use defaults
 - Arrays/objects are initialized if missing
-
----
-
-## Version History
-
-### Version 1.3 (October 24, 2025)
-- Added `initialState` object to text objects
-- Improved user experience by separating initial property values from keyframes
-- Properties can now be modified freely before creating keyframes
-- Keyframes no longer created automatically on property changes
-
-### Version 1.2 (October 12, 2025)
-- **BREAKING CHANGE:** Complete keyframe system overhaul
-- Separated static properties (text, fontFamily, openTypeFeatures) from dynamic properties
-- Dynamic properties now stored as property-specific keyframe arrays
-- Individual keyframes now contain single values instead of property bundles
-- Variable font axes moved from nested objects to individual keyframe arrays
-- Simplified interpolation with per-keyframe curve definitions
-
-### Version 1.1 (October 10, 2025)
-- **BREAKING CHANGE:** Removed `rotation` property from text objects
-- Simplified text object structure
-- Updated keyframe properties structure
-
-### Version 1.0 (October 10, 2025)
-- Initial format specification
-- Basic text objects with keyframe animation
-- Canvas settings and font references
-- Variable font and OpenType feature support
-
----
-
-## Future Considerations
-
-Planned additions for future versions:
-- Layer system for z-ordering
-- Text effects and filters
-- Audio synchronization markers
-- Advanced curve types
-- Template and preset support
-- Asset embedding (font files)
-
----
-
-*This documentation should be updated whenever the file format changes. Maintain backwards compatibility when possible and provide migration paths for breaking changes.*
