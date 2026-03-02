@@ -22,19 +22,23 @@ Font Animation Studio saves projects as JSON files containing all project data i
 ## Root Level Properties
 
 ### `version` (string, required)
+
 - **Description:** Format version identifier
 - **Current Value:** `"1.0"`
 
 ### `textObjects` (array, required)
+
 - **Description:** Array of all text objects in the project
 - **Type:** Array of Text Object structures
 - **Default:** `[]` (empty array for new projects)
 
 ### `settings` (object, required)
+
 - **Description:** Canvas and animation settings
 - **Type:** Settings Object structure
 
 ### `fonts` (array, required)
+
 - **Description:** List of font family names used in the project
 - **Type:** Array of strings
 - **Usage:** Used to detect missing fonts when loading projects
@@ -55,12 +59,14 @@ Each text object represents an animated text element on the canvas.
     "x": 100,
     "y": 150,
     "fontSize": 48,
+    "lineHeight": 1.2,
     "color": "#000000"
   },
   "keyframes": {
     "x": [...],
     "y": [...],
     "fontSize": [...],
+    "lineHeight": [...],
     "color": [...],
     "variableaxis:wght": [...],
     "wdth": [...]
@@ -71,23 +77,26 @@ Each text object represents an animated text element on the canvas.
 ### Text Object Properties
 
 #### Static Properties (never change during animation)
-| Property | Type | Required | Description | Default | Range/Format |
-|----------|------|----------|-------------|---------|--------------|
-| `id` | number | ✅ | Unique identifier (timestamp) | `Date.now()` | Positive integer |
-| `text` | string | ✅ | Text content to display | `"Sample Text"` | Any string, max ~500 chars |
-| `fontFamily` | string | ✅ | Font family name | `"Arial"` | Valid font name |
-| `textAlign` | string | ✅ | Text alignment | `"left"` | `"left"`, `"center"`, `"right"` |
-| `openTypeFeatures` | object | ✅ | OpenType feature settings | `{}` | See OpenType Features |
+
+| Property           | Type   | Required | Description                   | Default         | Range/Format                    |
+| ------------------ | ------ | -------- | ----------------------------- | --------------- | ------------------------------- |
+| `id`               | number | ✅       | Unique identifier (timestamp) | `Date.now()`    | Positive integer                |
+| `text`             | string | ✅       | Text content to display       | `"Sample Text"` | Any string, max ~500 chars      |
+| `fontFamily`       | string | ✅       | Font family name              | `"Arial"`       | Valid font name                 |
+| `textAlign`        | string | ✅       | Text alignment                | `"left"`        | `"left"`, `"center"`, `"right"` |
+| `openTypeFeatures` | object | ✅       | OpenType feature settings     | `{}`            | See OpenType Features           |
 
 #### Initial State (special keyframe before animation)
-| Property | Type | Required | Description | Default | Range/Format |
-|----------|------|----------|-------------|---------|--------------|
-| `initialState` | object | ✅ | Default property values before keyframes | `{}` | See Initial State Object |
+
+| Property       | Type   | Required | Description                              | Default | Range/Format             |
+| -------------- | ------ | -------- | ---------------------------------------- | ------- | ------------------------ |
+| `initialState` | object | ✅       | Default property values before keyframes | `{}`    | See Initial State Object |
 
 #### Dynamic Properties (stored in keyframes)
-| Property | Type | Required | Description | Default | Range/Format |
-|----------|------|----------|-------------|---------|--------------|
-| `keyframes` | object | ✅ | Property-specific keyframe arrays | `{}` | See Keyframes Object |
+
+| Property    | Type   | Required | Description                       | Default | Range/Format         |
+| ----------- | ------ | -------- | --------------------------------- | ------- | -------------------- |
+| `keyframes` | object | ✅       | Property-specific keyframe arrays | `{}`    | See Keyframes Object |
 
 ### Keyframes Object Structure
 
@@ -123,6 +132,7 @@ The `initialState` object contains the default values for all animatable propert
     "x": 100,
     "y": 150,
     "fontSize": 48,
+    "lineHeight": 1.2,
     "color": "#000000",
     "variableaxis:wght": 400,
     "variableaxis:wdth": 100
@@ -131,6 +141,7 @@ The `initialState` object contains the default values for all animatable propert
 ```
 
 **Key Characteristics:**
+
 - **Pre-keyframe state**: Values used when no keyframes exist for a property
 - **Freely editable**: Can be modified unlimited times without creating keyframes
 - **Per-property**: Each animatable property can have an initial value
@@ -138,6 +149,7 @@ The `initialState` object contains the default values for all animatable propert
 - **Falls back to defaults**: Missing properties use application defaults
 
 **Behavior:**
+
 1. When an object is created, property changes update `initialState`
 2. No keyframes are created until the user explicitly adds them
 3. Once a property has keyframes, `initialState` for that property is no longer used
@@ -202,32 +214,33 @@ Individual keyframes define a single property value at a specific timeline posit
 
 ### Keyframe Properties
 
-| Property | Type | Required | Description | Default |
-|----------|------|----------|-------------|---------|
-| `frame` | number | ✅ | Timeline frame number | `0` |
-| `value` | any | ✅ | Property value at this frame | Property-dependent |
-| `curve` | object | ❌ | Bezier curve for interpolation | Linear interpolation |
+| Property | Type   | Required | Description                    | Default              |
+| -------- | ------ | -------- | ------------------------------ | -------------------- |
+| `frame`  | number | ✅       | Timeline frame number          | `0`                  |
+| `value`  | any    | ✅       | Property value at this frame   | Property-dependent   |
+| `curve`  | object | ❌       | Bezier curve for interpolation | Linear interpolation |
 
 ### Animatable Properties
 
-| Property | Type | Description | Range |
-|----------|------|-------------|-------|
-| `x` | number | Horizontal position | Any number |
-| `y` | number | Vertical position | Any number |
-| `fontSize` | number | Font size in pixels | 1-200 |
-| `color` | string | Text color | Hex color code |
+| Property              | Type   | Description                                                         | Range                |
+| --------------------- | ------ | ------------------------------------------------------------------- | -------------------- |
+| `x`                   | number | Horizontal position                                                 | Any number           |
+| `y`                   | number | Vertical position                                                   | Any number           |
+| `fontSize`            | number | Font size in pixels                                                 | 1-200                |
+| `lineHeight`          | number | Line height multiplier                                              | 0.1+                 |
+| `color`               | string | Text color                                                          | Hex color code       |
 | `variableaxis:{axis}` | number | Variable font axis (e.g., `variableaxis:wght`, `variableaxis:wdth`) | Font-specific ranges |
 
 ### Bezier Curve Object
 
 Defines easing curve for animation interpolation:
 
-| Property | Type | Description | Range |
-|----------|------|-------------|-------|
-| `x1` | number | First control point X | 0.0-1.0 |
-| `y1` | number | First control point Y | 0.0-1.0 |
-| `x2` | number | Second control point X | 0.0-1.0 |
-| `y2` | number | Second control point Y | 0.0-1.0 |
+| Property | Type   | Description            | Range   |
+| -------- | ------ | ---------------------- | ------- |
+| `x1`     | number | First control point X  | 0.0-1.0 |
+| `y1`     | number | First control point Y  | 0.0-1.0 |
+| `x2`     | number | Second control point X | 0.0-1.0 |
+| `y2`     | number | Second control point Y | 0.0-1.0 |
 
 ---
 
@@ -247,13 +260,13 @@ Contains canvas and animation settings:
 
 ### Settings Properties
 
-| Property | Type | Required | Description | Default | Range |
-|----------|------|----------|-------------|---------|-------|
-| `canvasWidth` | number | ✅ | Canvas width in pixels | `1920` | 100-8000 |
-| `canvasHeight` | number | ✅ | Canvas height in pixels | `1080` | 100-8000 |
-| `canvasBackground` | string | ✅ | Canvas background color | `"#ffffff"` | Hex color code |
-| `frameRate` | number | ✅ | Animation frame rate (fps) | `30` | 1-120 |
-| `duration` | number | ✅ | Total duration in seconds | `5.0` | 0.1-300.0 |
+| Property           | Type   | Required | Description                | Default     | Range          |
+| ------------------ | ------ | -------- | -------------------------- | ----------- | -------------- |
+| `canvasWidth`      | number | ✅       | Canvas width in pixels     | `1920`      | 100-8000       |
+| `canvasHeight`     | number | ✅       | Canvas height in pixels    | `1080`      | 100-8000       |
+| `canvasBackground` | string | ✅       | Canvas background color    | `"#ffffff"` | Hex color code |
+| `frameRate`        | number | ✅       | Animation frame rate (fps) | `30`        | 1-120          |
+| `duration`         | number | ✅       | Total duration in seconds  | `5.0`       | 0.1-300.0      |
 
 ---
 
@@ -281,8 +294,8 @@ Contains canvas and animation settings:
       "keyframes": {
         "x": [
           { "frame": 0, "value": 100 },
-          { 
-            "frame": 150, 
+          {
+            "frame": 150,
             "value": 500,
             "curve": {
               "x1": 0.25,
@@ -318,10 +331,7 @@ Contains canvas and animation settings:
     "frameRate": 30,
     "duration": 5.0
   },
-  "fonts": [
-    "Inter",
-    "Arial"
-  ]
+  "fonts": ["Inter", "Arial"]
 }
 ```
 
@@ -330,13 +340,16 @@ Contains canvas and animation settings:
 ## Loading Behavior
 
 ### Missing Fonts
+
 When a project is loaded with fonts that aren't available in the system:
+
 1. A warning modal displays missing font names
 2. User can choose to continue anyway
 3. Missing fonts fall back to system defaults (usually Arial)
 4. Font references remain in the data for when fonts become available
 
 ### Error Handling
+
 - Invalid JSON shows error notification
 - Missing required fields use default values
 - Invalid property values are clamped to valid ranges
@@ -347,19 +360,24 @@ When a project is loaded with fonts that aren't available in the system:
 ## Implementation Notes
 
 ### Property Updates
+
 When properties are changed via UI:
+
 1. Direct object properties are updated
 2. If no keyframes exist for the property, `initialState` is updated
 3. If keyframes exist, current frame keyframe is updated/created
 4. Changes are reflected immediately in rendering
 
 ### Animation Interpolation
+
 - Linear interpolation is used when no curve is specified
 - Bezier curves use standard cubic-bezier interpolation
 - Properties interpolate independently
 
 ### Data Validation
+
 Properties are validated on load:
+
 - Numbers are clamped to valid ranges
 - Colors default to black if invalid
 - Missing required fields use defaults

@@ -1,821 +1,882 @@
 // Enhanced Timeline management with better keyframe handling
 class TimelineManager {
-    constructor(app) {
-        this.app = app;
-        this.selectedKeyframes = [];
-        this.isDraggingCursor = false;
-        this.setup();
-    }
+  constructor(app) {
+    this.app = app;
+    this.selectedKeyframes = [];
+    this.isDraggingCursor = false;
+    this.setup();
+  }
 
-    setup() {
-        this.setupScrollSynchronization();
-        this.update();
-    }
+  setup() {
+    this.setupScrollSynchronization();
+    this.update();
+  }
 
-    setupScrollSynchronization() {
-        // Synchronize vertical scrolling between layer names and timeline container
-        const layerNames = document.getElementById('timelineLayerNames');
-        const timelineContainer = document.getElementById('timelineContainer');
-        const timelineHeader = document.getElementById('timelineHeader');
+  setupScrollSynchronization() {
+    // Synchronize vertical scrolling between layer names and timeline container
+    const layerNames = document.getElementById("timelineLayerNames");
+    const timelineContainer = document.getElementById("timelineContainer");
+    const timelineHeader = document.getElementById("timelineHeader");
 
-        if (layerNames && timelineContainer) {
-            // Prevent infinite loop during synchronization
-            let isUpdating = false;
+    if (layerNames && timelineContainer) {
+      // Prevent infinite loop during synchronization
+      let isUpdating = false;
 
-            // Vertical scroll synchronization
-            layerNames.addEventListener('scroll', () => {
-                if (!isUpdating) {
-                    isUpdating = true;
-                    timelineContainer.scrollTop = layerNames.scrollTop;
-                    requestAnimationFrame(() => { isUpdating = false; });
-                }
-            });
-
-            timelineContainer.addEventListener('scroll', () => {
-                if (!isUpdating) {
-                    isUpdating = true;
-                    layerNames.scrollTop = timelineContainer.scrollTop;
-                    requestAnimationFrame(() => { isUpdating = false; });
-                }
-            });
+      // Vertical scroll synchronization
+      layerNames.addEventListener("scroll", () => {
+        if (!isUpdating) {
+          isUpdating = true;
+          timelineContainer.scrollTop = layerNames.scrollTop;
+          requestAnimationFrame(() => {
+            isUpdating = false;
+          });
         }
+      });
 
-        // Synchronize horizontal scrolling between ruler and timeline content
-        if (timelineHeader && timelineContainer) {
-            let isHorizontalUpdating = false;
-
-            timelineHeader.addEventListener('scroll', () => {
-                if (!isHorizontalUpdating) {
-                    isHorizontalUpdating = true;
-                    timelineContainer.scrollLeft = timelineHeader.scrollLeft;
-                    requestAnimationFrame(() => { isHorizontalUpdating = false; });
-                }
-            });
-
-            timelineContainer.addEventListener('scroll', () => {
-                if (!isHorizontalUpdating) {
-                    isHorizontalUpdating = true;
-                    timelineHeader.scrollLeft = timelineContainer.scrollLeft;
-                    requestAnimationFrame(() => { isHorizontalUpdating = false; });
-                }
-            });
+      timelineContainer.addEventListener("scroll", () => {
+        if (!isUpdating) {
+          isUpdating = true;
+          layerNames.scrollTop = timelineContainer.scrollTop;
+          requestAnimationFrame(() => {
+            isUpdating = false;
+          });
         }
+      });
     }
 
-    // Helper method to calculate timeline width using settings
-    calculateTimelineWidth() {
-        const minPixelsPerSecond = window.AppSettings?.get('minPixelsPerSecond') || 80;
-        const minTimelineWidth = window.AppSettings?.get('minTimelineWidth') || 800;
-        return Math.max(minTimelineWidth, this.app.duration * minPixelsPerSecond);
-    }
+    // Synchronize horizontal scrolling between ruler and timeline content
+    if (timelineHeader && timelineContainer) {
+      let isHorizontalUpdating = false;
 
-    update() {
-        this.updateTimeRuler();
-        this.updateLayers();
-        this.updateCursor();
-    }
-
-    updateTimeRuler() {
-        const timeRuler = document.getElementById('timeRuler');
-        const totalFrames = this.app.totalFrames;
-
-        // Calculate timeline width using settings
-        const timelineWidth = this.calculateTimelineWidth();
-
-        // Set the timeline content wrapper width to establish scrollable area
-        const timelineContent = document.getElementById('timelineContent');
-        if (timelineContent) {
-            timelineContent.style.width = `${timelineWidth}px`; // Timeline width only, layer headers are in separate column
+      timelineHeader.addEventListener("scroll", () => {
+        if (!isHorizontalUpdating) {
+          isHorizontalUpdating = true;
+          timelineContainer.scrollLeft = timelineHeader.scrollLeft;
+          requestAnimationFrame(() => {
+            isHorizontalUpdating = false;
+          });
         }
+      });
 
-        // Set the timeline ruler width
-        timeRuler.style.width = `${timelineWidth}px`;
-
-        // Set all timeline layer widths to match
-        const timelineLayers = document.querySelectorAll('.timeline-layer');
-        timelineLayers.forEach(layer => {
-            layer.style.width = `${timelineWidth}px`;
-        });
-
-        // Clear only the time marks, not the cursor
-        const existingMarks = timeRuler.querySelectorAll('.time-mark');
-        existingMarks.forEach(mark => mark.remove());
-
-        // Ensure cursor exists
-        let timeCursor = document.getElementById('timeCursor');
-        if (!timeCursor) {
-            timeCursor = document.createElement('div');
-            timeCursor.id = 'timeCursor';
-            timeRuler.appendChild(timeCursor);
-
-            // Set up cursor dragging
-            this.setupCursorDragging(timeCursor);
+      timelineContainer.addEventListener("scroll", () => {
+        if (!isHorizontalUpdating) {
+          isHorizontalUpdating = true;
+          timelineHeader.scrollLeft = timelineContainer.scrollLeft;
+          requestAnimationFrame(() => {
+            isHorizontalUpdating = false;
+          });
         }
+      });
+    }
+  }
 
-        // Calculate optimal mark spacing
-        const targetMarks = 20;
-        const frameStep = Math.max(1, Math.ceil(totalFrames / targetMarks));
-        const roundedStep = this.roundToNiceNumber(frameStep);
+  // Helper method to calculate timeline width using settings
+  calculateTimelineWidth() {
+    const minPixelsPerSecond =
+      window.AppSettings?.get("minPixelsPerSecond") || 80;
+    const minTimelineWidth = window.AppSettings?.get("minTimelineWidth") || 800;
+    return Math.max(minTimelineWidth, this.app.duration * minPixelsPerSecond);
+  }
 
-        // Add frame marks
-        for (let i = 0; i <= totalFrames; i += roundedStep) {
-            const mark = document.createElement('div');
-            mark.className = 'time-mark';
-            mark.style.left = `${(i / totalFrames) * timelineWidth}px`;
+  update() {
+    this.updateTimeRuler();
+    this.updateLayers();
+    this.updateCursor();
+  }
 
-            const label = document.createElement('div');
-            label.className = 'time-label';
-            label.textContent = i.toString();
+  updateTimeRuler() {
+    const timeRuler = document.getElementById("timeRuler");
+    const totalFrames = this.app.totalFrames;
 
-            mark.appendChild(label);
-            timeRuler.appendChild(mark);
-        }
+    // Calculate timeline width using settings
+    const timelineWidth = this.calculateTimelineWidth();
 
-        // Add minor marks
-        for (let i = 0; i <= totalFrames; i += Math.max(1, roundedStep / 5)) {
-            if (i % roundedStep !== 0) {
-                const mark = document.createElement('div');
-                mark.className = 'time-mark';
-                mark.style.left = `${(i / totalFrames) * timelineWidth}px`;
-                mark.style.height = '50%';
-                mark.style.top = '50%';
-                mark.style.background = '#505050';
-                timeRuler.appendChild(mark);
-            }
-        }
+    // Set the timeline content wrapper width to establish scrollable area
+    const timelineContent = document.getElementById("timelineContent");
+    if (timelineContent) {
+      timelineContent.style.width = `${timelineWidth}px`; // Timeline width only, layer headers are in separate column
     }
 
-    roundToNiceNumber(num) {
-        const magnitude = Math.pow(10, Math.floor(Math.log10(num)));
-        const normalized = num / magnitude;
+    // Set the timeline ruler width
+    timeRuler.style.width = `${timelineWidth}px`;
 
-        let nice;
-        if (normalized <= 1) nice = 1;
-        else if (normalized <= 2) nice = 2;
-        else if (normalized <= 5) nice = 5;
-        else nice = 10;
+    // Set all timeline layer widths to match
+    const timelineLayers = document.querySelectorAll(".timeline-layer");
+    timelineLayers.forEach((layer) => {
+      layer.style.width = `${timelineWidth}px`;
+    });
 
-        return nice * magnitude;
+    // Clear only the time marks, not the cursor
+    const existingMarks = timeRuler.querySelectorAll(".time-mark");
+    existingMarks.forEach((mark) => mark.remove());
+
+    // Ensure cursor exists
+    let timeCursor = document.getElementById("timeCursor");
+    if (!timeCursor) {
+      timeCursor = document.createElement("div");
+      timeCursor.id = "timeCursor";
+      timeRuler.appendChild(timeCursor);
+
+      // Set up cursor dragging
+      this.setupCursorDragging(timeCursor);
     }
 
-    updateLayers() {
-        const timelineLayers = document.getElementById('timelineLayers');
-        const timelineLayerNames = document.getElementById('timelineLayerNames');
-        timelineLayers.innerHTML = '';
-        timelineLayerNames.innerHTML = '';
+    // Calculate optimal mark spacing
+    const targetMarks = 20;
+    const frameStep = Math.max(1, Math.ceil(totalFrames / targetMarks));
+    const roundedStep = this.roundToNiceNumber(frameStep);
 
-        this.app.textObjects.forEach((textObject, index) => {
-            // Initialize expansion state if not set (defaults to collapsed unless selected)
-            if (textObject._timelineExpanded === undefined) {
-                textObject._timelineExpanded = (textObject === this.app.selectedObject);
-            }
+    // Add frame marks
+    for (let i = 0; i <= totalFrames; i += roundedStep) {
+      const mark = document.createElement("div");
+      mark.className = "time-mark";
+      mark.style.left = `${(i / totalFrames) * timelineWidth}px`;
 
-            const layerName = this.createLayerName(textObject, index);
-            const layerContent = this.createLayerContent(textObject, index);
+      const label = document.createElement("div");
+      label.className = "time-label";
+      label.textContent = i.toString();
 
-            timelineLayerNames.appendChild(layerName);
-            timelineLayers.appendChild(layerContent);
-        });
-
-        // Update cursor extensions for new layers
-        this.updateCursorExtensions((this.app.currentFrame / this.app.totalFrames) * this.calculateTimelineWidth() - 1);
-
-        // Restore keyframe highlighting after rebuilding timeline
-        this.updateCurrentKeyframeHighlight();
+      mark.appendChild(label);
+      timeRuler.appendChild(mark);
     }
 
-    createLayerName(textObject, index) {
-        const layerGroup = document.createElement('div');
-        layerGroup.className = 'timeline-layer-group';
-        if (textObject === this.app.selectedObject) {
-            layerGroup.classList.add('selected');
-        }
-        layerGroup.dataset.objectId = textObject.id;
-
-        // Main text object header with expand/collapse button
-        const mainHeader = document.createElement('div');
-        mainHeader.className = 'timeline-layer-name main-layer';
-
-        // Expand/collapse button
-        const expandButton = document.createElement('span');
-        expandButton.className = 'expand-button';
-        expandButton.textContent = textObject._timelineExpanded ? '▼' : '▶';
-
-        // Layer text
-        const layerText = document.createElement('span');
-        layerText.textContent = textObject.text.length > 12
-            ? textObject.text.substring(0, 12) + '...'
-            : textObject.text || `Layer ${index + 1}`;
-
-        mainHeader.appendChild(expandButton);
-        mainHeader.appendChild(layerText);
-        mainHeader.title = textObject.text;
-
-        // Add click handler for selection and expand/collapse
-        mainHeader.addEventListener('click', (e) => {
-            e.stopPropagation();
-
-            // If clicking on expand button area, toggle expansion
-            if (e.target === expandButton || e.offsetX < 20) {
-                this.toggleLayerExpansion(textObject);
-            } else {
-                // Otherwise, select the object
-                this.selectObject(textObject);
-            }
-        });
-
-        layerGroup.appendChild(mainHeader);
-
-        // Only show property sub-layers if expanded and have keyframes
-        if (textObject._timelineExpanded) {
-            Object.keys(textObject.keyframes).forEach(property => {
-                const keyframes = textObject.keyframes[property];
-                if (keyframes && keyframes.length > 0) {
-                    const subLayer = document.createElement('div');
-                    subLayer.className = 'timeline-layer-name sub-layer';
-                    subLayer.dataset.property = property;
-                    subLayer.textContent = this.getPropertyDisplayName(property);
-                    layerGroup.appendChild(subLayer);
-                }
-            });
-        }
-
-        return layerGroup;
+    // Add minor marks
+    for (let i = 0; i <= totalFrames; i += Math.max(1, roundedStep / 5)) {
+      if (i % roundedStep !== 0) {
+        const mark = document.createElement("div");
+        mark.className = "time-mark";
+        mark.style.left = `${(i / totalFrames) * timelineWidth}px`;
+        mark.style.height = "50%";
+        mark.style.top = "50%";
+        mark.style.background = "#505050";
+        timeRuler.appendChild(mark);
+      }
     }
+  }
 
-    createLayerContent(textObject, index) {
-        const layerGroup = document.createElement('div');
-        layerGroup.className = 'timeline-layer-group';
-        if (textObject === this.app.selectedObject) {
-            layerGroup.classList.add('selected');
-        }
-        layerGroup.dataset.objectId = textObject.id;
+  roundToNiceNumber(num) {
+    const magnitude = Math.pow(10, Math.floor(Math.log10(num)));
+    const normalized = num / magnitude;
 
-        if (textObject._timelineExpanded) {
-            // Expanded view: show main layer + property sub-layers
-            const mainLayer = document.createElement('div');
-            mainLayer.className = 'timeline-layer main-layer';
-            layerGroup.appendChild(mainLayer);
+    let nice;
+    if (normalized <= 1) nice = 1;
+    else if (normalized <= 2) nice = 2;
+    else if (normalized <= 5) nice = 5;
+    else nice = 10;
 
-            // Show property sub-layers that have keyframes
-            Object.keys(textObject.keyframes).forEach(property => {
-                const keyframes = textObject.keyframes[property];
-                if (keyframes && keyframes.length > 0) {
-                    const subLayer = this.createPropertyLayer(textObject, property);
-                    layerGroup.appendChild(subLayer);
-                }
-            });
-        } else {
-            // Collapsed view: single layer with all keyframes combined
-            const collapsedLayer = document.createElement('div');
-            collapsedLayer.className = 'timeline-layer main-layer collapsed';
-            collapsedLayer.dataset.objectId = textObject.id;
+    return nice * magnitude;
+  }
 
-            // Collect all keyframes from all properties
-            this.addCollapsedKeyframes(collapsedLayer, textObject);
+  updateLayers() {
+    const timelineLayers = document.getElementById("timelineLayers");
+    const timelineLayerNames = document.getElementById("timelineLayerNames");
+    timelineLayers.innerHTML = "";
+    timelineLayerNames.innerHTML = "";
 
-            layerGroup.appendChild(collapsedLayer);
-        }
+    this.app.textObjects.forEach((textObject, index) => {
+      // Initialize expansion state if not set (defaults to collapsed unless selected)
+      if (textObject._timelineExpanded === undefined) {
+        textObject._timelineExpanded = textObject === this.app.selectedObject;
+      }
 
-        return layerGroup;
+      const layerName = this.createLayerName(textObject, index);
+      const layerContent = this.createLayerContent(textObject, index);
+
+      timelineLayerNames.appendChild(layerName);
+      timelineLayers.appendChild(layerContent);
+    });
+
+    // Update cursor extensions for new layers
+    this.updateCursorExtensions(
+      (this.app.currentFrame / this.app.totalFrames) *
+        this.calculateTimelineWidth() -
+        1,
+    );
+
+    // Restore keyframe highlighting after rebuilding timeline
+    this.updateCurrentKeyframeHighlight();
+  }
+
+  createLayerName(textObject, index) {
+    const layerGroup = document.createElement("div");
+    layerGroup.className = "timeline-layer-group";
+    if (textObject === this.app.selectedObject) {
+      layerGroup.classList.add("selected");
     }
+    layerGroup.dataset.objectId = textObject.id;
 
-    createPropertyLayer(textObject, property) {
-        const layer = document.createElement('div');
-        layer.className = 'timeline-layer sub-layer';
-        layer.dataset.objectId = textObject.id;
-        layer.dataset.property = property;
+    // Main text object header with expand/collapse button
+    const mainHeader = document.createElement("div");
+    mainHeader.className = "timeline-layer-name main-layer";
 
-        // Add existing keyframes for this property
-        const keyframes = textObject.keyframes[property] || [];
-        keyframes.forEach(keyframe => {
-            const keyframeElement = this.createPropertyKeyframe(keyframe, textObject, property);
-            layer.appendChild(keyframeElement);
-        });
+    // Expand/collapse button
+    const expandButton = document.createElement("span");
+    expandButton.className = "expand-button";
+    expandButton.textContent = textObject._timelineExpanded ? "▼" : "▶";
 
-        // Add keyframe spans between keyframes
-        this.addPropertyKeyframeSpans(layer, textObject, property);
+    // Layer text
+    const layerText = document.createElement("span");
+    layerText.textContent =
+      textObject.text.length > 12
+        ? textObject.text.substring(0, 12) + "..."
+        : textObject.text || `Layer ${index + 1}`;
 
-        // Add event listeners
-        this.setupPropertyLayerEventListeners(layer, textObject, property);
+    mainHeader.appendChild(expandButton);
+    mainHeader.appendChild(layerText);
+    mainHeader.title = textObject.text;
 
-        return layer;
-    }
+    // Add click handler for selection and expand/collapse
+    mainHeader.addEventListener("click", (e) => {
+      e.stopPropagation();
 
-    toggleLayerExpansion(textObject) {
-        textObject._timelineExpanded = !textObject._timelineExpanded;
+      // If clicking on expand button area, toggle expansion
+      if (e.target === expandButton || e.offsetX < 20) {
+        this.toggleLayerExpansion(textObject);
+      } else {
+        // Otherwise, select the object
+        this.selectObject(textObject);
+      }
+    });
 
-        // Rebuild the timeline to reflect the new state
-        this.updateLayers();
-    }
+    layerGroup.appendChild(mainHeader);
 
-    selectObject(textObject) {
-        const previousSelection = this.app.selectedObject;
-
-        // Set new selection
-        this.app.selectedObject = textObject;
-
-        // Handle timeline expansion
-        if (previousSelection !== textObject) {
-            // Collapse previously selected object
-            if (previousSelection) {
-                previousSelection._timelineExpanded = false;
-            }
-
-            // Expand newly selected object
-            textObject._timelineExpanded = true;
-
-            // Update timeline and other UI
-            this.updateLayers();
-            this.app.updateRightPanel();
-            this.app.redraw();
-        }
-    }
-
-    addCollapsedKeyframes(layer, textObject) {
-        // Collect all unique frame positions from all properties
-        const allFramePositions = new Set();
-        const keyframesByFrame = new Map();
-
-        // Gather keyframes from all properties
-        Object.keys(textObject.keyframes).forEach(property => {
-            const keyframes = textObject.keyframes[property] || [];
-            keyframes.forEach(keyframe => {
-                allFramePositions.add(keyframe.frame);
-
-                if (!keyframesByFrame.has(keyframe.frame)) {
-                    keyframesByFrame.set(keyframe.frame, []);
-                }
-                keyframesByFrame.get(keyframe.frame).push({
-                    property,
-                    keyframe
-                });
-            });
-        });
-
-        // Create visual keyframes for each unique frame position
-        Array.from(allFramePositions).sort((a, b) => a - b).forEach(frameNumber => {
-            const keyframeData = keyframesByFrame.get(frameNumber);
-            const keyframeElement = this.createCollapsedKeyframe(frameNumber, keyframeData, textObject);
-            layer.appendChild(keyframeElement);
-        });
-
-        // Add event listeners for the collapsed layer
-        this.setupCollapsedLayerEventListeners(layer, textObject);
-    }
-
-    createCollapsedKeyframe(frameNumber, keyframeData, textObject) {
-        const keyframe = document.createElement('div');
-        keyframe.className = 'keyframe collapsed-keyframe';
-        keyframe.dataset.frame = frameNumber;
-        keyframe.dataset.objectId = textObject.id;
-
-        // Position the keyframe
-        const timelineWidth = this.calculateTimelineWidth();
-        const position = (frameNumber / this.app.totalFrames) * timelineWidth;
-        // Center the keyframe dot by subtracting half its width (7px) to match expanded layer positioning
-        keyframe.style.left = `${position - 7}px`;
-
-        // Create tooltip showing all properties at this frame
-        const properties = keyframeData.map(data => this.getPropertyDisplayName(data.property)).join(', ');
-        keyframe.title = `Frame ${frameNumber}: ${properties}`;
-
-        // Add hover effects
-        keyframe.addEventListener('mouseenter', () => {
-            keyframe.classList.add('highlighted');
-        });
-
-        keyframe.addEventListener('mouseleave', () => {
-            keyframe.classList.remove('highlighted');
-        });
-
-        return keyframe;
-    }
-
-    setupCollapsedLayerEventListeners(layer, textObject) {
-        // Add click handler to expand layer or navigate to keyframes
-        layer.addEventListener('click', (e) => {
-            if (e.target.classList.contains('collapsed-keyframe')) {
-                // Navigate to the keyframe
-                const frameNumber = parseInt(e.target.dataset.frame);
-                this.app.setCurrentFrame(frameNumber);
-            }
-        });
-
-        // Add double-click to expand
-        layer.addEventListener('dblclick', (e) => {
-            e.stopPropagation();
-            this.toggleLayerExpansion(textObject);
-        });
-    }
-
-    getPropertyDisplayName(property) {
-        const displayNames = {
-            x: 'X Position',
-            y: 'Y Position',
-            fontSize: 'Font Size',
-            color: 'Color'
-        };
-
-        // Handle variable axis properties
-        if (property.startsWith('variableaxis:')) {
-            const axisTag = property.replace('variableaxis:', '');
-            return `${axisTag} (Variable Axis)`;
-        }
-
-        return displayNames[property] || property;
-    }
-
-    createPropertyKeyframe(keyframe, textObject, property) {
-        const keyframeElement = document.createElement('div');
-        keyframeElement.className = 'keyframe';
-        keyframeElement.dataset.frame = keyframe.frame;
-        keyframeElement.dataset.property = property;
-        keyframeElement.dataset.objectId = textObject.id;
-
-        // Check if this keyframe should be selected
-        const isSelected = this.isKeyframeSelected(textObject.id, property, keyframe.frame);
-        if (isSelected) {
-            keyframeElement.classList.add('selected');
-        }
-
-        const timelineWidth = this.calculateTimelineWidth();
-        const position = (keyframe.frame / this.app.totalFrames) * timelineWidth;
-        // Center the keyframe dot by subtracting half its width (7px)
-        keyframeElement.style.left = `${position - 7}px`;
-
-        return keyframeElement;
-    }
-
-    addPropertyKeyframeSpans(content, textObject, property) {
-        const keyframes = textObject.keyframes[property] || [];
-        if (keyframes.length < 2) return;
-
-        const timelineWidth = this.calculateTimelineWidth();
-
-        for (let i = 0; i < keyframes.length - 1; i++) {
-            const startFrame = keyframes[i].frame;
-            const endFrame = keyframes[i + 1].frame;
-
-            const span = document.createElement('div');
-            span.className = 'keyframe-span';
-
-            const startPosition = (startFrame / this.app.totalFrames) * timelineWidth;
-            const endPosition = (endFrame / this.app.totalFrames) * timelineWidth;
-
-            span.style.left = `${startPosition}px`;
-            span.style.width = `${Math.max(2, endPosition - startPosition)}px`;
-
-            content.appendChild(span);
-        }
-    }
-
-    setupPropertyLayerEventListeners(layer, textObject, property) {
-        // Keyframe selection and dragging
-        layer.addEventListener('mousedown', (e) => {
-            if (e.target.classList.contains('keyframe')) {
-                this.handlePropertyKeyframeMouseDown(e, textObject, property);
-            }
-        });
-    }
-
-    addPropertyKeyframe(textObject, property, frame) {
-        // Get current value at this frame or use a default
-        const currentValue = this.app.getPropertyValue(textObject, property, frame);
-        this.app.setKeyframe(textObject, property, frame, currentValue);
-
-        this.updateLayers();
-        this.app.redraw(); // Repaint canvas
-        this.app.updateRightPanel(); // Recalculate numerical values in UI
-        this.app.saveState();
-    }
-
-    handlePropertyKeyframeMouseDown(e, textObject, property) {
-        e.preventDefault();
-        e.stopPropagation();
-
-        const keyframe = e.target;
-        const frame = parseInt(keyframe.dataset.frame);
-        const isCurrentlySelected = this.isKeyframeSelected(textObject.id, property, frame);
-
-        // Handle selection
-        if (e.shiftKey) {
-            // Shift-click: Add/remove from selection
-            if (isCurrentlySelected) {
-                this.unselectPropertyKeyframe(textObject.id, property, frame);
-            } else {
-                this.selectPropertyKeyframe(textObject.id, property, frame, true);
-            }
-        } else if (e.ctrlKey || e.metaKey) {
-            // Ctrl/Cmd-click: Toggle selection
-            if (isCurrentlySelected) {
-                this.unselectPropertyKeyframe(textObject.id, property, frame);
-            } else {
-                this.selectPropertyKeyframe(textObject.id, property, frame, true);
-            }
-        } else {
-            // Regular click - only clear other selections if this keyframe is not already selected
-            // This preserves multi-selection when starting to drag
-            if (!isCurrentlySelected) {
-                this.clearKeyframeSelection();
-                this.selectPropertyKeyframe(textObject.id, property, frame);
-            }
-            // If already selected, keep all current selections for potential multi-keyframe drag
-        }
-
-        // Start dragging
-        let isDragging = false;
-        const startX = e.clientX;
-        const startFrame = frame;
-        let finalDelta = 0;
-
-        // Store direct references to keyframe objects and their original frames
-        const keyframeRefs = [];
-        for (const kf of this.selectedKeyframes) {
-            const textObject = this.app.textObjects.find(obj => obj.id === kf.objectId);
-            if (textObject && textObject.keyframes[kf.property]) {
-                const keyframes = textObject.keyframes[kf.property];
-                const targetKeyframe = keyframes.find(keyframeObj => keyframeObj.frame === kf.frame);
-                if (targetKeyframe) {
-                    keyframeRefs.push({
-                        keyframeObject: targetKeyframe,
-                        originalFrame: targetKeyframe.frame,
-                        selectedKf: kf
-                    });
-                }
-            }
-        }
-
-        const onMouseMove = (moveEvent) => {
-            if (!isDragging && Math.abs(moveEvent.clientX - startX) > 5) {
-                isDragging = true;
-            }
-
-            if (isDragging) {
-                // Get the timeline container to calculate mouse position relative to it
-                const timelineContainer = document.getElementById('timelineContainer');
-                const rect = timelineContainer.getBoundingClientRect();
-
-                // Calculate mouse position relative to timeline container (accounting for scroll)
-                // Add 7px to account for keyframe centering offset used in positioning
-                const mouseX = moveEvent.clientX - rect.left + timelineContainer.scrollLeft + 7;
-                const timelineWidth = this.calculateTimelineWidth();
-
-                // Convert mouse position to frame number using the same formula as keyframe positioning
-                const mouseFrame = Math.max(0, Math.min(Math.round((mouseX / timelineWidth) * this.app.totalFrames), this.app.totalFrames - 1));
-
-                // Calculate the offset from the original clicked keyframe
-                const deltaFrames = mouseFrame - startFrame;
-                finalDelta = deltaFrames;
-
-                // Update all selected keyframes to their new positions using direct references
-                for (const ref of keyframeRefs) {
-                    const newFrame = Math.max(0, Math.min(ref.originalFrame + deltaFrames, this.app.totalFrames - 1));
-                    ref.keyframeObject.frame = newFrame;
-                    // Update the selection tracking to match the new frame position
-                    ref.selectedKf.frame = newFrame;
-                    ref.selectedKf.id = `${ref.selectedKf.objectId}-${ref.selectedKf.property}-${newFrame}`;
-                }
-
-                this.updateLayers();
-                this.updateKeyframeSelectionVisual();
-                this.app.redraw();
-                this.app.updateRightPanel();
-            }
-        };
-
-        const onMouseUp = () => {
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
-
-            if (isDragging) {
-                // Update selectedKeyframes to reflect final positions
-                for (const ref of keyframeRefs) {
-                    ref.selectedKf.frame = ref.keyframeObject.frame;
-                    ref.selectedKf.id = `${ref.selectedKf.objectId}-${ref.selectedKf.property}-${ref.selectedKf.frame}`;
-                }
-
-                this.app.saveState();
-                // Update the timeline to reflect changes
-                this.updateLayers();
-                // Ensure selection is maintained after re-render
-                this.updateKeyframeSelectionVisual();
-            }
-        };
-
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
-    }
-
-    movePropertyKeyframe(textObject, property, oldFrame, newFrame) {
+    // Only show property sub-layers if expanded and have keyframes
+    if (textObject._timelineExpanded) {
+      Object.keys(textObject.keyframes).forEach((property) => {
         const keyframes = textObject.keyframes[property];
-        if (!keyframes) return;
-
-        const keyframeIndex = keyframes.findIndex(kf => kf.frame === oldFrame);
-        if (keyframeIndex >= 0) {
-            keyframes[keyframeIndex].frame = newFrame;
-            keyframes.sort((a, b) => a.frame - b.frame);
-            this.updateLayers();
-            this.app.redraw(); // Repaint canvas
-            this.app.updateRightPanel(); // Recalculate numerical values in UI
+        if (keyframes && keyframes.length > 0) {
+          const subLayer = document.createElement("div");
+          subLayer.className = "timeline-layer-name sub-layer";
+          subLayer.dataset.property = property;
+          subLayer.textContent = this.getPropertyDisplayName(property);
+          layerGroup.appendChild(subLayer);
         }
+      });
     }
 
-    moveSelectedKeyframes(deltaX) {
-        if (this.selectedKeyframes.length === 0) return;
+    return layerGroup;
+  }
 
-        // Calculate new frames for all selected keyframes
-        const updates = [];
-        for (const keyframe of this.selectedKeyframes) {
-            const newFrame = Math.max(0, Math.min(keyframe.frame + deltaX, this.app.totalFrames - 1));
+  createLayerContent(textObject, index) {
+    const layerGroup = document.createElement("div");
+    layerGroup.className = "timeline-layer-group";
+    if (textObject === this.app.selectedObject) {
+      layerGroup.classList.add("selected");
+    }
+    layerGroup.dataset.objectId = textObject.id;
 
-            // Check for conflicts with existing keyframes (excluding the ones being moved)
-            let conflict = false;
-            for (const existingKeyframe of keyframe.property.keyframes) {
-                if (!this.selectedKeyframes.includes(existingKeyframe) &&
-                    existingKeyframe.frame === newFrame) {
-                    conflict = true;
-                    break;
-                }
-            }
+    if (textObject._timelineExpanded) {
+      // Expanded view: show main layer + property sub-layers
+      const mainLayer = document.createElement("div");
+      mainLayer.className = "timeline-layer main-layer";
+      layerGroup.appendChild(mainLayer);
 
-            if (!conflict) {
-                updates.push({ keyframe, newFrame });
-            }
+      // Show property sub-layers that have keyframes
+      Object.keys(textObject.keyframes).forEach((property) => {
+        const keyframes = textObject.keyframes[property];
+        if (keyframes && keyframes.length > 0) {
+          const subLayer = this.createPropertyLayer(textObject, property);
+          layerGroup.appendChild(subLayer);
+        }
+      });
+    } else {
+      // Collapsed view: single layer with all keyframes combined
+      const collapsedLayer = document.createElement("div");
+      collapsedLayer.className = "timeline-layer main-layer collapsed";
+      collapsedLayer.dataset.objectId = textObject.id;
+
+      // Collect all keyframes from all properties
+      this.addCollapsedKeyframes(collapsedLayer, textObject);
+
+      layerGroup.appendChild(collapsedLayer);
+    }
+
+    return layerGroup;
+  }
+
+  createPropertyLayer(textObject, property) {
+    const layer = document.createElement("div");
+    layer.className = "timeline-layer sub-layer";
+    layer.dataset.objectId = textObject.id;
+    layer.dataset.property = property;
+
+    // Add existing keyframes for this property
+    const keyframes = textObject.keyframes[property] || [];
+    keyframes.forEach((keyframe) => {
+      const keyframeElement = this.createPropertyKeyframe(
+        keyframe,
+        textObject,
+        property,
+      );
+      layer.appendChild(keyframeElement);
+    });
+
+    // Add keyframe spans between keyframes
+    this.addPropertyKeyframeSpans(layer, textObject, property);
+
+    // Add event listeners
+    this.setupPropertyLayerEventListeners(layer, textObject, property);
+
+    return layer;
+  }
+
+  toggleLayerExpansion(textObject) {
+    textObject._timelineExpanded = !textObject._timelineExpanded;
+
+    // Rebuild the timeline to reflect the new state
+    this.updateLayers();
+  }
+
+  selectObject(textObject) {
+    const previousSelection = this.app.selectedObject;
+
+    // Set new selection
+    this.app.selectedObject = textObject;
+
+    // Handle timeline expansion
+    if (previousSelection !== textObject) {
+      // Collapse previously selected object
+      if (previousSelection) {
+        previousSelection._timelineExpanded = false;
+      }
+
+      // Expand newly selected object
+      textObject._timelineExpanded = true;
+
+      // Update timeline and other UI
+      this.updateLayers();
+      this.app.updateRightPanel();
+      this.app.redraw();
+    }
+  }
+
+  addCollapsedKeyframes(layer, textObject) {
+    // Collect all unique frame positions from all properties
+    const allFramePositions = new Set();
+    const keyframesByFrame = new Map();
+
+    // Gather keyframes from all properties
+    Object.keys(textObject.keyframes).forEach((property) => {
+      const keyframes = textObject.keyframes[property] || [];
+      keyframes.forEach((keyframe) => {
+        allFramePositions.add(keyframe.frame);
+
+        if (!keyframesByFrame.has(keyframe.frame)) {
+          keyframesByFrame.set(keyframe.frame, []);
+        }
+        keyframesByFrame.get(keyframe.frame).push({
+          property,
+          keyframe,
+        });
+      });
+    });
+
+    // Create visual keyframes for each unique frame position
+    Array.from(allFramePositions)
+      .sort((a, b) => a - b)
+      .forEach((frameNumber) => {
+        const keyframeData = keyframesByFrame.get(frameNumber);
+        const keyframeElement = this.createCollapsedKeyframe(
+          frameNumber,
+          keyframeData,
+          textObject,
+        );
+        layer.appendChild(keyframeElement);
+      });
+
+    // Add event listeners for the collapsed layer
+    this.setupCollapsedLayerEventListeners(layer, textObject);
+  }
+
+  createCollapsedKeyframe(frameNumber, keyframeData, textObject) {
+    const keyframe = document.createElement("div");
+    keyframe.className = "keyframe collapsed-keyframe";
+    keyframe.dataset.frame = frameNumber;
+    keyframe.dataset.objectId = textObject.id;
+
+    // Position the keyframe
+    const timelineWidth = this.calculateTimelineWidth();
+    const position = (frameNumber / this.app.totalFrames) * timelineWidth;
+    // Center the keyframe dot by subtracting half its width (7px) to match expanded layer positioning
+    keyframe.style.left = `${position - 7}px`;
+
+    // Create tooltip showing all properties at this frame
+    const properties = keyframeData
+      .map((data) => this.getPropertyDisplayName(data.property))
+      .join(", ");
+    keyframe.title = `Frame ${frameNumber}: ${properties}`;
+
+    // Add hover effects
+    keyframe.addEventListener("mouseenter", () => {
+      keyframe.classList.add("highlighted");
+    });
+
+    keyframe.addEventListener("mouseleave", () => {
+      keyframe.classList.remove("highlighted");
+    });
+
+    return keyframe;
+  }
+
+  setupCollapsedLayerEventListeners(layer, textObject) {
+    // Add click handler to expand layer or navigate to keyframes
+    layer.addEventListener("click", (e) => {
+      if (e.target.classList.contains("collapsed-keyframe")) {
+        // Navigate to the keyframe
+        const frameNumber = parseInt(e.target.dataset.frame);
+        this.app.setCurrentFrame(frameNumber);
+      }
+    });
+
+    // Add double-click to expand
+    layer.addEventListener("dblclick", (e) => {
+      e.stopPropagation();
+      this.toggleLayerExpansion(textObject);
+    });
+  }
+
+  getPropertyDisplayName(property) {
+    const displayNames = {
+      x: "X Position",
+      y: "Y Position",
+      fontSize: "Font Size",
+      lineHeight: "Line Height",
+      color: "Color",
+    };
+
+    // Handle variable axis properties
+    if (property.startsWith("variableaxis:")) {
+      const axisTag = property.replace("variableaxis:", "");
+      return `${axisTag} (Variable Axis)`;
+    }
+
+    return displayNames[property] || property;
+  }
+
+  createPropertyKeyframe(keyframe, textObject, property) {
+    const keyframeElement = document.createElement("div");
+    keyframeElement.className = "keyframe";
+    keyframeElement.dataset.frame = keyframe.frame;
+    keyframeElement.dataset.property = property;
+    keyframeElement.dataset.objectId = textObject.id;
+
+    // Check if this keyframe should be selected
+    const isSelected = this.isKeyframeSelected(
+      textObject.id,
+      property,
+      keyframe.frame,
+    );
+    if (isSelected) {
+      keyframeElement.classList.add("selected");
+    }
+
+    const timelineWidth = this.calculateTimelineWidth();
+    const position = (keyframe.frame / this.app.totalFrames) * timelineWidth;
+    // Center the keyframe dot by subtracting half its width (7px)
+    keyframeElement.style.left = `${position - 7}px`;
+
+    return keyframeElement;
+  }
+
+  addPropertyKeyframeSpans(content, textObject, property) {
+    const keyframes = textObject.keyframes[property] || [];
+    if (keyframes.length < 2) return;
+
+    const timelineWidth = this.calculateTimelineWidth();
+
+    for (let i = 0; i < keyframes.length - 1; i++) {
+      const startFrame = keyframes[i].frame;
+      const endFrame = keyframes[i + 1].frame;
+
+      const span = document.createElement("div");
+      span.className = "keyframe-span";
+
+      const startPosition = (startFrame / this.app.totalFrames) * timelineWidth;
+      const endPosition = (endFrame / this.app.totalFrames) * timelineWidth;
+
+      span.style.left = `${startPosition}px`;
+      span.style.width = `${Math.max(2, endPosition - startPosition)}px`;
+
+      content.appendChild(span);
+    }
+  }
+
+  setupPropertyLayerEventListeners(layer, textObject, property) {
+    // Keyframe selection and dragging
+    layer.addEventListener("mousedown", (e) => {
+      if (e.target.classList.contains("keyframe")) {
+        this.handlePropertyKeyframeMouseDown(e, textObject, property);
+      }
+    });
+  }
+
+  addPropertyKeyframe(textObject, property, frame) {
+    // Get current value at this frame or use a default
+    const currentValue = this.app.getPropertyValue(textObject, property, frame);
+    this.app.setKeyframe(textObject, property, frame, currentValue);
+
+    this.updateLayers();
+    this.app.redraw(); // Repaint canvas
+    this.app.updateRightPanel(); // Recalculate numerical values in UI
+    this.app.saveState();
+  }
+
+  handlePropertyKeyframeMouseDown(e, textObject, property) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const keyframe = e.target;
+    const frame = parseInt(keyframe.dataset.frame);
+    const isCurrentlySelected = this.isKeyframeSelected(
+      textObject.id,
+      property,
+      frame,
+    );
+
+    // Handle selection
+    if (e.shiftKey) {
+      // Shift-click: Add/remove from selection
+      if (isCurrentlySelected) {
+        this.unselectPropertyKeyframe(textObject.id, property, frame);
+      } else {
+        this.selectPropertyKeyframe(textObject.id, property, frame, true);
+      }
+    } else if (e.ctrlKey || e.metaKey) {
+      // Ctrl/Cmd-click: Toggle selection
+      if (isCurrentlySelected) {
+        this.unselectPropertyKeyframe(textObject.id, property, frame);
+      } else {
+        this.selectPropertyKeyframe(textObject.id, property, frame, true);
+      }
+    } else {
+      // Regular click - only clear other selections if this keyframe is not already selected
+      // This preserves multi-selection when starting to drag
+      if (!isCurrentlySelected) {
+        this.clearKeyframeSelection();
+        this.selectPropertyKeyframe(textObject.id, property, frame);
+      }
+      // If already selected, keep all current selections for potential multi-keyframe drag
+    }
+
+    // Start dragging
+    let isDragging = false;
+    const startX = e.clientX;
+    const startFrame = frame;
+    let finalDelta = 0;
+
+    // Store direct references to keyframe objects and their original frames
+    const keyframeRefs = [];
+    for (const kf of this.selectedKeyframes) {
+      const textObject = this.app.textObjects.find(
+        (obj) => obj.id === kf.objectId,
+      );
+      if (textObject && textObject.keyframes[kf.property]) {
+        const keyframes = textObject.keyframes[kf.property];
+        const targetKeyframe = keyframes.find(
+          (keyframeObj) => keyframeObj.frame === kf.frame,
+        );
+        if (targetKeyframe) {
+          keyframeRefs.push({
+            keyframeObject: targetKeyframe,
+            originalFrame: targetKeyframe.frame,
+            selectedKf: kf,
+          });
+        }
+      }
+    }
+
+    const onMouseMove = (moveEvent) => {
+      if (!isDragging && Math.abs(moveEvent.clientX - startX) > 5) {
+        isDragging = true;
+      }
+
+      if (isDragging) {
+        // Get the timeline container to calculate mouse position relative to it
+        const timelineContainer = document.getElementById("timelineContainer");
+        const rect = timelineContainer.getBoundingClientRect();
+
+        // Calculate mouse position relative to timeline container (accounting for scroll)
+        // Add 7px to account for keyframe centering offset used in positioning
+        const mouseX =
+          moveEvent.clientX - rect.left + timelineContainer.scrollLeft + 7;
+        const timelineWidth = this.calculateTimelineWidth();
+
+        // Convert mouse position to frame number using the same formula as keyframe positioning
+        const mouseFrame = Math.max(
+          0,
+          Math.min(
+            Math.round((mouseX / timelineWidth) * this.app.totalFrames),
+            this.app.totalFrames - 1,
+          ),
+        );
+
+        // Calculate the offset from the original clicked keyframe
+        const deltaFrames = mouseFrame - startFrame;
+        finalDelta = deltaFrames;
+
+        // Update all selected keyframes to their new positions using direct references
+        for (const ref of keyframeRefs) {
+          const newFrame = Math.max(
+            0,
+            Math.min(ref.originalFrame + deltaFrames, this.app.totalFrames - 1),
+          );
+          ref.keyframeObject.frame = newFrame;
+          // Update the selection tracking to match the new frame position
+          ref.selectedKf.frame = newFrame;
+          ref.selectedKf.id = `${ref.selectedKf.objectId}-${ref.selectedKf.property}-${newFrame}`;
         }
 
-        // Apply all non-conflicting updates
-        for (const update of updates) {
-            update.keyframe.frame = update.newFrame;
-        }
-
-        // Redraw timeline and update property panel
         this.updateLayers();
+        this.updateKeyframeSelectionVisual();
         this.app.redraw();
         this.app.updateRightPanel();
-    }
+      }
+    };
 
-    deleteSelectedKeyframes() {
-        if (this.selectedKeyframes.length === 0) return;
+    const onMouseUp = () => {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
 
-        // Remove selected keyframes from their properties
-        for (const keyframe of this.selectedKeyframes) {
-            const textObject = this.app.textObjects.find(obj => obj.id === keyframe.objectId);
-            if (textObject && textObject.keyframes[keyframe.property]) {
-                const keyframes = textObject.keyframes[keyframe.property];
-                const index = keyframes.findIndex(kf => kf.frame === keyframe.frame);
-                if (index !== -1) {
-                    keyframes.splice(index, 1);
-                }
-            }
+      if (isDragging) {
+        // Update selectedKeyframes to reflect final positions
+        for (const ref of keyframeRefs) {
+          ref.selectedKf.frame = ref.keyframeObject.frame;
+          ref.selectedKf.id = `${ref.selectedKf.objectId}-${ref.selectedKf.property}-${ref.selectedKf.frame}`;
         }
 
-        // Clear selection
-        this.selectedKeyframes = [];
-
-        // Redraw timeline and update property panel
+        this.app.saveState();
+        // Update the timeline to reflect changes
         this.updateLayers();
-        this.app.redraw();
-        this.app.updateRightPanel();
-    }
-
-    findKeyframe(objectId, property, frame) {
-        const textObject = this.app.textObjects.find(obj => obj.id === objectId);
-        if (textObject && textObject.keyframes[property]) {
-            return textObject.keyframes[property].find(kf => kf.frame === frame);
-        }
-        return null;
-    }
-
-    selectPropertyKeyframe(objectId, property, frame, addToSelection = false) {
-        const keyframeId = `${objectId}-${property}-${frame}`;
-
-        if (!addToSelection) {
-            this.selectedKeyframes = [];
-        }
-
-        // Add to selection if not already selected
-        if (!this.selectedKeyframes.find(kf => kf.id === keyframeId)) {
-            this.selectedKeyframes.push({
-                id: keyframeId,
-                objectId: objectId,
-                property: property,
-                frame: frame
-            });
-        }
-
+        // Ensure selection is maintained after re-render
         this.updateKeyframeSelectionVisual();
+      }
+    };
+
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+  }
+
+  movePropertyKeyframe(textObject, property, oldFrame, newFrame) {
+    const keyframes = textObject.keyframes[property];
+    if (!keyframes) return;
+
+    const keyframeIndex = keyframes.findIndex((kf) => kf.frame === oldFrame);
+    if (keyframeIndex >= 0) {
+      keyframes[keyframeIndex].frame = newFrame;
+      keyframes.sort((a, b) => a.frame - b.frame);
+      this.updateLayers();
+      this.app.redraw(); // Repaint canvas
+      this.app.updateRightPanel(); // Recalculate numerical values in UI
     }
+  }
 
-    unselectPropertyKeyframe(objectId, property, frame) {
-        const keyframeId = `${objectId}-${property}-${frame}`;
-        this.selectedKeyframes = this.selectedKeyframes.filter(kf => kf.id !== keyframeId);
-        this.updateKeyframeSelectionVisual();
-    }
+  moveSelectedKeyframes(deltaX) {
+    if (this.selectedKeyframes.length === 0) return;
 
-    isKeyframeSelected(objectId, property, frame) {
-        const keyframeId = `${objectId}-${property}-${frame}`;
-        return this.selectedKeyframes.some(kf => kf.id === keyframeId);
-    }
+    // Calculate new frames for all selected keyframes
+    const updates = [];
+    for (const keyframe of this.selectedKeyframes) {
+      const newFrame = Math.max(
+        0,
+        Math.min(keyframe.frame + deltaX, this.app.totalFrames - 1),
+      );
 
-    updateKeyframeSelectionVisual() {
-        // Clear all visual selection
-        document.querySelectorAll('.keyframe.selected').forEach(kf => {
-            kf.classList.remove('selected');
-        });
-
-        // Apply visual selection to selected keyframes
-        this.selectedKeyframes.forEach(selected => {
-            const selector = `.keyframe[data-object-id="${selected.objectId}"][data-property="${selected.property}"][data-frame="${selected.frame}"]`;
-            const keyframeElements = document.querySelectorAll(selector);
-            keyframeElements.forEach(el => el.classList.add('selected'));
-        });
-    }
-
-    clearKeyframeSelection() {
-        this.selectedKeyframes = [];
-        this.updateKeyframeSelectionVisual();
-    }
-
-
-
-
-
-    setupLayerEventListeners(layer, textObject) {
-        // In the new structure, the layer element itself is the content area
-        const content = layer;
-
-        // Keyframe selection and dragging
-        content.addEventListener('mousedown', (e) => {
-            if (e.target.classList.contains('keyframe')) {
-                this.handleKeyframeMouseDown(e, textObject);
-            }
-        });
-
-        // Context menu for keyframe deletion
-        content.addEventListener('contextmenu', (e) => {
-            if (e.target.classList.contains('keyframe')) {
-                e.preventDefault();
-                this.showKeyframeContextMenu(e, textObject);
-            }
-        });
-    }
-
-    handleKeyframeMouseDown(e, textObject) {
-        const keyframe = e.target;
-        const frame = parseInt(keyframe.dataset.frame);
-
-        // Select keyframe
-        if (!e.shiftKey && !e.ctrlKey && !e.metaKey) {
-            this.clearKeyframeSelection();
+      // Check for conflicts with existing keyframes (excluding the ones being moved)
+      let conflict = false;
+      for (const existingKeyframe of keyframe.property.keyframes) {
+        if (
+          !this.selectedKeyframes.includes(existingKeyframe) &&
+          existingKeyframe.frame === newFrame
+        ) {
+          conflict = true;
+          break;
         }
-        this.selectKeyframe(textObject.id, frame);
+      }
 
-        // Start dragging
-        let isDragging = false;
-        const startX = e.clientX;
-        const startFrame = frame;
-
-        const handleMouseMove = (e) => {
-            if (!isDragging && Math.abs(e.clientX - startX) > 5) {
-                isDragging = true;
-                keyframe.style.cursor = 'grabbing';
-            }
-
-            if (isDragging) {
-                const content = keyframe.parentElement;
-                const rect = content.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const newFrame = Math.max(0, Math.min(this.app.totalFrames - 1,
-                    Math.round((x / rect.width) * this.app.totalFrames)));
-
-                // Check if frame is available
-                const existingKeyframe = textObject.keyframes.find(kf => kf.frame === newFrame && kf.frame !== startFrame);
-                if (!existingKeyframe) {
-                    this.moveKeyframe(textObject, startFrame, newFrame);
-                }
-            }
-        };
-
-        const handleMouseUp = () => {
-            if (isDragging) {
-                this.app.saveState();
-                keyframe.style.cursor = '';
-            }
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
-        };
-
-        document.addEventListener('mousemove', handleMouseMove);
-        document.addEventListener('mouseup', handleMouseUp);
+      if (!conflict) {
+        updates.push({ keyframe, newFrame });
+      }
     }
 
-    showKeyframeContextMenu(e, textObject) {
-        const frame = parseInt(e.target.dataset.frame);
+    // Apply all non-conflicting updates
+    for (const update of updates) {
+      update.keyframe.frame = update.newFrame;
+    }
 
-        // Create a simple context menu
-        const menu = document.createElement('div');
-        menu.style.cssText = `
+    // Redraw timeline and update property panel
+    this.updateLayers();
+    this.app.redraw();
+    this.app.updateRightPanel();
+  }
+
+  deleteSelectedKeyframes() {
+    if (this.selectedKeyframes.length === 0) return;
+
+    // Remove selected keyframes from their properties
+    for (const keyframe of this.selectedKeyframes) {
+      const textObject = this.app.textObjects.find(
+        (obj) => obj.id === keyframe.objectId,
+      );
+      if (textObject && textObject.keyframes[keyframe.property]) {
+        const keyframes = textObject.keyframes[keyframe.property];
+        const index = keyframes.findIndex((kf) => kf.frame === keyframe.frame);
+        if (index !== -1) {
+          keyframes.splice(index, 1);
+        }
+      }
+    }
+
+    // Clear selection
+    this.selectedKeyframes = [];
+
+    // Redraw timeline and update property panel
+    this.updateLayers();
+    this.app.redraw();
+    this.app.updateRightPanel();
+  }
+
+  findKeyframe(objectId, property, frame) {
+    const textObject = this.app.textObjects.find((obj) => obj.id === objectId);
+    if (textObject && textObject.keyframes[property]) {
+      return textObject.keyframes[property].find((kf) => kf.frame === frame);
+    }
+    return null;
+  }
+
+  selectPropertyKeyframe(objectId, property, frame, addToSelection = false) {
+    const keyframeId = `${objectId}-${property}-${frame}`;
+
+    if (!addToSelection) {
+      this.selectedKeyframes = [];
+    }
+
+    // Add to selection if not already selected
+    if (!this.selectedKeyframes.find((kf) => kf.id === keyframeId)) {
+      this.selectedKeyframes.push({
+        id: keyframeId,
+        objectId: objectId,
+        property: property,
+        frame: frame,
+      });
+    }
+
+    this.updateKeyframeSelectionVisual();
+  }
+
+  unselectPropertyKeyframe(objectId, property, frame) {
+    const keyframeId = `${objectId}-${property}-${frame}`;
+    this.selectedKeyframes = this.selectedKeyframes.filter(
+      (kf) => kf.id !== keyframeId,
+    );
+    this.updateKeyframeSelectionVisual();
+  }
+
+  isKeyframeSelected(objectId, property, frame) {
+    const keyframeId = `${objectId}-${property}-${frame}`;
+    return this.selectedKeyframes.some((kf) => kf.id === keyframeId);
+  }
+
+  updateKeyframeSelectionVisual() {
+    // Clear all visual selection
+    document.querySelectorAll(".keyframe.selected").forEach((kf) => {
+      kf.classList.remove("selected");
+    });
+
+    // Apply visual selection to selected keyframes
+    this.selectedKeyframes.forEach((selected) => {
+      const selector = `.keyframe[data-object-id="${selected.objectId}"][data-property="${selected.property}"][data-frame="${selected.frame}"]`;
+      const keyframeElements = document.querySelectorAll(selector);
+      keyframeElements.forEach((el) => el.classList.add("selected"));
+    });
+  }
+
+  clearKeyframeSelection() {
+    this.selectedKeyframes = [];
+    this.updateKeyframeSelectionVisual();
+  }
+
+  setupLayerEventListeners(layer, textObject) {
+    // In the new structure, the layer element itself is the content area
+    const content = layer;
+
+    // Keyframe selection and dragging
+    content.addEventListener("mousedown", (e) => {
+      if (e.target.classList.contains("keyframe")) {
+        this.handleKeyframeMouseDown(e, textObject);
+      }
+    });
+
+    // Context menu for keyframe deletion
+    content.addEventListener("contextmenu", (e) => {
+      if (e.target.classList.contains("keyframe")) {
+        e.preventDefault();
+        this.showKeyframeContextMenu(e, textObject);
+      }
+    });
+  }
+
+  handleKeyframeMouseDown(e, textObject) {
+    const keyframe = e.target;
+    const frame = parseInt(keyframe.dataset.frame);
+
+    // Select keyframe
+    if (!e.shiftKey && !e.ctrlKey && !e.metaKey) {
+      this.clearKeyframeSelection();
+    }
+    this.selectKeyframe(textObject.id, frame);
+
+    // Start dragging
+    let isDragging = false;
+    const startX = e.clientX;
+    const startFrame = frame;
+
+    const handleMouseMove = (e) => {
+      if (!isDragging && Math.abs(e.clientX - startX) > 5) {
+        isDragging = true;
+        keyframe.style.cursor = "grabbing";
+      }
+
+      if (isDragging) {
+        const content = keyframe.parentElement;
+        const rect = content.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const newFrame = Math.max(
+          0,
+          Math.min(
+            this.app.totalFrames - 1,
+            Math.round((x / rect.width) * this.app.totalFrames),
+          ),
+        );
+
+        // Check if frame is available
+        const existingKeyframe = textObject.keyframes.find(
+          (kf) => kf.frame === newFrame && kf.frame !== startFrame,
+        );
+        if (!existingKeyframe) {
+          this.moveKeyframe(textObject, startFrame, newFrame);
+        }
+      }
+    };
+
+    const handleMouseUp = () => {
+      if (isDragging) {
+        this.app.saveState();
+        keyframe.style.cursor = "";
+      }
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+  }
+
+  showKeyframeContextMenu(e, textObject) {
+    const frame = parseInt(e.target.dataset.frame);
+
+    // Create a simple context menu
+    const menu = document.createElement("div");
+    menu.style.cssText = `
             position: fixed;
             left: ${e.clientX}px;
             top: ${e.clientY}px;
@@ -828,509 +889,566 @@ class TimelineManager {
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         `;
 
-        const deleteOption = document.createElement('div');
-        deleteOption.style.cssText = `
+    const deleteOption = document.createElement("div");
+    deleteOption.style.cssText = `
             padding: 8px 16px;
             cursor: pointer;
             color: #ffffff;
             font-size: 12px;
         `;
-        deleteOption.textContent = 'Delete Keyframe';
-        deleteOption.addEventListener('mouseenter', () => {
-            deleteOption.style.background = '#d32f2f';
-        });
-        deleteOption.addEventListener('mouseleave', () => {
-            deleteOption.style.background = 'transparent';
-        });
-        deleteOption.addEventListener('click', () => {
-            this.deleteKeyframe(textObject, frame);
-            document.body.removeChild(menu);
-        });
+    deleteOption.textContent = "Delete Keyframe";
+    deleteOption.addEventListener("mouseenter", () => {
+      deleteOption.style.background = "#d32f2f";
+    });
+    deleteOption.addEventListener("mouseleave", () => {
+      deleteOption.style.background = "transparent";
+    });
+    deleteOption.addEventListener("click", () => {
+      this.deleteKeyframe(textObject, frame);
+      document.body.removeChild(menu);
+    });
 
-        menu.appendChild(deleteOption);
-        document.body.appendChild(menu);
+    menu.appendChild(deleteOption);
+    document.body.appendChild(menu);
 
-        // Remove menu on click outside
-        const removeMenu = (e) => {
-            if (!menu.contains(e.target)) {
-                document.body.removeChild(menu);
-                document.removeEventListener('click', removeMenu);
-            }
-        };
-        setTimeout(() => document.addEventListener('click', removeMenu), 100);
-    }
+    // Remove menu on click outside
+    const removeMenu = (e) => {
+      if (!menu.contains(e.target)) {
+        document.body.removeChild(menu);
+        document.removeEventListener("click", removeMenu);
+      }
+    };
+    setTimeout(() => document.addEventListener("click", removeMenu), 100);
+  }
 
-    addKeyframe(textObject, frame) {
-        // Check if keyframe already exists at this frame
-        const existingKeyframe = textObject.keyframes.find(kf => kf.frame === frame);
-        if (existingKeyframe) {
-            if (window.UIManager) {
-                window.UIManager.createNotification('Keyframe already exists at this frame', 'warning');
-            }
-            return;
-        }
-
-        // Get current properties for the new keyframe
-        const currentProps = this.app.getObjectPropertiesAtFrame(textObject, frame);
-
-        const newKeyframe = {
-            frame: frame,
-            properties: { ...currentProps },
-            curve: {
-                cp1x: 33.33, cp1y: 0,
-                cp2x: 66.67, cp2y: 100
-            }
-        };
-
-        textObject.keyframes.push(newKeyframe);
-        textObject.keyframes.sort((a, b) => a.frame - b.frame);
-
-        this.update();
-        this.app.redraw(); // Repaint canvas
-        this.app.updateRightPanel(); // Recalculate numerical values in UI
-        this.app.saveState();
-
-        if (window.UIManager) {
-            window.UIManager.createNotification(`Added keyframe at frame ${frame}`, 'success');
-        }
-    }
-
-    deleteKeyframe(textObject, frame) {
-        const keyframeIndex = textObject.keyframes.findIndex(kf => kf.frame === frame);
-        if (keyframeIndex > -1 && textObject.keyframes.length > 1) {
-            textObject.keyframes.splice(keyframeIndex, 1);
-            this.clearKeyframeSelection();
-            this.update();
-            this.app.redraw(); // Repaint canvas
-            this.app.updateRightPanel(); // Recalculate numerical values in UI
-            this.app.saveState();
-
-            if (window.UIManager) {
-                window.UIManager.createNotification(`Deleted keyframe at frame ${frame}`, 'info');
-            }
-        } else if (textObject.keyframes.length === 1) {
-            if (window.UIManager) {
-                window.UIManager.createNotification('Cannot delete the last keyframe', 'warning');
-            }
-        }
-    }
-
-    moveKeyframe(textObject, oldFrame, newFrame) {
-        const keyframe = textObject.keyframes.find(kf => kf.frame === oldFrame);
-        if (keyframe) {
-            keyframe.frame = newFrame;
-            textObject.keyframes.sort((a, b) => a.frame - b.frame);
-            this.update();
-            this.app.redraw(); // Repaint canvas
-            this.app.updateRightPanel(); // Recalculate numerical values in UI
-        }
-    }
-
-    selectKeyframe(objectId, frame) {
-        const key = `${objectId}-${frame}`;
-        if (!this.selectedKeyframes.includes(key)) {
-            this.selectedKeyframes.push(key);
-        }
-        this.updateKeyframeSelection();
-        this.updateInterpolationPanel();
-    }
-
-    clearKeyframeSelection() {
-        this.selectedKeyframes = [];
-        this.updateKeyframeSelection();
-        this.updateInterpolationPanel();
-    }
-
-    isKeyframeSelected(objectId, frame) {
-        return this.selectedKeyframes.includes(`${objectId}-${frame}`);
-    }
-
-    updateKeyframeSelection() {
-        // Update visual selection in timeline
-        document.querySelectorAll('.keyframe').forEach(keyframe => {
-            const objectId = keyframe.dataset.objectId;
-            const frame = keyframe.dataset.frame;
-
-            if (this.isKeyframeSelected(objectId, parseInt(frame))) {
-                keyframe.classList.add('selected');
-            } else {
-                keyframe.classList.remove('selected');
-            }
-        });
-    }
-
-    updateInterpolationPanel() {
-        const interpolationPanel = document.getElementById('interpolationPanel');
-
-        if (this.selectedKeyframes.length >= 2) {
-            const validPairs = this.getConsecutiveKeyframePairs();
-
-            if (validPairs.length > 0) {
-                interpolationPanel.style.display = 'block';
-                this.setupCurveEditor(validPairs[0]);
-            } else {
-                interpolationPanel.style.display = 'none';
-            }
-        } else {
-            interpolationPanel.style.display = 'none';
-        }
-    }
-
-    getConsecutiveKeyframePairs() {
-        const keyframesByObject = {};
-
-        this.selectedKeyframes.forEach(key => {
-            const [objectId, frame] = key.split('-');
-            if (!keyframesByObject[objectId]) {
-                keyframesByObject[objectId] = [];
-            }
-            keyframesByObject[objectId].push(parseInt(frame));
-        });
-
-        const pairs = [];
-        Object.entries(keyframesByObject).forEach(([objectId, frames]) => {
-            frames.sort((a, b) => a - b);
-            for (let i = 0; i < frames.length - 1; i++) {
-                const textObject = this.app.textObjects.find(obj => obj.id.toString() === objectId);
-                if (textObject) {
-                    const keyframes = textObject.keyframes.sort((a, b) => a.frame - b.frame);
-                    const currentIndex = keyframes.findIndex(kf => kf.frame === frames[i]);
-                    const nextIndex = keyframes.findIndex(kf => kf.frame === frames[i + 1]);
-
-                    if (nextIndex === currentIndex + 1) {
-                        pairs.push({
-                            objectId: objectId,
-                            startFrame: frames[i],
-                            endFrame: frames[i + 1],
-                            startKeyframe: keyframes[currentIndex],
-                            endKeyframe: keyframes[nextIndex]
-                        });
-                    }
-                }
-            }
-        });
-
-        return pairs;
-    }
-
-    setupCurveEditor(pair) {
-        const canvas = document.getElementById('curveEditor');
-        const ctx = canvas.getContext('2d');
-
-        // Ensure curve exists
-        if (!pair.startKeyframe.curve) {
-            pair.startKeyframe.curve = {
-                cp1x: 33.33, cp1y: 0,
-                cp2x: 66.67, cp2y: 100
-            };
-        }
-
-        this.drawCurve(ctx, pair.startKeyframe.curve);
-        this.setupCurveInteraction(canvas, pair);
-    }
-
-    drawCurve(ctx, curve) {
-        const width = ctx.canvas.width;
-        const height = ctx.canvas.height;
-
-        ctx.clearRect(0, 0, width, height);
-
-        // Draw grid
-        ctx.strokeStyle = '#404040';
-        ctx.lineWidth = 1;
-
-        for (let i = 0; i <= 4; i++) {
-            const x = (i / 4) * width;
-            const y = (i / 4) * height;
-
-            ctx.beginPath();
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, height);
-            ctx.stroke();
-
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(width, y);
-            ctx.stroke();
-        }
-
-        // Draw curve
-        ctx.strokeStyle = '#0078d4';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(0, height);
-        ctx.bezierCurveTo(
-            (curve.cp1x / 100) * width, height - (curve.cp1y / 100) * height,
-            (curve.cp2x / 100) * width, height - (curve.cp2y / 100) * height,
-            width, 0
+  addKeyframe(textObject, frame) {
+    // Check if keyframe already exists at this frame
+    const existingKeyframe = textObject.keyframes.find(
+      (kf) => kf.frame === frame,
+    );
+    if (existingKeyframe) {
+      if (window.UIManager) {
+        window.UIManager.createNotification(
+          "Keyframe already exists at this frame",
+          "warning",
         );
-        ctx.stroke();
-
-        // Draw control points
-        this.drawControlPoint(ctx, (curve.cp1x / 100) * width, height - (curve.cp1y / 100) * height);
-        this.drawControlPoint(ctx, (curve.cp2x / 100) * width, height - (curve.cp2y / 100) * height);
-
-        // Draw control lines
-        ctx.strokeStyle = '#ff6b00';
-        ctx.lineWidth = 1;
-        ctx.setLineDash([4, 4]);
-
-        ctx.beginPath();
-        ctx.moveTo(0, height);
-        ctx.lineTo((curve.cp1x / 100) * width, height - (curve.cp1y / 100) * height);
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.moveTo(width, 0);
-        ctx.lineTo((curve.cp2x / 100) * width, height - (curve.cp2y / 100) * height);
-        ctx.stroke();
-
-        ctx.setLineDash([]);
+      }
+      return;
     }
 
-    drawControlPoint(ctx, x, y) {
-        ctx.fillStyle = '#ff6b00';
-        ctx.beginPath();
-        ctx.arc(x, y, 6, 0, Math.PI * 2);
-        ctx.fill();
+    // Get current properties for the new keyframe
+    const currentProps = this.app.getObjectPropertiesAtFrame(textObject, frame);
 
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2;
-        ctx.stroke();
+    const newKeyframe = {
+      frame: frame,
+      properties: { ...currentProps },
+      curve: {
+        cp1x: 33.33,
+        cp1y: 0,
+        cp2x: 66.67,
+        cp2y: 100,
+      },
+    };
+
+    textObject.keyframes.push(newKeyframe);
+    textObject.keyframes.sort((a, b) => a.frame - b.frame);
+
+    this.update();
+    this.app.redraw(); // Repaint canvas
+    this.app.updateRightPanel(); // Recalculate numerical values in UI
+    this.app.saveState();
+
+    if (window.UIManager) {
+      window.UIManager.createNotification(
+        `Added keyframe at frame ${frame}`,
+        "success",
+      );
     }
+  }
 
-    setupCurveInteraction(canvas, pair) {
-        let isDragging = false;
-        let dragPoint = null;
+  deleteKeyframe(textObject, frame) {
+    const keyframeIndex = textObject.keyframes.findIndex(
+      (kf) => kf.frame === frame,
+    );
+    if (keyframeIndex > -1 && textObject.keyframes.length > 1) {
+      textObject.keyframes.splice(keyframeIndex, 1);
+      this.clearKeyframeSelection();
+      this.update();
+      this.app.redraw(); // Repaint canvas
+      this.app.updateRightPanel(); // Recalculate numerical values in UI
+      this.app.saveState();
 
-        const getCurvePoint = (e, curve) => {
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-
-            const cp1x = (curve.cp1x / 100) * canvas.width;
-            const cp1y = canvas.height - (curve.cp1y / 100) * canvas.height;
-            const cp2x = (curve.cp2x / 100) * canvas.width;
-            const cp2y = canvas.height - (curve.cp2y / 100) * canvas.height;
-
-            const dist1 = Math.sqrt((x - cp1x) ** 2 + (y - cp1y) ** 2);
-            const dist2 = Math.sqrt((x - cp2x) ** 2 + (y - cp2y) ** 2);
-
-            if (dist1 < 12) return 'cp1';
-            if (dist2 < 12) return 'cp2';
-            return null;
-        };
-
-        canvas.addEventListener('mousedown', (e) => {
-            dragPoint = getCurvePoint(e, pair.startKeyframe.curve);
-            if (dragPoint) {
-                isDragging = true;
-                canvas.style.cursor = 'grabbing';
-            }
-        });
-
-        canvas.addEventListener('mousemove', (e) => {
-            if (!isDragging) {
-                const point = getCurvePoint(e, pair.startKeyframe.curve);
-                canvas.style.cursor = point ? 'grab' : 'crosshair';
-                return;
-            }
-
-            const rect = canvas.getBoundingClientRect();
-            const x = Math.max(0, Math.min(canvas.width, e.clientX - rect.left));
-            const y = Math.max(0, Math.min(canvas.height, e.clientY - rect.top));
-
-            const percentX = (x / canvas.width) * 100;
-            const percentY = ((canvas.height - y) / canvas.height) * 100;
-
-            if (dragPoint === 'cp1') {
-                pair.startKeyframe.curve.cp1x = percentX;
-                pair.startKeyframe.curve.cp1y = percentY;
-            } else if (dragPoint === 'cp2') {
-                pair.startKeyframe.curve.cp2x = percentX;
-                pair.startKeyframe.curve.cp2y = percentY;
-            }
-
-            this.drawCurve(canvas.getContext('2d'), pair.startKeyframe.curve);
-            this.app.redraw();
-        });
-
-        canvas.addEventListener('mouseup', () => {
-            if (isDragging) {
-                isDragging = false;
-                dragPoint = null;
-                canvas.style.cursor = 'crosshair';
-                this.app.saveState();
-            }
-        });
-
-        canvas.addEventListener('mouseleave', () => {
-            if (isDragging) {
-                isDragging = false;
-                dragPoint = null;
-                canvas.style.cursor = 'crosshair';
-            }
-        });
-
-        // Reset curve button
-        document.getElementById('resetCurve').onclick = () => {
-            pair.startKeyframe.curve = {
-                cp1x: 33.33, cp1y: 0,
-                cp2x: 66.67, cp2y: 100
-            };
-            this.drawCurve(canvas.getContext('2d'), pair.startKeyframe.curve);
-            this.app.redraw();
-            this.app.saveState();
-        };
+      if (window.UIManager) {
+        window.UIManager.createNotification(
+          `Deleted keyframe at frame ${frame}`,
+          "info",
+        );
+      }
+    } else if (textObject.keyframes.length === 1) {
+      if (window.UIManager) {
+        window.UIManager.createNotification(
+          "Cannot delete the last keyframe",
+          "warning",
+        );
+      }
     }
+  }
 
-    updateCursor() {
-        const timeCursor = document.getElementById('timeCursor');
-        const timelineHeader = document.getElementById('timelineHeader');
-        const timeRuler = document.getElementById('timeRuler');
-
-        if (!timeCursor || !timeRuler || !timelineHeader) {
-            return;
-        }
-
-        // Calculate cursor position based on timeline width, not percentage
-        const timelineWidth = this.calculateTimelineWidth();
-        const cursorPosition = (this.app.currentFrame / this.app.totalFrames) * timelineWidth;
-
-        // Offset by half the cursor width (1px) to center align with keyframes
-        // Cursor is 2px wide, so we subtract 1px to center it
-        const adjustedPosition = cursorPosition - 1;
-        timeCursor.style.left = `${adjustedPosition}px`;
-
-        // Update cursor extensions in all layers
-        this.updateCursorExtensions(adjustedPosition);
-
-        // Update keyframe highlighting based on current frame
-        this.updateCurrentKeyframeHighlight();
-
-        // Auto-scroll to keep cursor visible during playback or navigation
-        // Skip auto-scroll if user is currently dragging the cursor
-        if (!this.isDraggingCursor) {
-            // No offset needed since layer names are now in a separate fixed column
-            this.autoScroll(cursorPosition, timelineWidth);
-        }
+  moveKeyframe(textObject, oldFrame, newFrame) {
+    const keyframe = textObject.keyframes.find((kf) => kf.frame === oldFrame);
+    if (keyframe) {
+      keyframe.frame = newFrame;
+      textObject.keyframes.sort((a, b) => a.frame - b.frame);
+      this.update();
+      this.app.redraw(); // Repaint canvas
+      this.app.updateRightPanel(); // Recalculate numerical values in UI
     }
+  }
 
-    updateCurrentKeyframeHighlight() {
-        const timelineLayers = document.getElementById('timelineLayers');
-        if (!timelineLayers) return;
+  selectKeyframe(objectId, frame) {
+    const key = `${objectId}-${frame}`;
+    if (!this.selectedKeyframes.includes(key)) {
+      this.selectedKeyframes.push(key);
+    }
+    this.updateKeyframeSelection();
+    this.updateInterpolationPanel();
+  }
 
-        // Remove all current class from keyframes
-        const allKeyframes = timelineLayers.querySelectorAll('.keyframe');
-        allKeyframes.forEach(keyframe => {
-            keyframe.classList.remove('current');
-        });
+  clearKeyframeSelection() {
+    this.selectedKeyframes = [];
+    this.updateKeyframeSelection();
+    this.updateInterpolationPanel();
+  }
 
-        // Add current class to keyframes that match the current frame
-        const currentKeyframes = timelineLayers.querySelectorAll(`.keyframe[data-frame="${this.app.currentFrame}"]`);
-        currentKeyframes.forEach(keyframe => {
-            keyframe.classList.add('current');
-        });
+  isKeyframeSelected(objectId, frame) {
+    return this.selectedKeyframes.includes(`${objectId}-${frame}`);
+  }
 
-        // Force a repaint to ensure the enhanced visual effects are applied
-        if (currentKeyframes.length > 0) {
-            currentKeyframes.forEach(keyframe => {
-                keyframe.style.transform = keyframe.style.transform; // Trigger reflow
+  updateKeyframeSelection() {
+    // Update visual selection in timeline
+    document.querySelectorAll(".keyframe").forEach((keyframe) => {
+      const objectId = keyframe.dataset.objectId;
+      const frame = keyframe.dataset.frame;
+
+      if (this.isKeyframeSelected(objectId, parseInt(frame))) {
+        keyframe.classList.add("selected");
+      } else {
+        keyframe.classList.remove("selected");
+      }
+    });
+  }
+
+  updateInterpolationPanel() {
+    const interpolationPanel = document.getElementById("interpolationPanel");
+
+    if (this.selectedKeyframes.length >= 2) {
+      const validPairs = this.getConsecutiveKeyframePairs();
+
+      if (validPairs.length > 0) {
+        interpolationPanel.style.display = "block";
+        this.setupCurveEditor(validPairs[0]);
+      } else {
+        interpolationPanel.style.display = "none";
+      }
+    } else {
+      interpolationPanel.style.display = "none";
+    }
+  }
+
+  getConsecutiveKeyframePairs() {
+    const keyframesByObject = {};
+
+    this.selectedKeyframes.forEach((key) => {
+      const [objectId, frame] = key.split("-");
+      if (!keyframesByObject[objectId]) {
+        keyframesByObject[objectId] = [];
+      }
+      keyframesByObject[objectId].push(parseInt(frame));
+    });
+
+    const pairs = [];
+    Object.entries(keyframesByObject).forEach(([objectId, frames]) => {
+      frames.sort((a, b) => a - b);
+      for (let i = 0; i < frames.length - 1; i++) {
+        const textObject = this.app.textObjects.find(
+          (obj) => obj.id.toString() === objectId,
+        );
+        if (textObject) {
+          const keyframes = textObject.keyframes.sort(
+            (a, b) => a.frame - b.frame,
+          );
+          const currentIndex = keyframes.findIndex(
+            (kf) => kf.frame === frames[i],
+          );
+          const nextIndex = keyframes.findIndex(
+            (kf) => kf.frame === frames[i + 1],
+          );
+
+          if (nextIndex === currentIndex + 1) {
+            pairs.push({
+              objectId: objectId,
+              startFrame: frames[i],
+              endFrame: frames[i + 1],
+              startKeyframe: keyframes[currentIndex],
+              endKeyframe: keyframes[nextIndex],
             });
+          }
         }
+      }
+    });
+
+    return pairs;
+  }
+
+  setupCurveEditor(pair) {
+    const canvas = document.getElementById("curveEditor");
+    const ctx = canvas.getContext("2d");
+
+    // Ensure curve exists
+    if (!pair.startKeyframe.curve) {
+      pair.startKeyframe.curve = {
+        cp1x: 33.33,
+        cp1y: 0,
+        cp2x: 66.67,
+        cp2y: 100,
+      };
     }
 
-    updateCursorExtensions(cursorPosition) {
-        const timelineLayers = document.getElementById('timelineLayers');
-        if (!timelineLayers) return;
+    this.drawCurve(ctx, pair.startKeyframe.curve);
+    this.setupCurveInteraction(canvas, pair);
+  }
 
-        const layers = timelineLayers.querySelectorAll('.timeline-layer');
-        layers.forEach(layer => {
-            // In the new structure, the layer itself is the content area
-            const content = layer;
+  drawCurve(ctx, curve) {
+    const width = ctx.canvas.width;
+    const height = ctx.canvas.height;
 
-            // Find or create cursor extension element
-            let cursorExtension = content.querySelector('.cursor-extension');
-            if (!cursorExtension) {
-                cursorExtension = document.createElement('div');
-                cursorExtension.className = 'cursor-extension';
-                content.appendChild(cursorExtension);
-            }
+    ctx.clearRect(0, 0, width, height);
 
-            // Position the cursor extension to match the main cursor
-            cursorExtension.style.left = `${cursorPosition}px`;
-        });
+    // Draw grid
+    ctx.strokeStyle = "#404040";
+    ctx.lineWidth = 1;
+
+    for (let i = 0; i <= 4; i++) {
+      const x = (i / 4) * width;
+      const y = (i / 4) * height;
+
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+      ctx.stroke();
     }
 
-    autoScroll(cursorPosition, timelineWidth) {
-        const timelineContainer = document.getElementById('timelineContainer');
+    // Draw curve
+    ctx.strokeStyle = "#0078d4";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(0, height);
+    ctx.bezierCurveTo(
+      (curve.cp1x / 100) * width,
+      height - (curve.cp1y / 100) * height,
+      (curve.cp2x / 100) * width,
+      height - (curve.cp2y / 100) * height,
+      width,
+      0,
+    );
+    ctx.stroke();
 
-        if (!timelineContainer) return;
+    // Draw control points
+    this.drawControlPoint(
+      ctx,
+      (curve.cp1x / 100) * width,
+      height - (curve.cp1y / 100) * height,
+    );
+    this.drawControlPoint(
+      ctx,
+      (curve.cp2x / 100) * width,
+      height - (curve.cp2y / 100) * height,
+    );
 
-        const containerWidth = timelineContainer.clientWidth;
-        const currentScrollLeft = timelineContainer.scrollLeft;
-        const margin = Math.min(100, containerWidth * 0.1); // Adaptive margin, max 100px
+    // Draw control lines
+    ctx.strokeStyle = "#ff6b00";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
 
-        // Only auto-scroll if cursor is completely outside visible area
-        let newScrollLeft = currentScrollLeft;
+    ctx.beginPath();
+    ctx.moveTo(0, height);
+    ctx.lineTo(
+      (curve.cp1x / 100) * width,
+      height - (curve.cp1y / 100) * height,
+    );
+    ctx.stroke();
 
-        if (cursorPosition < currentScrollLeft) {
-            // Cursor is completely off-screen to the left
-            newScrollLeft = Math.max(0, cursorPosition - margin);
-        } else if (cursorPosition > currentScrollLeft + containerWidth) {
-            // Cursor is completely off-screen to the right
-            newScrollLeft = Math.min(timelineWidth - containerWidth, cursorPosition - containerWidth + margin);
-        }
+    ctx.beginPath();
+    ctx.moveTo(width, 0);
+    ctx.lineTo(
+      (curve.cp2x / 100) * width,
+      height - (curve.cp2y / 100) * height,
+    );
+    ctx.stroke();
 
-        // Only scroll if there's a significant change (reduces jitter)
-        if (Math.abs(newScrollLeft - currentScrollLeft) > 5) {
-            this.smoothScrollTo(newScrollLeft);
-        }
+    ctx.setLineDash([]);
+  }
+
+  drawControlPoint(ctx, x, y) {
+    ctx.fillStyle = "#ff6b00";
+    ctx.beginPath();
+    ctx.arc(x, y, 6, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  setupCurveInteraction(canvas, pair) {
+    let isDragging = false;
+    let dragPoint = null;
+
+    const getCurvePoint = (e, curve) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const cp1x = (curve.cp1x / 100) * canvas.width;
+      const cp1y = canvas.height - (curve.cp1y / 100) * canvas.height;
+      const cp2x = (curve.cp2x / 100) * canvas.width;
+      const cp2y = canvas.height - (curve.cp2y / 100) * canvas.height;
+
+      const dist1 = Math.sqrt((x - cp1x) ** 2 + (y - cp1y) ** 2);
+      const dist2 = Math.sqrt((x - cp2x) ** 2 + (y - cp2y) ** 2);
+
+      if (dist1 < 12) return "cp1";
+      if (dist2 < 12) return "cp2";
+      return null;
+    };
+
+    canvas.addEventListener("mousedown", (e) => {
+      dragPoint = getCurvePoint(e, pair.startKeyframe.curve);
+      if (dragPoint) {
+        isDragging = true;
+        canvas.style.cursor = "grabbing";
+      }
+    });
+
+    canvas.addEventListener("mousemove", (e) => {
+      if (!isDragging) {
+        const point = getCurvePoint(e, pair.startKeyframe.curve);
+        canvas.style.cursor = point ? "grab" : "crosshair";
+        return;
+      }
+
+      const rect = canvas.getBoundingClientRect();
+      const x = Math.max(0, Math.min(canvas.width, e.clientX - rect.left));
+      const y = Math.max(0, Math.min(canvas.height, e.clientY - rect.top));
+
+      const percentX = (x / canvas.width) * 100;
+      const percentY = ((canvas.height - y) / canvas.height) * 100;
+
+      if (dragPoint === "cp1") {
+        pair.startKeyframe.curve.cp1x = percentX;
+        pair.startKeyframe.curve.cp1y = percentY;
+      } else if (dragPoint === "cp2") {
+        pair.startKeyframe.curve.cp2x = percentX;
+        pair.startKeyframe.curve.cp2y = percentY;
+      }
+
+      this.drawCurve(canvas.getContext("2d"), pair.startKeyframe.curve);
+      this.app.redraw();
+    });
+
+    canvas.addEventListener("mouseup", () => {
+      if (isDragging) {
+        isDragging = false;
+        dragPoint = null;
+        canvas.style.cursor = "crosshair";
+        this.app.saveState();
+      }
+    });
+
+    canvas.addEventListener("mouseleave", () => {
+      if (isDragging) {
+        isDragging = false;
+        dragPoint = null;
+        canvas.style.cursor = "crosshair";
+      }
+    });
+
+    // Reset curve button
+    document.getElementById("resetCurve").onclick = () => {
+      pair.startKeyframe.curve = {
+        cp1x: 33.33,
+        cp1y: 0,
+        cp2x: 66.67,
+        cp2y: 100,
+      };
+      this.drawCurve(canvas.getContext("2d"), pair.startKeyframe.curve);
+      this.app.redraw();
+      this.app.saveState();
+    };
+  }
+
+  updateCursor() {
+    const timeCursor = document.getElementById("timeCursor");
+    const timelineHeader = document.getElementById("timelineHeader");
+    const timeRuler = document.getElementById("timeRuler");
+
+    if (!timeCursor || !timeRuler || !timelineHeader) {
+      return;
     }
 
-    smoothScrollTo(targetScrollLeft) {
-        const timelineContainer = document.getElementById('timelineContainer');
+    // Calculate cursor position based on timeline width, not percentage
+    const timelineWidth = this.calculateTimelineWidth();
+    const cursorPosition =
+      (this.app.currentFrame / this.app.totalFrames) * timelineWidth;
 
-        if (!timelineContainer) return;
+    // Offset by half the cursor width (1px) to center align with keyframes
+    // Cursor is 2px wide, so we subtract 1px to center it
+    const adjustedPosition = cursorPosition - 1;
+    timeCursor.style.left = `${adjustedPosition}px`;
 
-        // Scroll the unified timeline container
-        timelineContainer.scrollLeft = targetScrollLeft;
+    // Update cursor extensions in all layers
+    this.updateCursorExtensions(adjustedPosition);
+
+    // Update keyframe highlighting based on current frame
+    this.updateCurrentKeyframeHighlight();
+
+    // Auto-scroll to keep cursor visible during playback or navigation
+    // Skip auto-scroll if user is currently dragging the cursor
+    if (!this.isDraggingCursor) {
+      // No offset needed since layer names are now in a separate fixed column
+      this.autoScroll(cursorPosition, timelineWidth);
+    }
+  }
+
+  updateCurrentKeyframeHighlight() {
+    const timelineLayers = document.getElementById("timelineLayers");
+    if (!timelineLayers) return;
+
+    // Remove all current class from keyframes
+    const allKeyframes = timelineLayers.querySelectorAll(".keyframe");
+    allKeyframes.forEach((keyframe) => {
+      keyframe.classList.remove("current");
+    });
+
+    // Add current class to keyframes that match the current frame
+    const currentKeyframes = timelineLayers.querySelectorAll(
+      `.keyframe[data-frame="${this.app.currentFrame}"]`,
+    );
+    currentKeyframes.forEach((keyframe) => {
+      keyframe.classList.add("current");
+    });
+
+    // Force a repaint to ensure the enhanced visual effects are applied
+    if (currentKeyframes.length > 0) {
+      currentKeyframes.forEach((keyframe) => {
+        keyframe.style.transform = keyframe.style.transform; // Trigger reflow
+      });
+    }
+  }
+
+  updateCursorExtensions(cursorPosition) {
+    const timelineLayers = document.getElementById("timelineLayers");
+    if (!timelineLayers) return;
+
+    const layers = timelineLayers.querySelectorAll(".timeline-layer");
+    layers.forEach((layer) => {
+      // In the new structure, the layer itself is the content area
+      const content = layer;
+
+      // Find or create cursor extension element
+      let cursorExtension = content.querySelector(".cursor-extension");
+      if (!cursorExtension) {
+        cursorExtension = document.createElement("div");
+        cursorExtension.className = "cursor-extension";
+        content.appendChild(cursorExtension);
+      }
+
+      // Position the cursor extension to match the main cursor
+      cursorExtension.style.left = `${cursorPosition}px`;
+    });
+  }
+
+  autoScroll(cursorPosition, timelineWidth) {
+    const timelineContainer = document.getElementById("timelineContainer");
+
+    if (!timelineContainer) return;
+
+    const containerWidth = timelineContainer.clientWidth;
+    const currentScrollLeft = timelineContainer.scrollLeft;
+    const margin = Math.min(100, containerWidth * 0.1); // Adaptive margin, max 100px
+
+    // Only auto-scroll if cursor is completely outside visible area
+    let newScrollLeft = currentScrollLeft;
+
+    if (cursorPosition < currentScrollLeft) {
+      // Cursor is completely off-screen to the left
+      newScrollLeft = Math.max(0, cursorPosition - margin);
+    } else if (cursorPosition > currentScrollLeft + containerWidth) {
+      // Cursor is completely off-screen to the right
+      newScrollLeft = Math.min(
+        timelineWidth - containerWidth,
+        cursorPosition - containerWidth + margin,
+      );
     }
 
-    setupCursorDragging(timeCursor) {
-        timeCursor.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            this.isDraggingCursor = true;
-
-            const timeRuler = document.getElementById('timeRuler');
-            const timelineContainer = document.getElementById('timelineContainer');
-
-            const handleMouseMove = (e) => {
-                const timelineHeader = document.getElementById('timelineHeader');
-                const headerRect = timelineHeader.getBoundingClientRect();
-                const headerScrollLeft = timelineHeader ? timelineHeader.scrollLeft : 0;
-
-                // Calculate position relative to the timeline header container, then add scroll offset
-                const x = (e.clientX - headerRect.left) + headerScrollLeft;
-
-                // Convert pixel position to frame
-                const pixelsPerFrame = this.calculateTimelineWidth() / this.app.totalFrames;
-                const frame = Math.round(x / pixelsPerFrame);
-                const clampedFrame = Math.max(0, Math.min(frame, this.app.totalFrames - 1));
-
-                this.app.setCurrentFrame(clampedFrame);
-            };
-
-            const handleMouseUp = () => {
-                this.isDraggingCursor = false;
-                document.removeEventListener('mousemove', handleMouseMove);
-                document.removeEventListener('mouseup', handleMouseUp);
-            };
-
-            document.addEventListener('mousemove', handleMouseMove);
-            document.addEventListener('mouseup', handleMouseUp);
-        });
+    // Only scroll if there's a significant change (reduces jitter)
+    if (Math.abs(newScrollLeft - currentScrollLeft) > 5) {
+      this.smoothScrollTo(newScrollLeft);
     }
+  }
+
+  smoothScrollTo(targetScrollLeft) {
+    const timelineContainer = document.getElementById("timelineContainer");
+
+    if (!timelineContainer) return;
+
+    // Scroll the unified timeline container
+    timelineContainer.scrollLeft = targetScrollLeft;
+  }
+
+  setupCursorDragging(timeCursor) {
+    timeCursor.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      this.isDraggingCursor = true;
+
+      const timeRuler = document.getElementById("timeRuler");
+      const timelineContainer = document.getElementById("timelineContainer");
+
+      const handleMouseMove = (e) => {
+        const timelineHeader = document.getElementById("timelineHeader");
+        const headerRect = timelineHeader.getBoundingClientRect();
+        const headerScrollLeft = timelineHeader ? timelineHeader.scrollLeft : 0;
+
+        // Calculate position relative to the timeline header container, then add scroll offset
+        const x = e.clientX - headerRect.left + headerScrollLeft;
+
+        // Convert pixel position to frame
+        const pixelsPerFrame =
+          this.calculateTimelineWidth() / this.app.totalFrames;
+        const frame = Math.round(x / pixelsPerFrame);
+        const clampedFrame = Math.max(
+          0,
+          Math.min(frame, this.app.totalFrames - 1),
+        );
+
+        this.app.setCurrentFrame(clampedFrame);
+      };
+
+      const handleMouseUp = () => {
+        this.isDraggingCursor = false;
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+      };
+
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+    });
+  }
 }
 
 // Expose TimelineManager to window object
